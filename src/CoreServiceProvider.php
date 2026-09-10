@@ -3,6 +3,15 @@
 namespace Saucebase\Core;
 
 use Illuminate\Support\ServiceProvider;
+use Saucebase\Core\Breadcrumbs\BreadcrumbServiceProvider;
+use Saucebase\Core\Filament\FilamentServiceProvider;
+use Saucebase\Core\Inertia\InertiaServiceProvider;
+use Saucebase\Core\Inertia\ModalServiceProvider;
+use Saucebase\Core\Localization\LocalizationServiceProvider;
+use Saucebase\Core\Modules\ModuleSupportServiceProvider;
+use Saucebase\Core\Navigation\NavigationServiceProvider;
+use Saucebase\Core\Security\SecurityServiceProvider;
+use Saucebase\Core\Settings\SettingsServiceProvider;
 
 /**
  * The single provider Laravel discovers for this package.
@@ -21,7 +30,15 @@ class CoreServiceProvider extends ServiceProvider
      * @var list<class-string<ServiceProvider>>
      */
     private const PROVIDERS = [
-        //
+        ModuleSupportServiceProvider::class,
+        FilamentServiceProvider::class,
+        NavigationServiceProvider::class,
+        BreadcrumbServiceProvider::class,
+        InertiaServiceProvider::class,
+        ModalServiceProvider::class,
+        SettingsServiceProvider::class,
+        LocalizationServiceProvider::class,
+        SecurityServiceProvider::class,
     ];
 
     public function register(): void
