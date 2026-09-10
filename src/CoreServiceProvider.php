@@ -2,16 +2,23 @@
 
 namespace Saucebase\Core;
 
+use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\ServiceProvider;
-use Saucebase\Core\Breadcrumbs\BreadcrumbServiceProvider;
-use Saucebase\Core\Filament\FilamentServiceProvider;
-use Saucebase\Core\Inertia\InertiaServiceProvider;
-use Saucebase\Core\Inertia\ModalServiceProvider;
-use Saucebase\Core\Localization\LocalizationServiceProvider;
-use Saucebase\Core\Modules\ModuleSupportServiceProvider;
-use Saucebase\Core\Navigation\NavigationServiceProvider;
-use Saucebase\Core\Security\SecurityServiceProvider;
-use Saucebase\Core\Settings\SettingsServiceProvider;
+use InterNACHI\Modular\Support\Facades\Modules;
+use InterNACHI\Modular\Support\ModularizedCommandsServiceProvider;
+use InterNACHI\Modular\Support\ModularServiceProvider;
+use Saucebase\Core\Console\Commands\GenerateModuleTypesCommand;
+use Saucebase\Core\Console\Commands\RecipeToModuleCommand;
+use Saucebase\Core\Console\Commands\SeedModulesCommand;
+use Saucebase\Core\Providers\BreadcrumbServiceProvider;
+use Saucebase\Core\Providers\ConfigServiceProvider;
+use Saucebase\Core\Providers\FilamentServiceProvider;
+use Saucebase\Core\Providers\InertiaServiceProvider;
+use Saucebase\Core\Providers\LocalizationServiceProvider;
+use Saucebase\Core\Providers\ModalServiceProvider;
+use Saucebase\Core\Providers\NavigationServiceProvider;
+use Saucebase\Core\Providers\SecurityServiceProvider;
+use Saucebase\Core\Providers\SettingsServiceProvider;
 
 /**
  * The single provider Laravel discovers for this package.
@@ -30,7 +37,7 @@ class CoreServiceProvider extends ServiceProvider
      * @var list<class-string<ServiceProvider>>
      */
     private const PROVIDERS = [
-        ModuleSupportServiceProvider::class,
+        ConfigServiceProvider::class,
         FilamentServiceProvider::class,
         NavigationServiceProvider::class,
         BreadcrumbServiceProvider::class,
@@ -43,8 +50,59 @@ class CoreServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        $this->registerModular();
+
         foreach (self::PROVIDERS as $provider) {
             $this->app->register($provider);
         }
+    }
+
+    /**
+     * Migrations load always; commands and publishing are console-only.
+     *
+     * Laravel only auto-loads commands out of the application's own
+     * app/Console/Commands directory, so a command shipped by a package is invisible
+     * until it is registered here.
+     */
+    public function boot(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
+
+        // Publishing is opt-in ownership, not a duplicate: the migrator keys files by
+        // migration name across every registered path, so a published copy replaces
+        // core's rather than running alongside it.
+        $this->publishes([
+            __DIR__.'/../database/migrations' => database_path('migrations'),
+        ], 'saucebase-migrations');
+
+        $this->commands([
+            GenerateModuleTypesCommand::class,
+            RecipeToModuleCommand::class,
+            SeedModulesCommand::class,
+        ]);
+    }
+
+    /**
+     * Registers internachi/modular by hand, after its config.
+     *
+     * `ModularServiceProvider::register()` reads `modules_directory` and memoises the
+     * path, so it has to see our value first — hence `dont-discover` in composer.json
+     * and these lines in this order. Separate them and modules silently resolve
+     * against `app-modules/` instead, with no error.
+     *
+     * Suppressing discovery also drops the facade alias, so it is re-registered here.
+     */
+    private function registerModular(): void
+    {
+        $this->mergeConfigFrom(__DIR__.'/../config/app-modules.php', 'app-modules');
+
+        $this->app->register(ModularServiceProvider::class);
+        $this->app->register(ModularizedCommandsServiceProvider::class);
+
+        AliasLoader::getInstance()->alias('Modules', Modules::class);
     }
 }

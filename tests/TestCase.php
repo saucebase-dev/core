@@ -2,42 +2,18 @@
 
 namespace Saucebase\Core\Tests;
 
-use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
-use BladeUI\Icons\BladeIconsServiceProvider;
-use Filament\Actions\ActionsServiceProvider;
-use Filament\FilamentServiceProvider;
-use Filament\Forms\FormsServiceProvider;
-use Filament\Infolists\InfolistsServiceProvider;
-use Filament\Notifications\NotificationsServiceProvider;
-use Filament\QueryBuilder\QueryBuilderServiceProvider;
-use Filament\Schemas\SchemasServiceProvider;
-use Filament\SpatieLaravelSettingsPluginServiceProvider;
-use Filament\Support\SupportServiceProvider;
-use Filament\Tables\TablesServiceProvider;
-use Filament\Widgets\WidgetsServiceProvider;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Routing\Router;
 use Inertia\Inertia;
-use Inertia\ServiceProvider;
-use InertiaUI\Modal\ModalServiceProvider;
-use InterNACHI\Modular\Support\ModularServiceProvider;
-use Kirschbaum\PowerJoins\PowerJoinsServiceProvider;
-use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
-use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
-use Saucebase\Breadcrumbs\BreadcrumbsServiceProvider;
 use Saucebase\Core\CoreServiceProvider;
-use Saucebase\Core\Frontend\HandleAppearance;
-use Saucebase\Core\Inertia\HandleInertiaRequests;
-use Saucebase\Core\Localization\HandleLocalization;
-use Saucebase\Core\Localization\LocalizationController;
-use Saucebase\Core\Settings\SettingsController;
+use Saucebase\Core\Http\Controllers\LocalizationController;
+use Saucebase\Core\Http\Controllers\SettingsController;
+use Saucebase\Core\Http\Middleware\HandleAppearance;
+use Saucebase\Core\Http\Middleware\HandleInertiaRequests;
+use Saucebase\Core\Http\Middleware\HandleLocalization;
 use Saucebase\Core\Tests\Fixtures\Filament\TestPanelProvider;
 use Saucebase\Core\Tests\Fixtures\User;
-use Spatie\LaravelSettings\LaravelSettingsServiceProvider;
-use Spatie\Navigation\NavigationServiceProvider;
-use Spatie\Permission\PermissionServiceProvider;
-use Tighten\Ziggy\ZiggyServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -60,56 +36,54 @@ abstract class TestCase extends Orchestra
     }
 
     /**
-     * Providers a real application gets from package discovery.
+     * Every provider a real application would discover, plus core's own.
      *
-     * Testbench does not discover the providers of this package's own dependencies,
-     * so anything core relies on being registered has to be named here: Spatie's
-     * navigation provider binds ActiveUrlChecker to the current request URL,
-     * InterNACHI's binds ModuleRegistry, Spatie's settings provider supplies the
-     * config SettingsContainer reads at boot, and Spatie's permission provider merges
-     * the config PermissionRegistrar reads its model class names from.
+     * Testbench boots its own skeleton at vendor/orchestra/testbench-core/laravel,
+     * which has no vendor/ directory — so Laravel's PackageManifest finds no
+     * installed.json and discovers nothing. Naming providers here is the only way
+     * they register.
      *
-     * TestPanelProvider stands in for the application's AdminPanelProvider, which
-     * core does not ship.
+     * They are read out of core's own installed.json rather than hand-listed, for two
+     * reasons: a new dependency is registered without anyone remembering this file, and
+     * the order matches production exactly, since that is the same file and the same
+     * order Laravel reads in a real app.
+     *
+     * internachi/modular is excluded because CoreServiceProvider registers it itself,
+     * after setting `modules_directory` — registering it here would put it first and
+     * reproduce the bug that arrangement prevents.
+     *
+     * TestPanelProvider stands in for the application's AdminPanelProvider, which core
+     * does not ship.
      *
      * @return list<class-string>
      */
     protected function getPackageProviders($app): array
     {
         return [
-            // Filament and its dependencies. A real application gets all of these from
-            // package discovery; testbench discovers nothing, and the panel will not
-            // resolve without the full set.
-            BladeIconsServiceProvider::class,
-            BladeHeroiconsServiceProvider::class,
-            BladeCaptureDirectiveServiceProvider::class,
-            PowerJoinsServiceProvider::class,
-            LivewireServiceProvider::class,
-            SupportServiceProvider::class,
-            ActionsServiceProvider::class,
-            FormsServiceProvider::class,
-            InfolistsServiceProvider::class,
-            NotificationsServiceProvider::class,
-            SchemasServiceProvider::class,
-            TablesServiceProvider::class,
-            WidgetsServiceProvider::class,
-            QueryBuilderServiceProvider::class,
-            SpatieLaravelSettingsPluginServiceProvider::class,
-            FilamentServiceProvider::class,
-
-            // Core's other runtime dependencies, likewise undiscovered.
-            ServiceProvider::class,
-            ModalServiceProvider::class,
-            BreadcrumbsServiceProvider::class,
-            ZiggyServiceProvider::class,
-
-            ModularServiceProvider::class,
-            LaravelSettingsServiceProvider::class,
-            PermissionServiceProvider::class,
-            NavigationServiceProvider::class,
+            ...$this->discoverablePackageProviders(),
             CoreServiceProvider::class,
             TestPanelProvider::class,
         ];
+    }
+
+    /**
+     * @return list<class-string>
+     */
+    private function discoverablePackageProviders(): array
+    {
+        $installed = json_decode(
+            (string) file_get_contents(__DIR__.'/../vendor/composer/installed.json'),
+            true,
+        );
+
+        $excluded = ['internachi/modular'];
+
+        return collect($installed['packages'] ?? [])
+            ->reject(fn (array $package): bool => in_array($package['name'], $excluded, true))
+            ->flatMap(fn (array $package): array => $package['extra']['laravel']['providers'] ?? [])
+            ->filter(fn (string $provider): bool => class_exists($provider))
+            ->values()
+            ->all();
     }
 
     /**
@@ -180,14 +154,19 @@ abstract class TestCase extends Orchestra
 
     protected function defineDatabaseMigrations(): void
     {
-        // Every table the tests need, in one place: users, the permission tables and
-        // the settings table. The Spatie packages ship the latter two as `.stub` files
-        // for applications to publish rather than as runnable migrations, so the test
-        // application carries its own copies — as a real application does.
-        //
-        // Core's own settings migrations arrive separately: Spatie's provider loads
-        // whatever is on settings.migrations_paths, which core's SettingsServiceProvider
-        // has already prepended its directory to.
+        // The users table only — the application owns that one, so the test application
+        // has to supply it just as a real one does.
         $this->loadMigrationsFrom(__DIR__.'/Fixtures/Database/Migrations');
+
+        // Core's real migrations, not copies of them. Testbench's loadMigrationsFrom()
+        // runs a targeted `migrate --path=`, so it does not see the paths
+        // CoreServiceProvider registered — naming the directory here is what makes the
+        // tests exercise the migrations core actually ships. Second, because
+        // add_locale_to_users_table needs the users table above to exist.
+        $this->loadMigrationsFrom(dirname(__DIR__).'/database/migrations');
+
+        // Core's settings migrations arrive by yet another route: Spatie's provider
+        // loads whatever is on settings.migrations_paths, which SettingsServiceProvider
+        // has already prepended its own directory to.
     }
 }

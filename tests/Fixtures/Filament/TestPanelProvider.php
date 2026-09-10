@@ -14,8 +14,8 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Saucebase\Core\Filament\Admin\GeneralSettings;
-use Saucebase\Core\Filament\Admin\LocalizationSettings;
+use Saucebase\Core\Filament\Admin\Pages\GeneralSettings;
+use Saucebase\Core\Filament\Admin\Pages\LocalizationSettings;
 use Saucebase\Core\Filament\ModulesPlugin;
 
 /**
