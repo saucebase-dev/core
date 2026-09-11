@@ -1,8 +1,10 @@
 name: Tests
 
 on:
+    # No `branches:` filter: that key matches the PR's *base* branch, so an allowlist
+    # skips CI for any epic branch not named here, showing as no checks rather than a
+    # failure.
     pull_request:
-        branches: [main, dev-v3]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
