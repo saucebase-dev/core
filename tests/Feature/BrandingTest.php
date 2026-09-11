@@ -60,4 +60,26 @@ class BrandingTest extends TestCase
             );
         }
     }
+
+    public function test_meta_description_prefers_the_description_then_the_tagline(): void
+    {
+        $settings = app(GeneralSettings::class);
+
+        $settings->site_tagline = 'A tagline';
+        $settings->site_description = 'A description';
+        $this->assertSame('A description', $settings->metaDescription());
+
+        $settings->site_description = '';
+        $this->assertSame('A tagline', $settings->metaDescription());
+    }
+
+    public function test_meta_description_is_null_when_nothing_is_set(): void
+    {
+        $settings = app(GeneralSettings::class);
+
+        $settings->site_tagline = null;
+        $settings->site_description = '   ';
+
+        $this->assertNull($settings->metaDescription(), 'An empty description tag fails the same audit as a missing one.');
+    }
 }

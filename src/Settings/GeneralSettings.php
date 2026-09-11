@@ -64,6 +64,17 @@ class GeneralSettings extends Settings
         return $this->publicFileUrl($this->site_icon_on_dark);
     }
 
+    /**
+     * The blurb for `<meta name="description">`, or null to omit the tag.
+     *
+     * Falls back to the tagline, then to nothing: an empty description element fails the
+     * same search-engine audit as a missing one, so the caller has to be able to skip it.
+     */
+    public function metaDescription(): ?string
+    {
+        return Str::squish((string) ($this->site_description ?: $this->site_tagline)) ?: null;
+    }
+
     public static function group(): string
     {
         return 'general';
