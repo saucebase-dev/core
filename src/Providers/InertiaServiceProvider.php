@@ -3,8 +3,11 @@
 namespace Saucebase\Core\Providers;
 
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\View\View as ViewInstance;
 use Inertia\Response;
+use Saucebase\Core\Settings\GeneralSettings;
 
 class InertiaServiceProvider extends ServiceProvider
 {
@@ -23,6 +26,8 @@ class InertiaServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->shareBrandWithRootView();
+
         Response::macro('withSSR', function () {
             /** @var Response $this */
             request()->attributes->set('inertia.ssr', true);
@@ -37,6 +42,24 @@ class InertiaServiceProvider extends ServiceProvider
             Config::set('inertia.ssr.enabled', false);
 
             return $this;
+        });
+    }
+
+    /**
+     * Put the brand on the Inertia root view as `$brand`.
+     *
+     * Replaces an `@inject` that named `Saucebase\Core\Settings\GeneralSettings` in
+     * three separate blade files — the application's root view and both stack stubs —
+     * hardcoding a core class path into templates the application owns.
+     *
+     * A composer rather than `View::share()` because it is lazy: it fires only when the
+     * root view actually renders, so a JSON response or a Filament page never resolves
+     * the settings at all.
+     */
+    private function shareBrandWithRootView(): void
+    {
+        View::composer('app', function (ViewInstance $view): void {
+            $view->with('brand', $this->app->make(GeneralSettings::class));
         });
     }
 }

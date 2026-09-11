@@ -6,7 +6,6 @@ use BackedEnum;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -51,32 +50,52 @@ class GeneralSettings extends SettingsPage
                         ->label(__('Site description'))
                         ->maxLength(500)
                         ->columnSpanFull(),
-                    FileUpload::make('site_icon')
-                        ->label(__('Site icon'))
-                        ->extraAttributes(['data-testid' => 'admin-site-icon'])
-                        ->image()
-                        ->avatar()
-                        ->imageEditor()
-                        ->disk('public')
-                        ->directory('site-branding')
-                        ->visibility('public')
-                        ->maxSize(1024)
-                        ->helperText(__('Square. Used where only a mark fits, such as a collapsed sidebar.')),
-                    FileUpload::make('site_logo')
-                        ->label(__('Site logo'))
-                        ->extraAttributes(['data-testid' => 'admin-site-logo'])
-                        ->image()
-                        ->disk('public')
-                        ->directory('site-branding')
-                        ->visibility('public')
-                        ->maxSize(1024)
-                        ->helperText(__('Wordmark. Used where there is room to show the site name.')),
-                    Toggle::make('prefer_logo')
-                        ->label(__('Prefer logo'))
-                        ->extraAttributes(['data-testid' => 'admin-prefer-logo'])
-                        ->helperText(__('Use the site logo instead of the icon when both are available.')),
+                    $this->brandUpload(
+                        'site_logo_on_light',
+                        __('Logo (on light backgrounds)'),
+                        __('Wide lockup including your name. Shown wherever there is room for it.'),
+                    ),
+                    $this->brandUpload(
+                        'site_logo_on_dark',
+                        __('Logo (on dark backgrounds)'),
+                        __('The same lockup in light artwork, for dark mode.'),
+                    ),
+                    $this->brandUpload(
+                        'site_icon_on_light',
+                        __('Icon (on light backgrounds)'),
+                        __('Square mark. Used where only a mark fits, such as a collapsed sidebar or a browser tab.'),
+                    ),
+                    $this->brandUpload(
+                        'site_icon_on_dark',
+                        __('Icon (on dark backgrounds)'),
+                        __('The same mark in light artwork, for dark mode.'),
+                    ),
                 ])
                 ->columns(2),
         ]);
+    }
+
+    /**
+     * One upload field per brand asset.
+     *
+     * `->imageEditor()` is deliberately absent. It is client-side Cropper.js, which
+     * cannot open an SVG — and these fields are SVG by default, since the shipped brand
+     * is vector. Offering an editor that silently fails on the format we recommend would
+     * be worse than offering none.
+     *
+     * These are never empty: they fall back to the artwork core ships, so clearing one
+     * restores the default rather than leaving a gap.
+     */
+    private function brandUpload(string $name, string $label, string $helperText): FileUpload
+    {
+        return FileUpload::make($name)
+            ->label($label)
+            ->extraAttributes(['data-testid' => 'admin-'.str_replace('_', '-', $name)])
+            ->acceptedFileTypes(['image/svg+xml', 'image/png', 'image/jpeg', 'image/webp'])
+            ->disk('public')
+            ->directory('site-branding')
+            ->visibility('public')
+            ->maxSize(1024)
+            ->helperText($helperText);
     }
 }

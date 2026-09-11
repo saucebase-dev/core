@@ -40,10 +40,7 @@ class GeneralSettingsTest extends TestCase
         $this->assertNull($settings->site_tagline);
         $this->assertNull($settings->site_description);
 
-        // No brand images, so the logo and the favicon both stay the ones that ship.
-        $this->assertNull($settings->site_icon);
-        $this->assertNull($settings->site_logo);
-        $this->assertFalse($settings->prefer_logo);
+        // Brand assets are never null — see BrandingTest for the defaults themselves.
     }
 
     public function test_general_settings_are_shared_with_inertia(): void
@@ -55,8 +52,8 @@ class GeneralSettingsTest extends TestCase
         $settings->site_name = 'Acme Platform';
         $settings->site_tagline = 'The modular SaaS starter kit';
         $settings->site_description = 'The Acme customer platform.';
-        $settings->site_icon = 'site-branding/icon.png';
-        $settings->site_logo = 'https://cdn.example.com/logo.svg';
+        $settings->site_icon_on_light = 'site-branding/icon.png';
+        $settings->site_logo_on_light = 'https://cdn.example.com/logo.svg';
         $settings->save();
 
         $this->get('/general-settings-probe')
@@ -64,8 +61,11 @@ class GeneralSettingsTest extends TestCase
                 ->where('settings.general.site_name', 'Acme Platform')
                 ->where('settings.general.site_tagline', 'The modular SaaS starter kit')
                 ->where('settings.general.site_description', 'The Acme customer platform.')
-                ->where('settings.general.site_icon', Storage::disk('public')->url('site-branding/icon.png'))
-                ->where('settings.general.site_logo', 'https://cdn.example.com/logo.svg'));
+                ->where('settings.general.site_icon_on_light', Storage::disk('public')->url('site-branding/icon.png'))
+                ->where('settings.general.site_logo_on_light', 'https://cdn.example.com/logo.svg')
+                // Untouched assets still arrive, so the frontend never sees a gap.
+                ->where('settings.general.site_icon_on_dark', '/images/icon-on-dark.svg')
+                ->where('settings.general.site_logo_on_dark', '/images/logo-on-dark.svg'));
     }
 
     /**
@@ -78,10 +78,10 @@ class GeneralSettingsTest extends TestCase
     public function test_root_relative_branding_urls_are_not_resolved_as_storage_paths(): void
     {
         $settings = app(GeneralSettings::class);
-        $settings->site_icon = '/storage/tenant-logos/icon.png';
-        $settings->site_logo = '/storage/tenant-logos/logo.png';
+        $settings->site_icon_on_light = '/storage/tenant-logos/icon.png';
+        $settings->site_logo_on_light = '/storage/tenant-logos/logo.png';
 
-        $this->assertSame('/storage/tenant-logos/icon.png', $settings->siteIconUrl());
-        $this->assertSame('/storage/tenant-logos/logo.png', $settings->siteLogoUrl());
+        $this->assertSame('/storage/tenant-logos/icon.png', $settings->iconOnLightUrl());
+        $this->assertSame('/storage/tenant-logos/logo.png', $settings->logoOnLightUrl());
     }
 }

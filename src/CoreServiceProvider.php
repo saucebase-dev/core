@@ -58,7 +58,7 @@ class CoreServiceProvider extends ServiceProvider
     }
 
     /**
-     * Migrations load always; commands and publishing are console-only.
+     * Migrations and commands load always; publishing is console-only.
      *
      * Laravel only auto-loads commands out of the application's own
      * app/Console/Commands directory, so a command shipped by a package is invisible
@@ -67,6 +67,17 @@ class CoreServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+        // Commands are registered unconditionally, not behind runningInConsole().
+        // `Artisan::call()` works from an HTTP request too — the end-to-end suite drives
+        // `migrate:fresh` and `modules:seed` that way — and a command that only exists
+        // in the console is simply not found there. `commands()` defers through
+        // `Artisan::starting()` anyway, so there is nothing to save by guarding it.
+        $this->commands([
+            GenerateModuleTypesCommand::class,
+            RecipeToModuleCommand::class,
+            SeedModulesCommand::class,
+        ]);
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -79,11 +90,13 @@ class CoreServiceProvider extends ServiceProvider
             __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'saucebase-migrations');
 
-        $this->commands([
-            GenerateModuleTypesCommand::class,
-            RecipeToModuleCommand::class,
-            SeedModulesCommand::class,
-        ]);
+        // Brand assets have to be copied, not loaded: the web server reads public/ off
+        // disk, so there is no vendor equivalent of loadMigrationsFrom() for them.
+        // Publishing is not forced, so an application that has replaced these keeps its
+        // own — which is how the app repo and demo/ stay Saucebase-branded.
+        $this->publishes([
+            __DIR__.'/../public/images' => public_path('images'),
+        ], 'saucebase-assets');
     }
 
     /**

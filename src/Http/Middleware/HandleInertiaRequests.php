@@ -62,10 +62,15 @@ class HandleInertiaRequests extends Middleware
                         'site_name',
                         'site_tagline',
                         'site_description',
-                        'prefer_logo',
                     ])->all(),
-                    'site_icon' => $settings->siteIconUrl(),
-                    'site_logo' => $settings->siteLogoUrl(),
+
+                    // Resolved URLs rather than stored paths, so the frontend never has
+                    // to know whether an asset is one core ships or one someone uploaded.
+                    // All four are always present — there is no unset state to handle.
+                    'site_logo_on_light' => $settings->logoOnLightUrl(),
+                    'site_logo_on_dark' => $settings->logoOnDarkUrl(),
+                    'site_icon_on_light' => $settings->iconOnLightUrl(),
+                    'site_icon_on_dark' => $settings->iconOnDarkUrl(),
                 ];
             },
             // Ziggy data is computed lazily so it can be skipped on partial reloads
