@@ -16,8 +16,11 @@ class LocalizationController
      * The trust boundary for the setting: the selector only offers enabled languages, but
      * nothing stops a client from posting any code, so the check happens here.
      *
-     * Assigned rather than mass-assigned, which keeps `locale` off `$fillable` until
-     * something actually needs to fill it from input.
+     * `forceFill` rather than assignment because core does not own the user model: it
+     * adds `locale` by migration, so the column exists but is declared nowhere core can
+     * see. Writing it as an array keeps `locale` off `$fillable` — it is set from a
+     * validated route segment, never from request input — without naming a property that
+     * static analysis has no way to resolve.
      */
     public function __invoke(Request $request, string $locale): JsonResponse
     {
@@ -31,8 +34,7 @@ class LocalizationController
         Session::put('locale', $locale);
 
         if ($user = $request->user()) {
-            $user->locale = $locale;
-            $user->save();
+            $user->forceFill(['locale' => $locale])->save();
         }
 
         return new JsonResponse(['locale' => App::getLocale()]);

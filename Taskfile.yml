@@ -1,0 +1,29 @@
+# https://taskfile.dev
+version: '3'
+
+tasks:
+    # Core runs under orchestra/testbench, so none of these need the app's containers.
+
+    lint:
+        desc: Fix code style with Pint
+        cmd: vendor/bin/pint
+
+    lint:test:
+        desc: Check code style without changing files
+        cmd: vendor/bin/pint --test
+
+    analyse:
+        desc: PHPStan static analysis (level 5)
+        cmd: vendor/bin/phpstan analyse --memory-limit=2G
+
+    test:
+        desc: Run PHPUnit tests
+        cmd: vendor/bin/phpunit {{.CLI_ARGS}}
+        interactive: true
+
+    check:
+        desc: Full quality pipeline (lint + analyse + test)
+        cmds:
+            - task: lint
+            - task: analyse
+            - task: test

@@ -1,0 +1,26 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/nesbot/carbon/extension.neon
+
+parameters:
+    reportUnmatchedIgnoredErrors: false
+
+    paths:
+        - src/
+        - database/
+
+    # Larastan infers model properties by parsing migration files. Core ships the
+    # migrations for its own features, so without this the columns they add are
+    # reported as undefined properties.
+    databaseMigrationsPath:
+        - database/migrations
+
+    level: 5
+
+    ignoreErrors:
+        # Every consumer of this trait is a module, and modules live outside this
+        # package, so PHPStan sees a trait nothing mixes in and declines to analyse it.
+        # Analysing it needs a class here that uses it, which would exist only to be
+        # analysed.
+        - identifier: trait.unused
+          path: src/Filament/ModulePlugin.php

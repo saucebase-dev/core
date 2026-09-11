@@ -42,6 +42,7 @@
         "tightenco/ziggy": "^2.6.4"
     },
     "require-dev": {
+        "larastan/larastan": "^3.0",
         "laravel/pint": "^1.30.5",
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.5.34"
@@ -80,11 +81,13 @@
     "scripts": {
         "test": "phpunit",
         "lint": "pint",
-        "lint:test": "pint --test"
+        "lint:test": "pint --test",
+        "analyse": "phpstan analyse --memory-limit=2G"
     },
     "scripts-descriptions": {
         "test": "Run the test suite",
         "lint": "Fix code style with Pint",
-        "lint:test": "Check code style without changing files"
+        "lint:test": "Check code style without changing files",
+        "analyse": "Run static analysis"
     }
 }
