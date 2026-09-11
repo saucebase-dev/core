@@ -1,0 +1,18 @@
+{
+    "name": "saucebase/module-test-fixture",
+    "description": "Fixture module for core's tests. The hyphenated multi-word name is deliberate: every shipped module is a single lowercase word, which hides the studly/kebab/lowercase conversions the module machinery performs on a name.",
+    "type": "saucebase-module",
+    "license": "proprietary",
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\ModuleTestFixture\\Providers\\ModuleTestFixtureServiceProvider"
+            ]
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\ModuleTestFixture\\": "src/"
+        }
+    }
+}

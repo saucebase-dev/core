@@ -79,7 +79,7 @@ class GenerateModuleTypesCommand extends Command
 
     private function generateForModule(string $name): int
     {
-        $appPath = base_path("modules/{$name}/src");
+        $appPath = module_path($name, 'src');
 
         if (! is_dir($appPath)) {
             $this->components->error("Module app path not found: {$appPath}");
@@ -87,7 +87,7 @@ class GenerateModuleTypesCommand extends Command
             return self::FAILURE;
         }
 
-        $typesDir = base_path("modules/{$name}/resources/js/types");
+        $typesDir = module_path($name, 'resources/js/types');
 
         if (! is_dir($typesDir)) {
             mkdir($typesDir, 0755, true);

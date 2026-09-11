@@ -42,7 +42,7 @@
         "tightenco/ziggy": "^2.6.4"
     },
     "require-dev": {
-        "larastan/larastan": "^3.0",
+        "larastan/larastan": "^3.11",
         "laravel/pint": "^1.30.5",
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.5.34"
