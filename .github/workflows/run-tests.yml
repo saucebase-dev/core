@@ -44,3 +44,21 @@ jobs:
 
       - name: Execute tests
         run: vendor/bin/phpunit
+
+  phplint:
+      permissions:
+          contents: write
+      runs-on: ubuntu-latest
+      steps:
+          - uses: actions/checkout@v6
+            with:
+                ref: ${{ github.head_ref }}
+          - name: "laravel-pint"
+            uses: aglipanci/laravel-pint-action@latest
+            with:
+                configPath: './pint.json'
+
+          - name: Commit changes
+            uses: stefanzweifel/git-auto-commit-action@v7
+            with:
+                commit_message: PHP Linting (Pint)
