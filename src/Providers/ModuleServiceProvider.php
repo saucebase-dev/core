@@ -5,6 +5,7 @@ namespace Saucebase\Core\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use InterNACHI\Modular\Support\ModuleRegistry;
+use Saucebase\Core\CoreServiceProvider;
 
 abstract class ModuleServiceProvider extends ServiceProvider
 {
@@ -37,6 +38,11 @@ abstract class ModuleServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Laravel registers discovered packages alphabetically, so a module named
+        // before "core" gets here first and moduleName() would find no registry.
+        // Registering an already-registered provider is a no-op.
+        $this->app->register(CoreServiceProvider::class);
+
         // Config is merged here rather than in boot() because every register() runs
         // before any boot(): a provider that reads a module's config while booting —
         // Filament resolving its panels, for one — would otherwise race the merge and
