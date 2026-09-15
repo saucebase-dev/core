@@ -19,6 +19,7 @@ use Saucebase\Core\Providers\ModalServiceProvider;
 use Saucebase\Core\Providers\NavigationServiceProvider;
 use Saucebase\Core\Providers\SecurityServiceProvider;
 use Saucebase\Core\Providers\SettingsServiceProvider;
+use Saucebase\Core\Sitemap\SitemapRegistry;
 
 /**
  * The single provider Laravel discovers for this package.
@@ -55,6 +56,8 @@ class CoreServiceProvider extends ServiceProvider
         foreach (self::PROVIDERS as $provider) {
             $this->app->register($provider);
         }
+
+        $this->app->singleton(SitemapRegistry::class);
     }
 
     /**
