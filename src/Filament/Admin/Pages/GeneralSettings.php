@@ -83,8 +83,7 @@ class GeneralSettings extends SettingsPage
      * is vector. Offering an editor that silently fails on the format we recommend would
      * be worse than offering none.
      *
-     * These are never empty: they fall back to the artwork core ships, so clearing one
-     * restores the default rather than leaving a gap.
+     * Clearing one stores null, and the app renders its own default in its place.
      */
     private function brandUpload(string $name, string $label, string $helperText): FileUpload
     {

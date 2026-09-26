@@ -3,12 +3,15 @@
 namespace Saucebase\Core\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use InterNACHI\Modular\Support\ModuleRegistry;
 
 class SeedModulesCommand extends Command
 {
-    protected $signature = 'modules:seed {--module= : Seed a specific module (case-insensitive). Omit to seed all.}';
+    protected $signature = 'modules:seed
+        {--module= : Seed a specific module (case-insensitive). Omit to seed all.}
+        {--demo : Also run each module\'s Demo{Module}DatabaseSeeder with sample content.}';
 
     protected $description = 'Seed all installed modules that have a DatabaseSeeder';
 
@@ -32,16 +35,34 @@ class SeedModulesCommand extends Command
             $modules = $registry->modules();
         }
 
+        $this->seed($modules, fn (string $studly) => 'DatabaseSeeder');
+
+        if ($this->option('demo')) {
+            // Every module's required data exists before any demo content refers to it.
+            $this->seed($modules, fn (string $studly) => "Demo{$studly}DatabaseSeeder");
+        }
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * @param  Collection<int, mixed>  $modules
+     * @param  callable(string): string  $seederName
+     */
+    private function seed(Collection $modules, callable $seederName): void
+    {
         foreach ($modules as $module) {
-            $seeder = 'Modules\\'.Str::studly($module->name).'\\Database\\Seeders\\DatabaseSeeder';
+            $studly = Str::studly($module->name);
+            $seeder = "Modules\\{$studly}\\Database\\Seeders\\".$seederName($studly);
 
             if (! class_exists($seeder)) {
                 continue;
             }
 
-            $this->components->task($module->name, fn () => $this->call('db:seed', ['--module' => strtolower($module->name)]) === self::SUCCESS);
+            $this->components->task(
+                "{$module->name} ".class_basename($seeder),
+                fn () => $this->call('db:seed', ['--class' => $seeder]) === self::SUCCESS,
+            );
         }
-
-        return self::SUCCESS;
     }
 }

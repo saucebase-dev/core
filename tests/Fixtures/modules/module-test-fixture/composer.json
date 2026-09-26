@@ -12,7 +12,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Modules\\ModuleTestFixture\\": "src/"
+            "Modules\\ModuleTestFixture\\": "src/",
+            "Modules\\ModuleTestFixture\\Database\\Seeders\\": "database/seeders/"
         }
     }
 }
