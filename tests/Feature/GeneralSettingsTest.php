@@ -7,17 +7,20 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Testing\AssertableInertia;
+use Livewire\Livewire;
+use Saucebase\Core\Filament\Admin\Pages\GeneralSettings as GeneralSettingsPage;
 use Saucebase\Core\Settings\GeneralSettings;
+use Saucebase\Core\Tests\Fixtures\User;
 use Saucebase\Core\Tests\TestCase;
+use Spatie\Permission\Models\Role;
 
 /**
  * The application's identity: what it calls itself, and the marks it wears.
  *
- * The Filament form that edits these is deliberately untested. Its fields are
- * declarations — `->required()`, `->image()`, `->maxSize(1024)` — and the engine that
- * enforces them is Filament's, tested by Filament. What is ours is below: the
- * migration's defaults, how a stored path becomes a URL, and what reaches the
- * front-end.
+ * The Filament fields are declarations — `->required()`, `->image()`,
+ * `->maxSize(1024)` — whose enforcement belongs to Filament. What is ours is below:
+ * the migration's defaults, the clearing contract, how a stored path becomes a URL,
+ * and what reaches the front-end.
  */
 class GeneralSettingsTest extends TestCase
 {
@@ -40,7 +43,7 @@ class GeneralSettingsTest extends TestCase
         $this->assertNull($settings->site_tagline);
         $this->assertNull($settings->site_description);
 
-        // Brand assets are never null — see BrandingTest for the defaults themselves.
+        // Brand assets start null — see BrandingTest.
     }
 
     public function test_general_settings_are_shared_with_inertia(): void
@@ -63,9 +66,9 @@ class GeneralSettingsTest extends TestCase
                 ->where('settings.general.site_description', 'The Acme customer platform.')
                 ->where('settings.general.site_icon_on_light', Storage::disk('public')->url('site-branding/icon.png'))
                 ->where('settings.general.site_logo_on_light', 'https://cdn.example.com/logo.svg')
-                // Untouched assets still arrive, so the frontend never sees a gap.
-                ->where('settings.general.site_icon_on_dark', '/images/icon-on-dark.svg')
-                ->where('settings.general.site_logo_on_dark', '/images/logo-on-dark.svg'));
+                // Untouched assets arrive as null; the frontend picks the fallback.
+                ->where('settings.general.site_icon_on_dark', null)
+                ->where('settings.general.site_logo_on_dark', null));
     }
 
     /**
@@ -83,5 +86,32 @@ class GeneralSettingsTest extends TestCase
 
         $this->assertSame('/storage/tenant-logos/icon.png', $settings->iconOnLightUrl());
         $this->assertSame('/storage/tenant-logos/logo.png', $settings->logoOnLightUrl());
+    }
+
+    public function test_clearing_brand_assets_stores_null(): void
+    {
+        Role::findOrCreate('admin');
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        Livewire::actingAs($admin)
+            ->test(GeneralSettingsPage::class)
+            ->fillForm([
+                'site_logo_on_light' => null,
+                'site_logo_on_dark' => null,
+                'site_icon_on_light' => null,
+                'site_icon_on_dark' => null,
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->app->forgetScopedInstances();
+
+        $settings = app(GeneralSettings::class);
+
+        $this->assertNull($settings->site_logo_on_light);
+        $this->assertNull($settings->site_logo_on_dark);
+        $this->assertNull($settings->site_icon_on_light);
+        $this->assertNull($settings->site_icon_on_dark);
     }
 }

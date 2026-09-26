@@ -18,20 +18,11 @@ return new class extends SettingsMigration
             $this->migrator->add('general.site_description', null);
         }
 
-        // Brand assets are never null: they point at the files core ships and publishes,
-        // and an upload replaces the path. Keeping a real value here is what lets every
-        // consumer drop its "nothing configured" branch.
-        //
-        // The suffix names the background the asset sits on, not the colour of its ink —
-        // `logo-on-dark` is the light-coloured one.
-        foreach ([
-            'general.site_logo_on_light' => '/images/logo-on-light.svg',
-            'general.site_logo_on_dark' => '/images/logo-on-dark.svg',
-            'general.site_icon_on_light' => '/images/icon-on-light.svg',
-            'general.site_icon_on_dark' => '/images/icon-on-dark.svg',
-        ] as $property => $default) {
-            if (! $this->migrator->exists($property)) {
-                $this->migrator->add($property, $default);
+        // Brand assets hold uploads only. Null means "use the app's fallback", which
+        // lives with the app's views, not here.
+        foreach (['site_logo_on_light', 'site_logo_on_dark', 'site_icon_on_light', 'site_icon_on_dark'] as $asset) {
+            if (! $this->migrator->exists("general.{$asset}")) {
+                $this->migrator->add("general.{$asset}", null);
             }
         }
     }

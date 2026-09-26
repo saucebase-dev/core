@@ -12,10 +12,9 @@ use Spatie\LaravelSettings\Settings;
  * Every brand-rendering surface resolves this — the logo, the sidebar, the page title,
  * the favicon — so anything that decorates this object rebrands all of them at once.
  *
- * The four brand assets are always set. They default to the files core ships and
- * publishes, and an upload replaces the path rather than filling an empty one. That is
- * deliberate: with no null state, no consumer needs a "nothing configured" branch, which
- * is what lets the logo component be an `<img>` and nothing more.
+ * The four brand assets hold what the owner uploaded, or null. Which artwork stands in
+ * for a missing one is decided where it renders — the app's logo component and root
+ * view — so core never stores a path into the app's public directory.
  */
 class GeneralSettings extends Settings
 {
@@ -35,31 +34,31 @@ class GeneralSettings extends Settings
      * The suffix names the background the asset sits on, not the colour of its ink:
      * `on_dark` is the light-coloured artwork.
      */
-    public string $site_logo_on_light;
+    public ?string $site_logo_on_light;
 
-    public string $site_logo_on_dark;
+    public ?string $site_logo_on_dark;
 
     /** The square mark, for where only a mark fits — a collapsed sidebar, a tab icon. */
-    public string $site_icon_on_light;
+    public ?string $site_icon_on_light;
 
-    public string $site_icon_on_dark;
+    public ?string $site_icon_on_dark;
 
-    public function logoOnLightUrl(): string
+    public function logoOnLightUrl(): ?string
     {
         return $this->publicFileUrl($this->site_logo_on_light);
     }
 
-    public function logoOnDarkUrl(): string
+    public function logoOnDarkUrl(): ?string
     {
         return $this->publicFileUrl($this->site_logo_on_dark);
     }
 
-    public function iconOnLightUrl(): string
+    public function iconOnLightUrl(): ?string
     {
         return $this->publicFileUrl($this->site_icon_on_light);
     }
 
-    public function iconOnDarkUrl(): string
+    public function iconOnDarkUrl(): ?string
     {
         return $this->publicFileUrl($this->site_icon_on_dark);
     }
@@ -81,12 +80,15 @@ class GeneralSettings extends Settings
     }
 
     /**
-     * A shipped asset is a path under the document root; an uploaded one is a key on the
-     * public disk. Telling them apart by shape means an upload and a default can sit in
-     * the same field.
+     * An uploaded file is a key on the public disk; a root-relative path or absolute URL
+     * (set by code, such as a tenant override) is already servable and passes through.
      */
-    private function publicFileUrl(string $path): string
+    private function publicFileUrl(?string $path): ?string
     {
+        if (blank($path)) {
+            return null;
+        }
+
         return Str::startsWith($path, '/') || Str::isUrl($path)
             ? $path
             : Storage::disk('public')->url($path);
