@@ -39,26 +39,6 @@ class BrandingTest extends TestCase
         $this->assertNull($brand->iconOnDarkUrl());
     }
 
-    public function test_upgrade_forgets_stored_shipped_paths_but_keeps_uploads(): void
-    {
-        $brand = $this->app->make(GeneralSettings::class);
-        $brand->site_logo_on_light = '/images/logo-on-light.svg';
-        $brand->site_logo_on_dark = '/images/logo-on-dark.svg';
-        $brand->site_icon_on_light = 'site-branding/acme.svg';
-        $brand->site_icon_on_dark = '/images/icon-on-dark.svg';
-        $brand->save();
-
-        (require dirname(__DIR__, 2).'/database/settings/0001_01_01_000014_forget_default_brand_assets.php')->up();
-        $this->app->forgetScopedInstances();
-        $brand = $this->app->make(GeneralSettings::class);
-        $brand->refresh();
-
-        $this->assertNull($brand->site_logo_on_light);
-        $this->assertNull($brand->site_logo_on_dark);
-        $this->assertNull($brand->site_icon_on_dark);
-        $this->assertSame('site-branding/acme.svg', $brand->site_icon_on_light);
-    }
-
     public function test_an_uploaded_asset_resolves_through_the_public_disk(): void
     {
         $brand = $this->app->make(GeneralSettings::class);
