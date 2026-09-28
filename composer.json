@@ -22,15 +22,14 @@
   "require": {
     "php": "^8.4",
     "cviebrock/eloquent-sluggable": "^13.0.1",
-    "filament/filament": "^5.8.1",
-    "filament/spatie-laravel-media-library-plugin": "^5.8.1",
-    "filament/spatie-laravel-settings-plugin": "^5.8.1",
-    "inertiajs/inertia-laravel": "^3.3.4",
+    "filament/filament": "^5.8.4",
+    "filament/spatie-laravel-media-library-plugin": "^5.8.4",
+    "filament/spatie-laravel-settings-plugin": "^5.8.4",
+    "inertiajs/inertia-laravel": "^3.4.0",
     "inertiaui/modal": "^3.1.2",
     "internachi/modular": "^3.0.2",
-    "laravel/framework": "^13.32",
+    "laravel/framework": "^13.33",
     "laravel/sanctum": "^4.3.3",
-    "openplain/filament-shadcn-theme": "^1.1",
     "saucebase/breadcrumbs": "^1.1",
     "saucebase/module-installer": "^2.8.0",
     "spatie/laravel-data": "^4.23",
@@ -43,10 +42,10 @@
     "tightenco/ziggy": "^2.6.4"
   },
   "require-dev": {
-    "larastan/larastan": "^3.12.1",
+    "larastan/larastan": "^3.12.2",
     "laravel/pint": "^1.32.1",
-    "orchestra/testbench": "^11.2",
-    "phpunit/phpunit": "^12.5.35"
+    "orchestra/testbench": "^11.3",
+    "phpunit/phpunit": "^12.5.36"
   },
   "autoload": {
     "psr-4": {

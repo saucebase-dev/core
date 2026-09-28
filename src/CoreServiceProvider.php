@@ -10,6 +10,7 @@ use InterNACHI\Modular\Support\ModularServiceProvider;
 use Saucebase\Core\Console\Commands\GenerateModuleTypesCommand;
 use Saucebase\Core\Console\Commands\RecipeToModuleCommand;
 use Saucebase\Core\Console\Commands\SeedModulesCommand;
+use Saucebase\Core\Console\Commands\SyncModuleBoostCommand;
 use Saucebase\Core\Providers\BreadcrumbServiceProvider;
 use Saucebase\Core\Providers\ConfigServiceProvider;
 use Saucebase\Core\Providers\FilamentServiceProvider;
@@ -80,6 +81,7 @@ class CoreServiceProvider extends ServiceProvider
             GenerateModuleTypesCommand::class,
             RecipeToModuleCommand::class,
             SeedModulesCommand::class,
+            SyncModuleBoostCommand::class,
         ]);
 
         if (! $this->app->runningInConsole()) {
