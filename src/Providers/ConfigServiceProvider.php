@@ -3,11 +3,8 @@
 namespace Saucebase\Core\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Spatie\LaravelData\Support\TypeScriptTransformer\DataTypeScriptTransformer;
-use Spatie\LaravelTypeScriptTransformer\Transformers\DtoTransformer;
-use Spatie\LaravelTypeScriptTransformer\Transformers\SpatieStateTransformer;
-use Spatie\TypeScriptTransformer\Collectors\DefaultCollector;
-use Spatie\TypeScriptTransformer\Transformers\EnumTransformer;
+use Saucebase\Core\TypeScript\TypeScriptConfig;
+use Spatie\TypeScriptTransformer\TypeScriptTransformerConfig;
 
 /**
  * Applies the handful of third-party config values Saucebase actually diverges on,
@@ -42,6 +39,8 @@ class ConfigServiceProvider extends ServiceProvider
             __DIR__.'/../../config/laravel-translatable-string-exporter.php',
             'laravel-translatable-string-exporter',
         );
+
+        $this->registerTypeScriptTransformer();
     }
 
     public function boot(): void
@@ -52,7 +51,6 @@ class ConfigServiceProvider extends ServiceProvider
         ], 'saucebase-config');
 
         $this->configureFilament();
-        $this->configureTypeScriptTransformer();
     }
 
     /**
@@ -69,32 +67,15 @@ class ConfigServiceProvider extends ServiceProvider
     }
 
     /**
-     * Three deliberate departures from the package defaults:
-     *
-     * - `EnumCollector` is dropped: `EnumTransformer` already handles enums via the
-     *   default collector, and running both emits each enum twice.
-     * - `DataTypeScriptTransformer` is added so `spatie/laravel-data` objects generate
-     *   types; `SpatieEnumTransformer` is dropped as it targets the retired
-     *   `spatie/enum` package.
-     * - `output_file` points into `resources/js/types/` where Vite can see it, rather
-     *   than the package default of `resources/types/`.
+     * typescript-transformer v3 reads a config object from the container rather than
+     * config keys. The app's own types go to `resources/js/types/`, where Vite can see
+     * them; `module:generate-types` swaps in a per-module config the same way.
      */
-    private function configureTypeScriptTransformer(): void
+    private function registerTypeScriptTransformer(): void
     {
-        config()->set('typescript-transformer.collectors', [
-            DefaultCollector::class,
-        ]);
-
-        config()->set('typescript-transformer.transformers', [
-            SpatieStateTransformer::class,
-            EnumTransformer::class,
-            DtoTransformer::class,
-            DataTypeScriptTransformer::class,
-        ]);
-
-        config()->set(
-            'typescript-transformer.output_file',
-            base_path('resources/js/types/generated.d.ts'),
-        );
+        $this->app->singleton(TypeScriptTransformerConfig::class, fn () => TypeScriptConfig::make(
+            app_path(),
+            resource_path('js/types'),
+        ));
     }
 }

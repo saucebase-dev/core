@@ -94,6 +94,21 @@ class ModuleIntegrationTest extends TestCase
         $this->assertFileExists(module_path('module-test-fixture', 'resources/js/types/generated.d.ts'));
     }
 
+    public function test_generated_types_contain_only_classes_marked_for_typescript(): void
+    {
+        $this->artisan('module:generate-types', ['module' => ['module-test-fixture']])
+            ->assertSuccessful();
+
+        $types = file_get_contents(module_path('module-test-fixture', 'resources/js/types/generated.d.ts'));
+
+        $this->assertStringContainsString("FixtureStatus = 'draft' | 'published'", $types);
+        $this->assertStringContainsString('title: string', $types);
+        $this->assertStringContainsString('count: number | null', $types);
+        $this->assertStringContainsString('status: Modules.ModuleTestFixture.Enums.FixtureStatus', $types);
+        $this->assertStringNotContainsString('InternalFixture', $types);
+        $this->assertStringNotContainsString('Paginator', $types);
+    }
+
     public function test_the_type_generation_command_reports_an_unknown_module(): void
     {
         $this->artisan('module:generate-types', ['module' => ['nope']])

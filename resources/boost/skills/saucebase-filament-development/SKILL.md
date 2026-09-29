@@ -327,7 +327,6 @@ Always authenticate before testing panel functionality. Tests must be PHPUnit cl
 ```php
 namespace Modules\Feature\Tests\Feature;
 
-use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -344,7 +343,7 @@ class FeatureResourceTest extends TestCase
     {
         parent::setUp();
         $admin = User::factory()->create(['email_verified_at' => now()]);
-        $admin->assignRole(Role::ADMIN);
+        $admin->assignRole('admin');
         $this->actingAs($admin);
     }
 

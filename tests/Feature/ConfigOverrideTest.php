@@ -2,19 +2,18 @@
 
 namespace Saucebase\Core\Tests\Feature;
 
+use Illuminate\Filesystem\Filesystem;
 use InterNACHI\Modular\Support\ModuleRegistry;
 use ReflectionProperty;
 use Saucebase\Core\Tests\TestCase;
-use Spatie\LaravelData\Support\TypeScriptTransformer\DataTypeScriptTransformer;
-use Spatie\TypeScriptTransformer\Collectors\EnumCollector;
-use Spatie\TypeScriptTransformer\Transformers\SpatieEnumTransformer;
+use Spatie\TypeScriptTransformer\TypeScriptTransformerConfig;
 
 /**
  * Pins the config values core applies on behalf of the app.
  *
  * These assertions exist because the failure mode has no symptom at boot: if the
  * override does not land, the app runs happily on the vendor default and the damage
- * shows up somewhere else entirely — a duplicated TypeScript enum, admin pages that
+ * shows up somewhere else entirely — types written where Vite cannot see them, admin pages that
  * refuse to cluster. Asserting the value after a real boot is the only thing that
  * catches a `mergeConfigFrom` regression or a provider-ordering change.
  */
@@ -26,25 +25,13 @@ class ConfigOverrideTest extends TestCase
         $this->assertFalse(config('filament.modules.clusters.use-top-navigation'));
     }
 
-    public function test_typescript_transformer_collectors_exclude_the_enum_collector(): void
-    {
-        // EnumCollector plus EnumTransformer emits every enum twice.
-        $this->assertNotContains(EnumCollector::class, config('typescript-transformer.collectors'));
-    }
-
-    public function test_typescript_transformer_handles_laravel_data_objects(): void
-    {
-        $transformers = config('typescript-transformer.transformers');
-
-        $this->assertContains(DataTypeScriptTransformer::class, $transformers);
-        $this->assertNotContains(SpatieEnumTransformer::class, $transformers);
-    }
-
     public function test_generated_types_land_where_vite_can_see_them(): void
     {
+        (new Filesystem)->deleteDirectory(resource_path('js/types'));
+
         $this->assertSame(
-            base_path('resources/js/types/generated.d.ts'),
-            config('typescript-transformer.output_file'),
+            resource_path('js/types'),
+            app(TypeScriptTransformerConfig::class)->outputDirectory,
         );
     }
 
