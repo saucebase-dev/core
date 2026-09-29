@@ -14,6 +14,9 @@ use InterNACHI\Modular\Support\ModuleRegistry;
  * each one with a `resources/boost` directory gets a symlink at the path Boost expects
  * and an entry in `packages`.
  *
+ * Core itself is a regular Composer package, so it needs no link, only the entry; a
+ * stale entry is harmless because Boost ignores listed packages that aren't installed.
+ *
  * What the command manages is recorded under boost.json's `saucebase.managed` — the link
  * it created or adopted and the target it pointed at — so a later run can remove exactly
  * that, and nothing a person put there.
@@ -87,6 +90,7 @@ class SyncModuleBoostCommand extends Command
             ->diff(array_keys($previous))
             ->diff($collisions)
             ->merge(array_keys($managed))
+            ->when(is_dir($vendorDir.'/saucebase/core/resources/boost'), fn ($packages) => $packages->push('saucebase/core'))
             ->unique()
             ->sort()
             ->values()

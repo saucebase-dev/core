@@ -68,6 +68,17 @@ class SyncModuleBoostCommandTest extends TestCase
         );
     }
 
+    public function test_core_is_registered_when_it_ships_boost_resources(): void
+    {
+        mkdir($this->root.'/vendor/saucebase/core/resources/boost', 0777, true);
+        $this->boostJson([]);
+
+        $this->artisan('modules:boost')->assertSuccessful();
+
+        $this->assertSame(['saucebase/core'], $this->readBoostJson()['packages']);
+        $this->assertArrayNotHasKey('saucebase', $this->readBoostJson());
+    }
+
     public function test_a_module_without_boost_resources_is_ignored(): void
     {
         $this->module('blog', withBoost: false);
