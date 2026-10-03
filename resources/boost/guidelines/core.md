@@ -8,6 +8,8 @@ module plugin.
   namespaces. An installed module is active; there is no enable/disable toggle.
 - A module's main provider extends `Saucebase\Core\Providers\ModuleServiceProvider` without `$name` or
   `$nameLower`; the base provider looks the name up with `ModuleRegistry::moduleForClass()`.
+- Follow Laravel's naming and placement unless a rule here says otherwise: exceptions end in
+  `Exception`, commands in `Command`, form requests in `Request`.
 - Traits live in `Traits/`, never `Concerns/`, including internal helpers (`Filament/Traits/`,
   `Console/Traits/`), so the directory says what the file is.
 - A module's agent context lives in its `resources/boost/`. `composer boost:update` runs `modules:boost`,

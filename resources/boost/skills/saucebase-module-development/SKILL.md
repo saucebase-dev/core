@@ -48,7 +48,10 @@ base provider already:
 - merges `config/config.php` under the module's lowercase name (`config('<name>.key')`), in `register()`,
   so other providers can read it while booting;
 - loads translations from the module's root `lang/` as `<name>::` (`__('<name>::file.key')`);
-- publishes `resources/assets` to `public/modules/<kebab-name>` (tag `module-assets`).
+- publishes `resources/assets` to `public/modules/<kebab-name>` (tag `module-assets`);
+- under `runningUnitTests()`, loads migrations from `tests/Support/migrations/`. Tables for test-only
+  models go there, never in a `Schema::create` inside a test: on MySQL that DDL commits the test's
+  transaction.
 
 Override `shareInertiaData()` for props every page needs (`Inertia::share('auth.user', fn () => ...)`),
 and list extra providers in `protected array $providers`. `replaceConfig($path, $key)` overwrites a whole

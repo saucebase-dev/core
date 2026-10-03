@@ -5,6 +5,7 @@ namespace Saucebase\Core\Tests\Feature;
 use Filament\Facades\Filament;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Modules\ModuleTestFixture\Filament\ModuleTestFixturePlugin;
 use Modules\ModuleTestFixture\Providers\ModuleTestFixtureServiceProvider;
@@ -35,6 +36,15 @@ class ModuleIntegrationTest extends TestCase
     public function test_the_module_provider_registers_its_translations_under_the_module_namespace(): void
     {
         $this->assertSame('Module test fixture', __('module-test-fixture::module-test-fixture.title'));
+    }
+
+    /**
+     * Test-only tables migrate with the rest, before a test's transaction opens: DDL inside
+     * a test commits that transaction on MySQL.
+     */
+    public function test_the_module_test_migrations_run_under_unit_tests(): void
+    {
+        $this->assertTrue(Schema::hasTable('fixture_test_rows'));
     }
 
     public function test_a_settings_section_is_discovered_in_the_module(): void
