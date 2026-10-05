@@ -12,6 +12,7 @@ use Saucebase\Core\Filament\Admin\Pages\GeneralSettings as GeneralSettingsPage;
 use Saucebase\Core\Settings\GeneralSettings;
 use Saucebase\Core\Tests\Fixtures\User;
 use Saucebase\Core\Tests\TestCase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 /**
@@ -92,7 +93,7 @@ class GeneralSettingsTest extends TestCase
     {
         Role::findOrCreate('admin');
         $admin = User::factory()->create();
-        $admin->assignRole('admin');
+        $admin->assignRole('admin')->givePermissionTo(Permission::findOrCreate('manage settings'));
 
         Livewire::actingAs($admin)
             ->test(GeneralSettingsPage::class)

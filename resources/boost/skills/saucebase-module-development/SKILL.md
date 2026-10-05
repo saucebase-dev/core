@@ -118,7 +118,8 @@ redirects such as OAuth callbacks.
 
 `php artisan modules:seed` runs `Modules\<Name>\Database\Seeders\DatabaseSeeder` for every installed module
 that has one; `--module=<name>` limits it to one. `--demo` then also runs `Demo<Name>DatabaseSeeder`, after
-every module's required data exists.
+every module's required data exists. A module with an admin area creates its `manage {module}` permission
+there (see `saucebase-filament-development`); demo seeders never hold anything an install needs.
 
 ## TypeScript Types
 

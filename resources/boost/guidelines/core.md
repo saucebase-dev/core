@@ -17,10 +17,13 @@ module plugin.
   modules there by hand.
 - Authorization follows spatie/laravel-permission: check **permissions**, never role names
   (`permission:…`, `can('access admin panel')`). Signing in is the only gate for the signed-in
-  area; a permission guards only what some signed-in users must not reach. The platform permission
-  is `access admin panel`. The `admin` role passes every check through the app's
+  area; a permission guards only what some signed-in users must not reach. `access admin panel`
+  opens the panel; each module's admin area is its own `manage {module}` permission, checked in
+  `canAccess()` and created by the module's `DatabaseSeeder`, and site-wide settings pages are
+  `manage settings`. The `admin` role passes every check through the app's
   `Gate::before`. Roles are defined in the app's `RolesDatabaseSeeder`; `admin` and `user` (the role
-  every sign-up gets) are fixed names modules may assign.
+  every sign-up gets) are fixed names modules may assign. The one exception is demo data: a module's
+  `Demo…DatabaseSeeder` may create a staff role for its own area (`blog admin`, `blog@saucebase.dev`).
 - Where a signed-in user lands is the app's choice: `Home::using(fn (Request $request, string $reason) => …)`
   in a service provider (null means the site root). Modules redirect with `Home::url($request, Home::LOGIN)`
   or link to `route('home')`, never `route('dashboard')`, which is only the dashboard page.

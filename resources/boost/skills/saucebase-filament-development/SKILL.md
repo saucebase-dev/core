@@ -83,7 +83,26 @@ and `filament.modules.clusters.use-top-navigation` switches the panel to top nav
 A module's settings page (backed by a Spatie settings class in `src/Settings/`) extends
 `Saucebase\Core\Filament\Pages\SettingsPage`. It places the page in the Settings navigation group, after
 any item there that isn't a settings page, orders settings pages by `$navigationSort` (capped at 1000),
-and limits the form width.
+and limits the form width. It also asks for `manage settings`, the permission for site-wide settings; a
+page whose settings belong to the module's own admin area overrides `canAccess()` with that area's
+permission.
+
+## Admin Permission
+
+`access admin panel` only opens the panel. Every module's admin area is closed by its own permission,
+`manage {module}` (one per module), checked in `canAccess()` on each resource and page. That also hides
+the navigation entry and every record page and action under the resource:
+
+```php
+public static function canAccess(): bool
+{
+    return auth()->user()?->can('manage blog') ?? false;
+}
+```
+
+The module's `Database\Seeders\DatabaseSeeder` creates it with `Permission::findOrCreate('manage blog')`,
+granted to nobody; the app's `RolesDatabaseSeeder` decides which roles get it, and `admin` passes every
+check. Add a policy only when a module needs finer control than the whole area (edit but not delete).
 
 ---
 

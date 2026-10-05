@@ -10,6 +10,10 @@ use Filament\Support\Enums\Width;
  *
  * Extending it gives module settings pages a consistent width and lets Filament place
  * them in the same navigation group without maintaining a central page list.
+ *
+ * A settings page is site-wide unless its module says otherwise, so it asks for
+ * `manage settings`; a module whose settings belong to its own admin area overrides
+ * `canAccess()` with that area's permission.
  */
 abstract class SettingsPage extends BaseSettingsPage
 {
@@ -22,6 +26,11 @@ abstract class SettingsPage extends BaseSettingsPage
      * form across the whole screen and leaves labels far from their inputs.
      */
     protected Width|string|null $maxContentWidth = Width::FiveExtraLarge;
+
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->can('manage settings') ?? false;
+    }
 
     public static function getNavigationGroup(): ?string
     {
