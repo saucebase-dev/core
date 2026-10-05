@@ -7,6 +7,7 @@ use Illuminate\Routing\Router;
 use Inertia\Inertia;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Saucebase\Core\CoreServiceProvider;
+use Saucebase\Core\Http\Controllers\HomeController;
 use Saucebase\Core\Http\Controllers\LocalizationController;
 use Saucebase\Core\Http\Controllers\SettingsController;
 use Saucebase\Core\Http\Middleware\HandleAppearance;
@@ -136,8 +137,9 @@ abstract class TestCase extends Orchestra
      *
      * The application registers these in routes/web.php, behind its own middleware —
      * that stays the application's decision (sc-651). Core only needs the names to
-     * resolve: `settings` for the modal, `dashboard` because SettingsSection::url()
-     * builds its fragment from it, and `index` for the base-route redirect.
+     * resolve: `settings` for the modal, `home` because SettingsSection::url() builds
+     * its fragment from it, `dashboard` as the default home, and `index` for the
+     * base-route redirect.
      */
     protected function defineRoutes($router): void
     {
@@ -147,6 +149,7 @@ abstract class TestCase extends Orchestra
             // route re-renders that route and reads headers off the result.
             $router->get('/', fn () => Inertia::render('Index'))->name('index');
             $router->get('/dashboard', fn () => Inertia::render('Dashboard'))->name('dashboard');
+            $router->get('/home', HomeController::class)->name('home');
             $router->get('/settings', SettingsController::class)->name('settings');
             $router->post('/locale/{locale}', LocalizationController::class)->name('locale');
         });

@@ -3,6 +3,7 @@
 namespace Saucebase\Core\Tests\Feature;
 
 use InterNACHI\Modular\Support\ModuleRegistry;
+use Modules\ModuleOrderFixture\Filament\ModuleOrderFixturePlugin;
 use Modules\ModuleTestFixture\Settings\ModuleTestFixtureSection;
 use Saucebase\Core\Tests\Concerns\InteractsWithFixtureModules;
 use Saucebase\Core\Tests\TestCase;
@@ -17,12 +18,15 @@ class ModuleDiscoveryTest extends TestCase
 {
     use InteractsWithFixtureModules;
 
-    public function test_a_module_directory_is_discovered(): void
+    public function test_every_module_directory_is_discovered_and_autoloaded(): void
     {
         $modules = $this->app->make(ModuleRegistry::class)->modules();
 
-        $this->assertCount(1, $modules);
-        $this->assertSame('module-test-fixture', $modules->first()->name);
+        $this->assertEqualsCanonicalizing(
+            ['module-test-fixture', 'module-order-fixture'],
+            $modules->pluck('name')->all(),
+        );
+        $this->assertTrue(class_exists(ModuleOrderFixturePlugin::class));
     }
 
     public function test_a_class_is_traced_back_to_its_module(): void

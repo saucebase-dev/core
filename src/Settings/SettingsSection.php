@@ -24,7 +24,7 @@ abstract class SettingsSection
      */
     public static function url(string $slug): string
     {
-        return route('dashboard').'#settings/'.$slug;
+        return route('home').'#settings/'.$slug;
     }
 
     /** Identifies the section in the `#settings/<slug>` fragment. */

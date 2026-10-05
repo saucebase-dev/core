@@ -21,6 +21,9 @@ module plugin.
   is `access admin panel`. The `admin` role passes every check through the app's
   `Gate::before`. Roles are defined in the app's `RolesDatabaseSeeder`; `admin` and `user` (the role
   every sign-up gets) are fixed names modules may assign.
+- Where a signed-in user lands is the app's choice: `Home::using(fn (Request $request, string $reason) => …)`
+  in a service provider (null means the site root). Modules redirect with `Home::url($request, Home::LOGIN)`
+  or link to `route('home')`, never `route('dashboard')`, which is only the dashboard page.
 
 Activate `saucebase-module-development` before creating or changing a module, and
 `saucebase-filament-development` before changing a module's Filament code.

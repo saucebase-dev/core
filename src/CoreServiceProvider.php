@@ -20,6 +20,7 @@ use Saucebase\Core\Providers\ModalServiceProvider;
 use Saucebase\Core\Providers\NavigationServiceProvider;
 use Saucebase\Core\Providers\SecurityServiceProvider;
 use Saucebase\Core\Providers\SettingsServiceProvider;
+use Saucebase\Core\Services\Home;
 use Saucebase\Core\Sitemap\SitemapRegistry;
 
 /**
@@ -59,6 +60,7 @@ class CoreServiceProvider extends ServiceProvider
         }
 
         $this->app->singleton(SitemapRegistry::class);
+        $this->app->singleton(Home::class);
     }
 
     /**
