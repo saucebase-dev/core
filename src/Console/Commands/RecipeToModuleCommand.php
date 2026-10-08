@@ -5,7 +5,7 @@ namespace Saucebase\Core\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use RuntimeException;
-use Saucebase\Core\Services\FrontendConfig;
+use Saucebase\Core\FrontendConfig;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 use Symfony\Component\Finder\Finder;
 

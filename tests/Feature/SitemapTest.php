@@ -3,9 +3,6 @@
 namespace Saucebase\Core\Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Route;
-use Saucebase\Core\Http\Controllers\RobotsController;
-use Saucebase\Core\Http\Controllers\SitemapController;
 use Saucebase\Core\Settings\SeoSettings;
 use Saucebase\Core\Sitemap\SitemapRegistry;
 use Saucebase\Core\Tests\TestCase;
@@ -15,15 +12,6 @@ use Spatie\Sitemap\Tags\Url;
 class SitemapTest extends TestCase
 {
     use RefreshDatabase;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
-        Route::get('/robots.txt', RobotsController::class);
-        Route::getRoutes()->refreshNameLookups();
-    }
 
     public function test_sitemap_lists_urls_from_every_contributor(): void
     {

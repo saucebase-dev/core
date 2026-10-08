@@ -2,7 +2,7 @@
 
 namespace Saucebase\Core\Tests\Unit\Services;
 
-use Saucebase\Core\Services\FrontendConfig;
+use Saucebase\Core\FrontendConfig;
 use Saucebase\Core\Tests\TestCase;
 
 /**

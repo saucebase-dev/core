@@ -5,7 +5,7 @@ namespace Saucebase\Core\Providers;
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\ServiceProvider;
 use Saucebase\Core\Facades\Navigation as NavigationFacade;
-use Saucebase\Core\Services\Navigation;
+use Saucebase\Core\Navigation\Navigation;
 use Spatie\Navigation\Helpers\ActiveUrlChecker;
 
 class NavigationServiceProvider extends ServiceProvider

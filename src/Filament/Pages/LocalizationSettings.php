@@ -1,6 +1,6 @@
 <?php
 
-namespace Saucebase\Core\Filament\Admin\Pages;
+namespace Saucebase\Core\Filament\Pages;
 
 use BackedEnum;
 use Filament\Forms\Components\CheckboxList;
@@ -9,7 +9,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Saucebase\Core\Filament\Pages\SettingsPage;
 use Saucebase\Core\Settings\LocalizationSettings as LocalizationSettingsData;
 
 class LocalizationSettings extends SettingsPage

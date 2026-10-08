@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Testing\AssertableInertia;
 use Livewire\Livewire;
-use Saucebase\Core\Filament\Admin\Pages\GeneralSettings as GeneralSettingsPage;
+use Saucebase\Core\Filament\Pages\GeneralSettings as GeneralSettingsPage;
 use Saucebase\Core\Settings\GeneralSettings;
 use Saucebase\Core\Tests\Fixtures\User;
 use Saucebase\Core\Tests\TestCase;

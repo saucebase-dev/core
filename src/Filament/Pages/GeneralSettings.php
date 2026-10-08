@@ -1,6 +1,6 @@
 <?php
 
-namespace Saucebase\Core\Filament\Admin\Pages;
+namespace Saucebase\Core\Filament\Pages;
 
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
@@ -9,7 +9,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Saucebase\Core\Filament\Pages\SettingsPage;
 use Saucebase\Core\Settings\GeneralSettings as GeneralSettingsData;
 
 class GeneralSettings extends SettingsPage

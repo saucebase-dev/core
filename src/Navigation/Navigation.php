@@ -1,10 +1,9 @@
 <?php
 
-namespace Saucebase\Core\Services;
+namespace Saucebase\Core\Navigation;
 
 use Illuminate\Support\Str;
 use InterNACHI\Modular\Support\ModuleRegistry;
-use Saucebase\Core\Navigation\Section;
 use Spatie\Navigation\Navigation as SpatieNavigation;
 
 /**

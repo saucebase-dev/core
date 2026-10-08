@@ -5,7 +5,7 @@ namespace Saucebase\Core\Tests\Feature;
 use Filament\Facades\Filament;
 use Filament\Navigation\NavigationGroup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Saucebase\Core\Filament\Admin\Pages\GeneralSettings;
+use Saucebase\Core\Filament\Pages\GeneralSettings;
 use Saucebase\Core\Tests\Fixtures\User;
 use Saucebase\Core\Tests\TestCase;
 use Spatie\Permission\Models\Permission;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Saucebase\Core\Services;
+namespace Saucebase\Core;
 
 class FrontendConfig
 {

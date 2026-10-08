@@ -10,7 +10,7 @@ return new class extends SettingsMigration
         if (! $this->migrator->exists('localization.enabled_locales')) {
             $this->migrator->add(
                 'localization.enabled_locales',
-                array_keys(config('app.available_locales', ['en' => 'English'])),
+                array_keys(config('saucebase.locales', ['en' => 'English'])),
             );
         }
 

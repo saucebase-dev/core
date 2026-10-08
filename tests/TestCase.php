@@ -7,35 +7,11 @@ use Illuminate\Routing\Router;
 use Inertia\Inertia;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Saucebase\Core\CoreServiceProvider;
-use Saucebase\Core\Http\Controllers\HomeController;
-use Saucebase\Core\Http\Controllers\LocalizationController;
-use Saucebase\Core\Http\Controllers\SettingsController;
-use Saucebase\Core\Http\Middleware\HandleAppearance;
-use Saucebase\Core\Http\Middleware\HandleInertiaRequests;
-use Saucebase\Core\Http\Middleware\HandleLocalization;
 use Saucebase\Core\Tests\Fixtures\Filament\TestPanelProvider;
 use Saucebase\Core\Tests\Fixtures\User;
 
 abstract class TestCase extends Orchestra
 {
-    /**
-     * Put core's middleware on the `web` group, as bootstrap/app.php does.
-     *
-     * Core ships the middleware but does not register it — that stays the
-     * application's call — so the test application has to do the same wiring.
-     * It happens here rather than in defineEnvironment() because testbench builds
-     * the middleware groups after that runs, and would discard the additions.
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $router = $this->app->make(Router::class);
-        $router->pushMiddlewareToGroup('web', HandleAppearance::class);
-        $router->pushMiddlewareToGroup('web', HandleLocalization::class);
-        $router->pushMiddlewareToGroup('web', HandleInertiaRequests::class);
-    }
-
     /**
      * Every provider a real application would discover, plus core's own.
      *
@@ -123,9 +99,8 @@ abstract class TestCase extends Orchestra
             // the fixture has to be the configured provider model.
             $config->set('auth.providers.users.model', User::class);
 
-            // The application publishes this in config/app.php; the localization
-            // settings migration seeds the enabled languages from it.
-            $config->set('app.available_locales', [
+            // An application overrides these by publishing config/saucebase.php.
+            $config->set('saucebase.locales', [
                 'en' => 'English',
                 'pt_BR' => 'Português',
             ]);
@@ -133,13 +108,8 @@ abstract class TestCase extends Orchestra
     }
 
     /**
-     * Routes core's code names but does not own.
-     *
-     * The application registers these in routes/web.php, behind its own middleware —
-     * that stays the application's decision (sc-651). Core only needs the names to
-     * resolve: `settings` for the modal, `home` because SettingsSection::url() builds
-     * its fragment from it, `dashboard` as the default home, and `index` for the
-     * base-route redirect.
+     * Routes core's code names but the application owns: `dashboard` as the default
+     * home, and `index` for the base-route redirect.
      */
     protected function defineRoutes($router): void
     {
@@ -149,9 +119,6 @@ abstract class TestCase extends Orchestra
             // route re-renders that route and reads headers off the result.
             $router->get('/', fn () => Inertia::render('Index'))->name('index');
             $router->get('/dashboard', fn () => Inertia::render('Dashboard'))->name('dashboard');
-            $router->get('/home', HomeController::class)->name('home');
-            $router->get('/settings', SettingsController::class)->name('settings');
-            $router->post('/locale/{locale}', LocalizationController::class)->name('locale');
         });
     }
 

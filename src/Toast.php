@@ -1,6 +1,6 @@
 <?php
 
-namespace Saucebase\Core\Helpers;
+namespace Saucebase\Core;
 
 use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;

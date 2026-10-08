@@ -4,8 +4,8 @@ namespace Saucebase\Core\Tests\Unit\Services;
 
 use Illuminate\Http\Request;
 use Saucebase\Core\Facades\Navigation as NavigationFacade;
+use Saucebase\Core\Navigation\Navigation;
 use Saucebase\Core\Navigation\Section;
-use Saucebase\Core\Services\Navigation;
 use Saucebase\Core\Tests\TestCase;
 use Spatie\Navigation\Helpers\ActiveUrlChecker;
 

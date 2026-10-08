@@ -1,6 +1,6 @@
 <?php
 
-namespace Saucebase\Core\Services;
+namespace Saucebase\Core;
 
 use Closure;
 use Illuminate\Http\Request;

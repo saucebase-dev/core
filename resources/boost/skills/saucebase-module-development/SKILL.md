@@ -110,7 +110,7 @@ $this->app->make(SitemapRegistry::class)->add(fn (Sitemap $sitemap) => $sitemap
 
 ## Toasts
 
-`Saucebase\Core\Helpers\Toast::success($message, $description)` (also `default`, `error`, `info`,
+`Saucebase\Core\Toast::success($message, $description)` (also `default`, `error`, `info`,
 `warning`, `loading`) flashes a toast for the next page, through Inertia or the session for full-page
 redirects such as OAuth callbacks.
 

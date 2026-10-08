@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Config;
 use Inertia\Middleware;
 use InterNACHI\Modular\Support\ModuleRegistry;
 use Saucebase\Breadcrumbs\Breadcrumbs;
-use Saucebase\Core\Services\Navigation;
+use Saucebase\Core\Navigation\Navigation;
 use Saucebase\Core\Settings\GeneralSettings;
 use Saucebase\Core\Settings\SectionRegistry;
 use Symfony\Component\HttpFoundation\Response;

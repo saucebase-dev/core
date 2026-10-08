@@ -20,7 +20,7 @@ class HomeTest extends TestCase
     {
         $this->assertSame(route('dashboard'), Home::url(Request::create('/')));
 
-        $this->get('/home')->assertRedirect(route('dashboard'));
+        $this->actingAs($this->createUser())->get('/home')->assertRedirect(route('dashboard'));
     }
 
     public function test_the_application_chooses_home_and_hears_why_it_is_asked(): void
@@ -28,7 +28,7 @@ class HomeTest extends TestCase
         Home::using(fn (Request $request, string $reason): string => url("/chat?reason={$reason}"));
 
         $this->assertSame(url('/chat?reason=registered'), Home::url(Request::create('/'), Home::REGISTERED));
-        $this->get('/home')->assertRedirect(url('/chat?reason=visit'));
+        $this->actingAs($this->createUser())->get('/home')->assertRedirect(url('/chat?reason=visit'));
     }
 
     /** An app with no signed-in home sends people to the site itself. */
@@ -37,14 +37,14 @@ class HomeTest extends TestCase
         Home::using(fn (): ?string => null);
 
         $this->assertSame(route('index'), Home::url(Request::create('/')));
-        $this->get('/home')->assertRedirect(route('index'));
+        $this->actingAs($this->createUser())->get('/home')->assertRedirect(route('index'));
     }
 
     public function test_home_keeps_the_query_it_was_given(): void
     {
         Home::using(fn (): string => url('/chat'));
 
-        $this->get('/home?checkout=success')->assertRedirect(url('/chat?checkout=success'));
+        $this->actingAs($this->createUser())->get('/home?checkout=success')->assertRedirect(url('/chat?checkout=success'));
     }
 
     public function test_a_settings_section_opens_over_home(): void

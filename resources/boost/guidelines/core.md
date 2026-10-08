@@ -27,6 +27,13 @@ module plugin.
 - Where a signed-in user lands is the app's choice: `Home::using(fn (Request $request, string $reason) => …)`
   in a service provider (null means the site root). Modules redirect with `Home::url($request, Home::LOGIN)`
   or link to `route('home')`, never `route('dashboard')`, which is only the dashboard page.
+- Translation: text people read goes through `__()` / `t()` with the English sentence as its
+  JSON key; keyed server messages (`auth::auth.failed`) live in a module's `lang/<locale>/*.php`.
+  Developer console output and exceptions stay plain English. Never list keys by hand:
+  `translatable:export <locale>` (configured by core to scan the app and every module) writes
+  `lang/<locale>.json`. A locale is discovered from `lang/<locale>/` or `lang/<locale>.json`
+  (`LocalizationSettings::available()`) and offered once enabled in the admin. The frontend
+  bundles `lang/*.json` at build time, so a new language reaches the browser only after a build.
 
 Activate `saucebase-module-development` before creating or changing a module, and
 `saucebase-filament-development` before changing a module's Filament code.

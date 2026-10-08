@@ -2,7 +2,12 @@
 
 namespace Saucebase\Core;
 
+use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\AliasLoader;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use InterNACHI\Modular\Support\Facades\Modules;
 use InterNACHI\Modular\Support\ModularizedCommandsServiceProvider;
@@ -11,6 +16,9 @@ use Saucebase\Core\Console\Commands\GenerateModuleTypesCommand;
 use Saucebase\Core\Console\Commands\RecipeToModuleCommand;
 use Saucebase\Core\Console\Commands\SeedModulesCommand;
 use Saucebase\Core\Console\Commands\SyncModuleBoostCommand;
+use Saucebase\Core\Http\Middleware\HandleAppearance;
+use Saucebase\Core\Http\Middleware\HandleInertiaRequests;
+use Saucebase\Core\Http\Middleware\HandleLocalization;
 use Saucebase\Core\Providers\BreadcrumbServiceProvider;
 use Saucebase\Core\Providers\ConfigServiceProvider;
 use Saucebase\Core\Providers\FilamentServiceProvider;
@@ -20,8 +28,10 @@ use Saucebase\Core\Providers\ModalServiceProvider;
 use Saucebase\Core\Providers\NavigationServiceProvider;
 use Saucebase\Core\Providers\SecurityServiceProvider;
 use Saucebase\Core\Providers\SettingsServiceProvider;
-use Saucebase\Core\Services\Home;
 use Saucebase\Core\Sitemap\SitemapRegistry;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 /**
  * The single provider Laravel discovers for this package.
@@ -73,6 +83,8 @@ class CoreServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->registerHttp();
+        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
 
         // Commands are registered unconditionally, not behind runningInConsole().
         // `Artisan::call()` works from an HTTP request too — the end-to-end suite drives
@@ -104,6 +116,32 @@ class CoreServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../public/images' => public_path('images'),
         ], 'saucebase-assets');
+    }
+
+    /**
+     * Wires core into the HTTP stack, so a plain Laravel app needs nothing in bootstrap/app.php.
+     *
+     * Groups go through the kernel, not the router: the kernel re-syncs its groups onto
+     * the router and would drop anything pushed there directly. Modules register after
+     * core, so middleware they append runs after these.
+     */
+    private function registerHttp(): void
+    {
+        $kernel = $this->app->make(Kernel::class);
+
+        foreach ([HandleAppearance::class, HandleLocalization::class, HandleInertiaRequests::class] as $middleware) {
+            $kernel->appendMiddlewareToGroup('web', $middleware);
+        }
+
+        // The theme script sets this cookie in the browser, so the server must read it unencrypted.
+        EncryptCookies::except(['appearance']);
+
+        $router = $this->app->make(Router::class);
+        $router->aliasMiddleware('role', RoleMiddleware::class);
+        $router->aliasMiddleware('permission', PermissionMiddleware::class);
+        $router->aliasMiddleware('role_or_permission', RoleOrPermissionMiddleware::class);
+
+        RedirectIfAuthenticated::redirectUsing(fn (Request $request): string => $this->app->make(Home::class)->url($request));
     }
 
     /**

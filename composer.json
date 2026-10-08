@@ -29,7 +29,6 @@
     "inertiaui/modal": "^3.1.2",
     "internachi/modular": "^3.0.2",
     "laravel/framework": "^13.33",
-    "laravel/sanctum": "^4.3.3",
     "saucebase/breadcrumbs": "^1.1",
     "saucebase/module-installer": "^2.8.0",
     "spatie/laravel-data": "^4.23",
@@ -52,7 +51,7 @@
       "Saucebase\\Core\\": "src/"
     },
     "files": [
-      "src/Helpers/helpers.php"
+      "src/helpers.php"
     ]
   },
   "autoload-dev": {
