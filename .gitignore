@@ -5,3 +5,4 @@
 .DS_Store
 /.phpstan.cache/
 tests/Fixtures/modules/*/resources/js/
+/resources/js/node_modules/
