@@ -14,7 +14,7 @@ import {
 const SAUCEBASE_JS = 'vendor/saucebase/core/resources/js';
 
 /** Where the starter UI lives until it is published into an app's resources/js. */
-const SAUCEBASE_STACK = 'vendor/saucebase/core/stack';
+const SAUCEBASE_STACK = 'vendor/saucebase/core/stubs/stack';
 
 /**
  * The framework-neutral half of the Saucebase build. `vue/vite.ts` and `react/vite.ts`

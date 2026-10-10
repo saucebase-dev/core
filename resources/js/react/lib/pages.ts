@@ -33,7 +33,7 @@ export function resolveModularPageComponent(
         `${__SAUCEBASE_APP_JS__}/pages/${name}.tsx`,
         import.meta.glob<ResolvedComponent>([
             '/resources/js/pages/**/*.tsx',
-            '/vendor/saucebase/core/stack/react/js/pages/**/*.tsx',
+            '/vendor/saucebase/core/stubs/stack/react/js/pages/**/*.tsx',
         ]),
     );
 }

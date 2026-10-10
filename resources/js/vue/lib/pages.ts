@@ -31,7 +31,7 @@ export function resolveModularPageComponent(name: string) {
         `${__SAUCEBASE_APP_JS__}/pages/${name}.vue`,
         import.meta.glob<DefineComponent>([
             '/resources/js/pages/**/*.vue',
-            '/vendor/saucebase/core/stack/vue/js/pages/**/*.vue',
+            '/vendor/saucebase/core/stubs/stack/vue/js/pages/**/*.vue',
         ]),
     );
 }

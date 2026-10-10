@@ -11,7 +11,7 @@ async function resolve(name: string, dev: boolean) {
     vi.stubGlobal('__SAUCEBASE_FRAMEWORK__', 'vue');
     vi.stubGlobal(
         '__SAUCEBASE_APP_JS__',
-        dev ? '/vendor/saucebase/core/stack/vue/js' : '/resources/js',
+        dev ? '/vendor/saucebase/core/stubs/stack/vue/js' : '/resources/js',
     );
 
     const { resolveModularPageComponent } = await import('./pages');
@@ -33,7 +33,7 @@ describe('resolveModularPageComponent', () => {
 
     it('finds app pages in a contributor checkout', async () => {
         expect(await resolve('Dashboard', true)).toBe(
-            '/vendor/saucebase/core/stack/vue/js/pages/Dashboard.vue',
+            '/vendor/saucebase/core/stubs/stack/vue/js/pages/Dashboard.vue',
         );
     });
 

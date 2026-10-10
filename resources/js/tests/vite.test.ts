@@ -48,11 +48,11 @@ describe('saucebase()', () => {
         const { resolve, define } = config();
 
         expect(resolve.alias['@']).toBe(
-            path.join(root, 'vendor/saucebase/core/stack/vue/js'),
+            path.join(root, 'vendor/saucebase/core/stubs/stack/vue/js'),
         );
         expect(define.__SAUCEBASE_DEV__).toBe('true');
         expect(define.__SAUCEBASE_APP_JS__).toBe(
-            '"/vendor/saucebase/core/stack/vue/js"',
+            '"/vendor/saucebase/core/stubs/stack/vue/js"',
         );
     });
 
