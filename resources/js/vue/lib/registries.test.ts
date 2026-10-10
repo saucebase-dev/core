@@ -1,6 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
-import { getGlobalComponents, hasGlobalComponent, registerGlobalComponent } from './globalComponents';
-import { handleAction, registerAction, registerIcon, resolveIcon } from './navigation';
+import {
+    getGlobalComponents,
+    hasGlobalComponent,
+    registerGlobalComponent,
+} from './globalComponents';
+import {
+    handleAction,
+    registerAction,
+    registerIcon,
+    resolveIcon,
+} from './navigation';
 
 const Component = () => null;
 
@@ -32,7 +41,9 @@ describe('navigation', () => {
 
         handleAction('ui.theme.toggle', {} as MouseEvent);
 
-        expect(warn).toHaveBeenCalledWith('No handler registered for action: ui.theme.toggle');
+        expect(warn).toHaveBeenCalledWith(
+            'No handler registered for action: ui.theme.toggle',
+        );
         expect(resolveIcon('dashboard')).toBeUndefined();
         warn.mockRestore();
     });

@@ -9,12 +9,19 @@ import { pathToFileURL } from 'node:url';
 
 const MODULES_PATH = 'modules';
 
-type PlaywrightProject = Record<string, unknown> & { name: string; testDir?: string };
+type PlaywrightProject = Record<string, unknown> & {
+    name: string;
+    testDir?: string;
+};
 
-export async function loadEnabledModuleNames(root = process.cwd()): Promise<string[]> {
+export async function loadEnabledModuleNames(
+    root = process.cwd(),
+): Promise<string[]> {
     let entries;
     try {
-        entries = await fs.readdir(path.join(root, MODULES_PATH), { withFileTypes: true });
+        entries = await fs.readdir(path.join(root, MODULES_PATH), {
+            withFileTypes: true,
+        });
     } catch {
         return [];
     }
@@ -22,7 +29,11 @@ export async function loadEnabledModuleNames(root = process.cwd()): Promise<stri
     const names: string[] = [];
     for (const entry of entries) {
         if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
-        if (await exists(path.join(root, MODULES_PATH, entry.name, 'composer.json'))) {
+        if (
+            await exists(
+                path.join(root, MODULES_PATH, entry.name, 'composer.json'),
+            )
+        ) {
             names.push(entry.name);
         }
     }
@@ -33,7 +44,9 @@ export async function loadEnabledModuleNames(root = process.cwd()): Promise<stri
 /**
  * The `lang/` directories of modules that have one, for `laravel-vue-i18n`.
  */
-export async function collectModuleLangPaths(root = process.cwd()): Promise<string[]> {
+export async function collectModuleLangPaths(
+    root = process.cwd(),
+): Promise<string[]> {
     const langPaths: string[] = [];
 
     for (const name of await loadEnabledModuleNames(root)) {
@@ -59,15 +72,24 @@ export async function collectModulePlaywrightConfigs(
     for (const name of await loadEnabledModuleNames(root)) {
         const testDir = path.join(MODULES_PATH, name, 'tests', 'e2e');
         const setupNames: string[] = [];
-        const configFile = path.join(root, MODULES_PATH, name, 'playwright.config.ts');
+        const configFile = path.join(
+            root,
+            MODULES_PATH,
+            name,
+            'playwright.config.ts',
+        );
 
         if (await exists(configFile)) {
             const config = await import(pathToFileURL(configFile).href);
-            const entries: PlaywrightProject[] = [config.default].flat().filter(Boolean);
+            const entries: PlaywrightProject[] = [config.default]
+                .flat()
+                .filter(Boolean);
 
             for (const setup of entries) {
                 if (!setup.name) {
-                    console.warn(`Module ${name}: a setup in playwright.config.ts has no 'name' and was skipped.`);
+                    console.warn(
+                        `Module ${name}: a setup in playwright.config.ts has no 'name' and was skipped.`,
+                    );
                     continue;
                 }
                 setupNames.push(setup.name);
@@ -75,7 +97,11 @@ export async function collectModulePlaywrightConfigs(
             }
         }
 
-        projects.push({ name: `@${name}`, testDir, dependencies: ['database.setup', ...setupNames] });
+        projects.push({
+            name: `@${name}`,
+            testDir,
+            dependencies: ['database.setup', ...setupNames],
+        });
     }
 
     return { projects, setups };

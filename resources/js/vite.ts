@@ -12,14 +12,22 @@ const SAUCEBASE_JS = 'vendor/saucebase/core/resources/js';
  * The framework-neutral half of the Saucebase build. `vue/vite.ts` and `react/vite.ts`
  * call it and add their own plugins; apps use those, never this directly.
  */
-export function saucebase({ framework, entry }: { framework: 'vue' | 'react'; entry: string }): PluginOption[] {
+export function saucebase({
+    framework,
+    entry,
+}: {
+    framework: 'vue' | 'react';
+    entry: string;
+}): PluginOption[] {
     return [
         {
             name: 'saucebase',
             config: (userConfig) => {
                 const root = path.resolve(userConfig.root ?? process.cwd());
                 const frontendFile = path.join(root, 'frontend.json');
-                const frontend = fs.existsSync(frontendFile) ? JSON.parse(fs.readFileSync(frontendFile, 'utf-8')) : {};
+                const frontend = fs.existsSync(frontendFile)
+                    ? JSON.parse(fs.readFileSync(frontendFile, 'utf-8'))
+                    : {};
                 const dev = frontend.dev === true;
 
                 return {
@@ -32,27 +40,49 @@ export function saucebase({ framework, entry }: { framework: 'vue' | 'react'; en
                         // so its imports resolve from the app's node_modules.
                         preserveSymlinks: true,
                         alias: {
-                            [`@saucebase/${framework}`]: path.join(root, SAUCEBASE_JS, framework),
+                            [`@saucebase/${framework}`]: path.join(
+                                root,
+                                SAUCEBASE_JS,
+                                framework,
+                            ),
                             '@saucebase/core': path.join(root, SAUCEBASE_JS),
                             // A contributor checkout keeps both frameworks side by side; an installed app is flat.
-                            '@': path.join(root, 'resources/js', dev ? framework : ''),
+                            '@': path.join(
+                                root,
+                                'resources/js',
+                                dev ? framework : '',
+                            ),
                             '@js': path.join(root, 'resources/js'),
                             '@css': path.join(root, 'resources/css'),
                             '@modules': path.join(root, 'modules'),
-                            'ziggy-js': path.join(root, 'vendor/tightenco/ziggy'),
+                            'ziggy-js': path.join(
+                                root,
+                                'vendor/tightenco/ziggy',
+                            ),
                         },
                     },
                     build: {
                         rollupOptions: {
                             output: {
                                 chunkFileNames: (chunk) => {
-                                    const ids = chunk.facadeModuleId ? [chunk.facadeModuleId] : [...chunk.moduleIds];
-                                    const module = ids.reduce<string | null>((found, id) => found ?? moduleOf(id), null);
+                                    const ids = chunk.facadeModuleId
+                                        ? [chunk.facadeModuleId]
+                                        : [...chunk.moduleIds];
+                                    const module = ids.reduce<string | null>(
+                                        (found, id) => found ?? moduleOf(id),
+                                        null,
+                                    );
 
-                                    return module ? `assets/${module}/[name]-[hash].js` : 'assets/[name]-[hash].js';
+                                    return module
+                                        ? `assets/${module}/[name]-[hash].js`
+                                        : 'assets/[name]-[hash].js';
                                 },
                                 assetFileNames: (asset) => {
-                                    const module = moduleOf(asset.originalFileNames?.[0] ?? asset.names?.[0] ?? '');
+                                    const module = moduleOf(
+                                        asset.originalFileNames?.[0] ??
+                                            asset.names?.[0] ??
+                                            '',
+                                    );
 
                                     return module
                                         ? `assets/${module}/[name]-[hash][extname]`

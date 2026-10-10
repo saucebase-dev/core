@@ -51,8 +51,7 @@ describe('modules', () => {
     });
 
     it('builds a Playwright project per module with its setups', async () => {
-        const { projects, setups } =
-            await collectModulePlaywrightConfigs(root);
+        const { projects, setups } = await collectModulePlaywrightConfigs(root);
 
         expect(projects).toContainEqual({
             name: '@auth',
