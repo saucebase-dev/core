@@ -13,10 +13,23 @@ const replaceState = vi.fn((_state: unknown, _title: string, url: string) => {
     location.hash = url.includes('#') ? url.slice(url.indexOf('#')) : '';
 });
 
+const windowListeners: Record<string, () => void> = {};
+const routerListeners: Record<string, () => void> = {};
+
+vi.mock('@inertiajs/react', () => ({
+    router: {
+        on: (event: string, listener: () => void) => {
+            routerListeners[event] = listener;
+        },
+    },
+}));
+
 vi.stubGlobal('window', {
     location,
     history: { state: { id: 1 }, replaceState },
-    addEventListener: vi.fn(),
+    addEventListener: (event: string, listener: () => void) => {
+        windowListeners[event] = listener;
+    },
 });
 
 const { settingsHref, useSettingsModal } = await import('./useSettingsModal');
@@ -94,5 +107,30 @@ describe('useSettingsModal', () => {
             '',
             '/dashboard?tab=1#settings/profile',
         );
+    });
+
+    it('puts the fragment back when an Inertia navigation drops it', () => {
+        location.hash = '#settings/profile';
+        windowListeners.hashchange();
+
+        // Inertia writes its own URL, which has no fragment, into the history entry.
+        location.hash = '';
+        routerListeners.navigate();
+
+        expect(replaceState).toHaveBeenCalledWith(
+            { id: 1 },
+            '',
+            '/dashboard?tab=1#settings/profile',
+        );
+    });
+
+    it('leaves the URL alone after a navigation when settings are closed', () => {
+        location.hash = '#pricing';
+        windowListeners.hashchange();
+
+        location.hash = '';
+        routerListeners.navigate();
+
+        expect(replaceState).not.toHaveBeenCalled();
     });
 });

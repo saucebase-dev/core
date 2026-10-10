@@ -1,3 +1,4 @@
+import { router } from '@inertiajs/react';
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
 
 /**
@@ -23,11 +24,16 @@ export function settingsHref(section?: string): string {
 
 const listeners = new Set<() => void>();
 
+/** The fragment as this file last saw it, kept to notice when Inertia drops it. */
+let fragment = typeof window === 'undefined' ? '' : window.location.hash;
+
 /**
  * `replaceState` does not fire `hashchange`, so the two writers below have to
  * announce themselves; the browser event feeds the same channel.
  */
 function notify(): void {
+    fragment = window.location.hash;
+
     for (const listener of listeners) {
         listener();
     }
@@ -41,6 +47,20 @@ function notify(): void {
  */
 if (typeof window !== 'undefined') {
     window.addEventListener('hashchange', notify);
+
+    // Inertia writes its own URL into the history entry on every navigation, the
+    // first render included, and that URL has no fragment. Without this, a fragment
+    // set while one is still finishing is dropped and the modal closes or loses its
+    // address.
+    router.on('navigate', () => {
+        if (parse(fragment).open && window.location.hash !== fragment) {
+            window.history.replaceState(
+                window.history.state,
+                '',
+                window.location.pathname + window.location.search + fragment,
+            );
+        }
+    });
 }
 
 function subscribe(listener: () => void): () => void {

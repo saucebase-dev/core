@@ -1,3 +1,4 @@
+import { router } from '@inertiajs/vue3';
 import { visitModal, type ModalInstance } from '@inertiaui/modal-vue';
 import { computed, onMounted, ref, watch } from 'vue';
 
@@ -36,6 +37,24 @@ function readFragment() {
  */
 if (typeof window !== 'undefined') {
     window.addEventListener('hashchange', readFragment);
+
+    // Inertia writes its own URL into the history entry on every navigation, the
+    // first render included, and that URL has no fragment. Without this, a fragment
+    // set while one is still finishing is dropped with the modal still open.
+    router.on('navigate', () => {
+        if (
+            parse(fragment.value).open &&
+            window.location.hash !== fragment.value
+        ) {
+            window.history.replaceState(
+                window.history.state,
+                '',
+                window.location.pathname +
+                    window.location.search +
+                    fragment.value,
+            );
+        }
+    });
 }
 
 /** Parse `#settings/profile` into its section, or null when not a settings link. */
