@@ -38,16 +38,22 @@ describe('saucebase()', () => {
         expect(resolve.alias['@']).toBe(path.join(root, 'resources/js'));
         expect(resolve.alias['@modules']).toBe(path.join(root, 'modules'));
         expect(define.__SAUCEBASE_DEV__).toBe('false');
+        expect(define.__SAUCEBASE_APP_JS__).toBe('"/resources/js"');
         expect(define.__SAUCEBASE_FRAMEWORK__).toBe('"vue"');
     });
 
-    it('points @ at the framework tree in a contributor checkout', () => {
+    it("points @ at core's own copy of the UI in a contributor checkout", () => {
         fs.writeFileSync(path.join(root, 'frontend.json'), '{"dev": true}');
 
         const { resolve, define } = config();
 
-        expect(resolve.alias['@']).toBe(path.join(root, 'resources/js/vue'));
+        expect(resolve.alias['@']).toBe(
+            path.join(root, 'vendor/saucebase/core/stack/vue/js'),
+        );
         expect(define.__SAUCEBASE_DEV__).toBe('true');
+        expect(define.__SAUCEBASE_APP_JS__).toBe(
+            '"/vendor/saucebase/core/stack/vue/js"',
+        );
     });
 
     it('writes module chunks and assets under the module name', () => {

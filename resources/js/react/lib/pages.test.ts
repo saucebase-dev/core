@@ -9,6 +9,10 @@ async function resolve(name: string, dev: boolean) {
     vi.resetModules();
     vi.stubGlobal('__SAUCEBASE_DEV__', dev);
     vi.stubGlobal('__SAUCEBASE_FRAMEWORK__', 'react');
+    vi.stubGlobal(
+        '__SAUCEBASE_APP_JS__',
+        dev ? '/vendor/saucebase/core/stack/react/js' : '/resources/js',
+    );
 
     const { resolveModularPageComponent } = await import('./pages');
 
@@ -29,7 +33,7 @@ describe('resolveModularPageComponent', () => {
 
     it('finds app pages in a contributor checkout', async () => {
         expect(await resolve('Dashboard', true)).toBe(
-            '/resources/js/react/pages/Dashboard.tsx',
+            '/vendor/saucebase/core/stack/react/js/pages/Dashboard.tsx',
         );
     });
 
