@@ -53,7 +53,7 @@ if (typeof window !== 'undefined') {
     // set while one is still finishing is dropped and the modal closes or loses its
     // address.
     router.on('navigate', () => {
-        if (parse(fragment).open && window.location.hash !== fragment) {
+        if (parse(fragment).open && window.location.hash === '') {
             window.history.replaceState(
                 window.history.state,
                 '',

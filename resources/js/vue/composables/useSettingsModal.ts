@@ -42,10 +42,7 @@ if (typeof window !== 'undefined') {
     // first render included, and that URL has no fragment. Without this, a fragment
     // set while one is still finishing is dropped with the modal still open.
     router.on('navigate', () => {
-        if (
-            parse(fragment.value).open &&
-            window.location.hash !== fragment.value
-        ) {
+        if (parse(fragment.value).open && window.location.hash === '') {
             window.history.replaceState(
                 window.history.state,
                 '',

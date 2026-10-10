@@ -124,6 +124,17 @@ describe('useSettingsModal', () => {
         );
     });
 
+    it('does not undo a section change the browser has not announced yet', () => {
+        location.hash = '#settings/profile';
+        windowListeners.hashchange();
+
+        // The fragment changes at once; `hashchange` only fires later.
+        location.hash = '#settings/billing';
+        routerListeners.navigate();
+
+        expect(replaceState).not.toHaveBeenCalled();
+    });
+
     it('leaves the URL alone after a navigation when settings are closed', () => {
         location.hash = '#pricing';
         windowListeners.hashchange();
