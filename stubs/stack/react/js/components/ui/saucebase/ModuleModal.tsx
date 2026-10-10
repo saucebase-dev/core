@@ -82,7 +82,7 @@ export function ModuleModal({ selectedMod, onClose }: ModuleModalProps) {
                 copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
             })
             .catch(() => toast.error(t('Failed to copy')));
-    }, [mod, t]);
+    }, [mod, t, isInstalled]);
 
     if (!mod) return null;
 
