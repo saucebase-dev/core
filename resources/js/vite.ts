@@ -4,6 +4,11 @@ import laravel from 'laravel-vite-plugin';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { PluginOption } from 'vite';
+import {
+    REQUIREMENTS,
+    type Requirements,
+    unmetRequirements,
+} from './requirements.ts';
 
 /** Where Composer installs this package's JavaScript, relative to the app root. */
 const SAUCEBASE_JS = 'vendor/saucebase/core/resources/js';
@@ -15,9 +20,12 @@ const SAUCEBASE_JS = 'vendor/saucebase/core/resources/js';
 export function saucebase({
     framework,
     entry,
+    requires,
 }: {
     framework: 'vue' | 'react';
     entry: string;
+    /** The framework's own minimum npm versions. */
+    requires: Requirements;
 }): PluginOption[] {
     return [
         {
@@ -92,6 +100,14 @@ export function saucebase({
                         },
                     },
                 };
+            },
+            configResolved: (config) => {
+                for (const problem of unmetRequirements(config.root, {
+                    ...REQUIREMENTS,
+                    ...requires,
+                })) {
+                    config.logger.warn(`[saucebase] ${problem}`);
+                }
             },
             // Vite's watcher never reaches into vendor/ on its own, so edits to core wouldn't hot-reload.
             configureServer: (server) => {

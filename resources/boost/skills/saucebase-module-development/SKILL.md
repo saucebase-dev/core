@@ -121,6 +121,14 @@ that has one; `--module=<name>` limits it to one. `--demo` then also runs `Demo<
 every module's required data exists. A module with an admin area creates its `manage {module}` permission
 there (see `saucebase-filament-development`); demo seeders never hold anything an install needs.
 
+## Frontend Imports
+
+A module imports Saucebase's frontend code through the `@saucebase/core` and
+`@saucebase/<framework>` aliases (this package's `resources/js`), and the app's UI
+through `@/components`, `@/layouts` and `@/lib/utils`. The app's
+`saucebase-frontend-development` skill lists exactly what is available. Never import a
+`vendor/` path.
+
 ## TypeScript Types
 
 PHP enums and classes marked `#[TypeScript]` are exported to `resources/js/types/generated.d.ts`. Never

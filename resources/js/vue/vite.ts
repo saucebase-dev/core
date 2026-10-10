@@ -10,7 +10,17 @@ import { saucebase as core } from '../vite.ts';
  */
 export async function saucebase(): Promise<PluginOption[]> {
     return [
-        core({ framework: 'vue', entry: 'resources/js/app.ts' }),
+        core({
+            framework: 'vue',
+            entry: 'resources/js/app.ts',
+            requires: {
+                vue: '3.5.0',
+                '@inertiajs/vue3': '3.0.0',
+                '@inertiaui/modal-vue': '3.0.0',
+                'laravel-vue-i18n': '2.0.0',
+                'vue-sonner': '2.0.0',
+            },
+        }),
         vue({
             template: {
                 transformAssetUrls: {

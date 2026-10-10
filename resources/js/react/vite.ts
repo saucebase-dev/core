@@ -8,7 +8,16 @@ import { saucebase as core } from '../vite.ts';
  */
 export function saucebase(): PluginOption[] {
     return [
-        core({ framework: 'react', entry: 'resources/js/app.tsx' }),
+        core({
+            framework: 'react',
+            entry: 'resources/js/app.tsx',
+            requires: {
+                react: '19.0.0',
+                '@inertiajs/react': '3.0.0',
+                '@inertiaui/modal-react': '3.0.0',
+                sonner: '2.0.0',
+            },
+        }),
         react(),
         Icons({ compiler: 'jsx', jsx: 'react' }),
     ];

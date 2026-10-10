@@ -19,6 +19,7 @@ function config(): any {
     const plugin = saucebase({
         framework: 'vue',
         entry: 'resources/js/app.ts',
+        requires: {},
     }).find((p: any) => p?.name === 'saucebase') as any;
 
     return plugin.config({ root });
