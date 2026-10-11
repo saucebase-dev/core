@@ -13,6 +13,7 @@ use InterNACHI\Modular\Support\Facades\Modules;
 use InterNACHI\Modular\Support\ModularizedCommandsServiceProvider;
 use InterNACHI\Modular\Support\ModularServiceProvider;
 use Saucebase\Core\Console\Commands\GenerateModuleTypesCommand;
+use Saucebase\Core\Console\Commands\InstallCommand;
 use Saucebase\Core\Console\Commands\RecipeToModuleCommand;
 use Saucebase\Core\Console\Commands\SeedModulesCommand;
 use Saucebase\Core\Console\Commands\SyncModuleBoostCommand;
@@ -93,6 +94,7 @@ class CoreServiceProvider extends ServiceProvider
         // `Artisan::starting()` anyway, so there is nothing to save by guarding it.
         $this->commands([
             GenerateModuleTypesCommand::class,
+            InstallCommand::class,
             RecipeToModuleCommand::class,
             SeedModulesCommand::class,
             SyncModuleBoostCommand::class,
