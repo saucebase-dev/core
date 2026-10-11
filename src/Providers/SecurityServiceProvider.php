@@ -2,6 +2,8 @@
 
 namespace Saucebase\Core\Providers;
 
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Saucebase\Core\Http\Middleware\SecureHeaders;
@@ -11,6 +13,16 @@ class SecurityServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureSecureUrls();
+        $this->letAdminsPassEveryCheck();
+    }
+
+    /**
+     * Admins pass every can()/policy check. Others get null, so their own permissions
+     * decide (false would deny everyone). hasPermissionTo() skips this.
+     */
+    protected function letAdminsPassEveryCheck(): void
+    {
+        Gate::before(fn (Authenticatable $user): ?bool => method_exists($user, 'hasRole') && $user->hasRole('admin') ? true : null);
     }
 
     /**
