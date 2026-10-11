@@ -47,6 +47,8 @@ class InstallCommand extends Command
         $stubs = dirname(__DIR__, 3).'/stubs';
 
         if (! $this->option('force') && ! $this->confirmReplacing($files, $stubs.'/app')) {
+            $this->components->error('Nothing was installed. Run again with --force to replace these files.');
+
             return self::FAILURE;
         }
 

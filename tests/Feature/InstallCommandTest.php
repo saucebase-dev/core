@@ -112,6 +112,7 @@ class InstallCommandTest extends TestCase
     {
         $this->artisan('saucebase:install', ['framework' => 'vue'])
             ->expectsConfirmation('Replace these files?', 'no')
+            ->expectsOutputToContain('Nothing was installed. Run again with --force to replace these files.')
             ->assertFailed();
 
         $this->assertSame("<?php\n\n// welcome\n", $this->read('routes/web.php'));

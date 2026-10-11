@@ -17,7 +17,9 @@ import { computed } from 'vue';
 export function useAuth() {
     const page = usePage();
     const modalEnabled = computed(
-        () => page.props.auth?.modal_enabled === true,
+        () =>
+            (page.props.auth as { modal_enabled?: boolean } | undefined)
+                ?.modal_enabled === true,
     );
 
     function open(name: string, event?: MouseEvent) {

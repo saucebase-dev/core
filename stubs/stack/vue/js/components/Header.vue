@@ -15,6 +15,14 @@ import ThemeSelector from './ThemeSelector.vue';
 
 const page = usePage();
 
+// Shared by the auth module, which also types it. Core reads it without that
+// module installed, so it says here which fields it needs.
+const auth = computed(
+    () =>
+        page.props.auth as
+            { user?: unknown; registration_enabled?: boolean } | undefined,
+);
+
 /** How the sign-in and registration entry points render. */
 const { login, signup } = useAuth();
 const landingNav = computed<MenuItem[]>(
@@ -116,7 +124,7 @@ onBeforeUnmount(() => {
                     </div>
 
                     <a
-                        v-if="modules().has('Auth') && !$page.props.auth?.user"
+                        v-if="modules().has('Auth') && !auth?.user"
                         :href="route('login')"
                         class="text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200"
                         data-testid="header-sign-in"
@@ -128,8 +136,8 @@ onBeforeUnmount(() => {
                     <a
                         v-if="
                             modules().has('Auth') &&
-                            !$page.props.auth?.user &&
-                            $page.props.auth?.registration_enabled
+                            !auth?.user &&
+                            auth?.registration_enabled
                         "
                         :href="route('register')"
                         class="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary inline-flex cursor-pointer items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:outline-none"
@@ -140,7 +148,7 @@ onBeforeUnmount(() => {
                     </a>
 
                     <Link
-                        v-if="route().has('home') && $page.props.auth?.user"
+                        v-if="route().has('home') && auth?.user"
                         :href="route('home')"
                         class="bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-primary inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 focus:ring-2 focus:ring-offset-2 focus:outline-none"
                     >
@@ -149,7 +157,7 @@ onBeforeUnmount(() => {
                     <!-- The action, not a plain post: logging out is confirmed
                          the same way here as it is in the app. -->
                     <button
-                        v-if="route().has('logout') && $page.props.auth?.user"
+                        v-if="route().has('logout') && auth?.user"
                         type="button"
                         data-testid="logout-button"
                         class="text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200"
@@ -218,10 +226,7 @@ onBeforeUnmount(() => {
                         <div class="border-border/60 mt-2 border-t pt-4">
                             <!-- Unauthenticated: side-by-side buttons -->
                             <div
-                                v-if="
-                                    modules().has('auth') &&
-                                    !$page.props.auth?.user
-                                "
+                                v-if="modules().has('auth') && !auth?.user"
                                 class="flex gap-3"
                             >
                                 <a
@@ -236,9 +241,7 @@ onBeforeUnmount(() => {
                                     {{ $t('Sign In') }}
                                 </a>
                                 <a
-                                    v-if="
-                                        $page.props.auth?.registration_enabled
-                                    "
+                                    v-if="auth?.registration_enabled"
                                     :href="route('register')"
                                     class="bg-primary text-primary-foreground hover:bg-primary/90 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200"
                                     data-testid="header-get-started-mobile"
@@ -254,10 +257,7 @@ onBeforeUnmount(() => {
 
                             <!-- Authenticated: one button, home -->
                             <Link
-                                v-if="
-                                    modules().has('auth') &&
-                                    $page.props.auth?.user
-                                "
+                                v-if="modules().has('auth') && auth?.user"
                                 :href="route('home')"
                                 class="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200"
                             >
