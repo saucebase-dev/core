@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
-    name: Vitest (resources/js)
+    name: Vitest
 
     defaults:
       run:
