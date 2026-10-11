@@ -9,14 +9,16 @@ import { useEffect, useState } from 'react';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
 function useDarkMode() {
-    const [isDark, setIsDark] = useState(() =>
-        document.documentElement.classList.contains('dark'),
-    );
+    // Read after mount: there is no document while the page renders on the server.
+    const [isDark, setIsDark] = useState(false);
 
     useEffect(() => {
-        const observer = new MutationObserver(() => {
+        const read = () =>
             setIsDark(document.documentElement.classList.contains('dark'));
-        });
+
+        read();
+
+        const observer = new MutationObserver(read);
         observer.observe(document.documentElement, {
             attributeFilter: ['class'],
         });

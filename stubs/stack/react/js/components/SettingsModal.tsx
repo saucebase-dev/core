@@ -23,6 +23,10 @@ export default function SettingsModal() {
     const requested = useRef(section);
     requested.current = section;
 
+    /** Read when the request lands, which may be after the user closed settings. */
+    const wanted = useRef(isOpen);
+    wanted.current = isOpen;
+
     useEffect(() => {
         if (!isOpen) {
             modal.current?.close();
@@ -53,7 +57,13 @@ export default function SettingsModal() {
             },
         )
             .then((instance) => {
-                modal.current = instance;
+                // Closed while the request was in flight (Back, for one): there was
+                // no modal to close then, so the late response must not open one now.
+                if (wanted.current) {
+                    modal.current = instance;
+                } else {
+                    instance.close();
+                }
             })
             .finally(() => {
                 opening.current = false;

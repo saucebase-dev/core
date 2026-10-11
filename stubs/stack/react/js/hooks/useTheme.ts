@@ -2,7 +2,7 @@ import {
     revealTransition,
     type RevealOrigin,
 } from '@saucebase/core/lib/themeReveal';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 export type Theme = 'light' | 'dark' | 'auto';
 
@@ -21,27 +21,36 @@ function applyTheme(theme: Theme): void {
     document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
 }
 
+function storedTheme(): Theme {
+    return (localStorage.getItem(STORAGE_KEY) as Theme) || 'auto';
+}
+
+const listeners = new Set<() => void>();
+
+function subscribe(listener: () => void): () => void {
+    listeners.add(listener);
+
+    return () => listeners.delete(listener);
+}
+
 export function initializeTheme(): void {
-    const stored = (localStorage.getItem(STORAGE_KEY) as Theme) || 'auto';
-    applyTheme(stored);
+    applyTheme(storedTheme());
 
     window
         .matchMedia('(prefers-color-scheme: dark)')
         .addEventListener('change', () => {
-            const current =
-                (localStorage.getItem(STORAGE_KEY) as Theme) || 'auto';
-            if (current === 'auto') applyTheme('auto');
+            if (storedTheme() === 'auto') applyTheme('auto');
         });
 }
 
 export function useTheme() {
-    const [theme, setThemeState] = useState<Theme>(
-        () => (localStorage.getItem(STORAGE_KEY) as Theme) || 'auto',
+    // The preference lives in the browser, so the server renders `auto` and the
+    // stored one takes over once the page hydrates.
+    const theme = useSyncExternalStore<Theme>(
+        subscribe,
+        storedTheme,
+        () => 'auto',
     );
-
-    useEffect(() => {
-        applyTheme(theme);
-    }, [theme]);
 
     const setTheme = useCallback(
         (next: Theme, origin: RevealOrigin, animate = true) => {
@@ -49,10 +58,8 @@ export function useTheme() {
             setCookie(next);
 
             const apply = () => {
-                // Applied to the DOM here, not only through state: the effect runs
-                // after the view transition has already captured the new snapshot.
                 applyTheme(next);
-                setThemeState(next);
+                listeners.forEach((listener) => listener());
             };
 
             if (!animate) {

@@ -130,7 +130,9 @@ export function saucebase({
             input: [entry, 'resources/css/filament/admin/theme.css'],
             refresh: true,
         }),
-        inertia(),
+        // Named, not left to the plugin's guess: a contributor checkout also holds the
+        // other framework's placeholder `ssr.ts`, which the guess would pick first.
+        inertia({ ssr: entry.replace(/app(\.tsx?)$/, 'ssr$1') }),
     ];
 }
 

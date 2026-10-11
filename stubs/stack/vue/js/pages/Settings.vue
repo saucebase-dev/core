@@ -43,6 +43,12 @@ watch(
         }
 
         const resolved = await resolveModularPageComponent(item.component);
+
+        // The user may have picked another section while this one was loading.
+        if (current.value?.component !== item.component) {
+            return;
+        }
+
         panel.value = (resolved as { default?: Component }).default ?? resolved;
     },
     { immediate: true },

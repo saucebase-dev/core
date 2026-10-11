@@ -151,7 +151,7 @@ export function useSettingsModalSync(): void {
         opening = true;
 
         try {
-            modal = await visitModal(
+            const instance = await visitModal(
                 route(
                     'settings',
                     activeSection ? { section: activeSection } : {},
@@ -166,6 +166,14 @@ export function useSettingsModalSync(): void {
                     },
                 },
             );
+
+            // Closed while the request was in flight (Back, for one): there was no
+            // modal to close then, so the late response must not open one now.
+            if (isOpen.value) {
+                modal = instance;
+            } else {
+                instance.close();
+            }
         } finally {
             opening = false;
         }

@@ -3,9 +3,13 @@ import { loadLanguageAsync } from 'laravel-vue-i18n';
 import { computed, readonly, ref, watch, type Ref } from 'vue';
 import { useHttp } from './useHttp';
 
-// Singleton state to ensure all components share the same locale state
+// One state per browser tab, so all components share the same locale.
 let languageState: Ref<string> | null = null;
 let isInitialized = false;
+
+// The server process outlives a request: state kept here would hand one visitor's
+// language to the next, so server rendering gets its own on every call.
+const isServer = typeof window === 'undefined';
 
 /**
  * Composable for managing application localization
@@ -19,10 +23,10 @@ let isInitialized = false;
 export const useLocalization = () => {
     const page = usePage();
 
-    // Initialize singleton state only once
-    if (!languageState) {
-        languageState = ref<string>((page.props?.locale as string) || 'en');
-    }
+    const initial = (page.props?.locale as string) || 'en';
+    const language = isServer
+        ? ref<string>(initial)
+        : (languageState ??= ref<string>(initial));
 
     // Get available locales mapping from Inertia props
     const locales = computed(
@@ -46,29 +50,22 @@ export const useLocalization = () => {
             return;
         }
 
-        // Update local state
-        if (languageState) {
-            languageState.value = lang;
-        }
+        language.value = lang;
 
         // Load i18n translations for the new language
         await loadLanguageAsync(lang);
     };
 
     // Set up watch only once to avoid multiple watchers
-    if (!isInitialized) {
+    if (!isServer && !isInitialized) {
         isInitialized = true;
 
         // Sync language when page props change (on navigation)
         watch(
             () => page.props?.locale,
             (newLocale) => {
-                if (
-                    newLocale &&
-                    languageState &&
-                    newLocale !== languageState.value
-                ) {
-                    languageState.value = newLocale as string;
+                if (newLocale && newLocale !== language.value) {
+                    language.value = newLocale as string;
                     loadLanguageAsync(newLocale as string);
                 }
             },
@@ -76,7 +73,7 @@ export const useLocalization = () => {
     }
 
     return {
-        language: readonly(languageState),
+        language: readonly(language),
         locales,
         setLanguage,
     };

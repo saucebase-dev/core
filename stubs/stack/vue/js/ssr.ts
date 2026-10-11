@@ -1,6 +1,7 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import createServer from '@inertiajs/vue3/server';
 import { siteTitle } from '@saucebase/core/lib/settings';
+import { ziggyForServer } from '@saucebase/core/lib/ziggy';
 import { resolveLanguageForSsr } from '@saucebase/vue/lib/language';
 import {
     registerAppPages,
@@ -9,7 +10,7 @@ import {
 import { i18nVue } from 'laravel-vue-i18n';
 import { createSSRApp, h, type DefineComponent } from 'vue';
 import { renderToString } from 'vue/server-renderer';
-import { ZiggyVue } from 'ziggy-js';
+import { route as ziggyRoute, ZiggyVue } from 'ziggy-js';
 import { registerNavigationDefaults } from './lib/navigation';
 
 /**
@@ -29,14 +30,24 @@ createServer(
             title: siteTitle,
             resolve: resolveModularPageComponent,
             setup({ App: InertiaApp, props, plugin }) {
-                (globalThis as any).Ziggy = page.props.ziggy;
+                const ziggy = ziggyForServer(page.props.ziggy as any);
+
+                // The browser gets `route()` from the page's own script; the server has
+                // to be handed this request's routes. Set here, straight before the
+                // synchronous render, so one request never reads another's.
+                (globalThis as any).route = (
+                    name?: string,
+                    params?: any,
+                    absolute?: boolean,
+                ) => ziggyRoute(name as any, params, absolute, ziggy as any);
 
                 const app = createSSRApp({
                     render: () => h(App, {}, () => h(InertiaApp, props)),
                 })
                     .use(plugin)
-                    .use(ZiggyVue, page.props.ziggy as any)
+                    .use(ZiggyVue, ziggy as any)
                     .use(i18nVue, {
+                        lang: (page.props.locale as string) || 'en',
                         resolve: resolveLanguageForSsr,
                     });
 
