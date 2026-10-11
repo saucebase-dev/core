@@ -7,11 +7,14 @@ Everything [Saucebase](https://github.com/saucebase-dev/saucebase) adds on top o
 In a new Laravel application:
 
 ```bash
+composer config allow-plugins.saucebase/module-installer true
 composer require saucebase/core
 php artisan saucebase:install vue   # or react
 npm install && npm run build
 php artisan migrate --seed
 ```
+
+The first line trusts the Composer plugin that installs modules into `modules/`. Composer asks about it when run by hand, but refuses the plugin outright when run unattended (`--no-interaction`, CI).
 
 `saucebase:install` copies the starter pages, the build configuration and a few PHP files into the application, which owns them from then on. A framework is chosen once: the command refuses to run again after it has been set.
 
@@ -30,6 +33,13 @@ Core has no sign-in pages. Until you add them, guests get a 404 on the dashboard
 
 ```bash
 composer require saucebase/auth
+```
+
+After adding a module, generate its TypeScript types and run its migrations:
+
+```bash
+php artisan module:generate-types --all
+php artisan migrate
 ```
 
 ## What lives here, and what doesn't
