@@ -2,11 +2,11 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import type { DefineComponent } from 'vue';
 
 declare const __SAUCEBASE_APP_JS__: string;
-declare const __SAUCEBASE_DEV__: boolean;
+declare const __SAUCEBASE_CONTRIBUTOR__: boolean;
 declare const __SAUCEBASE_FRAMEWORK__: string;
 
 /** A contributor checkout keeps each framework's module files in their own folder; an installed app is flat. */
-const tree = __SAUCEBASE_DEV__ ? `${__SAUCEBASE_FRAMEWORK__}/` : '';
+const tree = __SAUCEBASE_CONTRIBUTOR__ ? `${__SAUCEBASE_FRAMEWORK__}/` : '';
 
 /**
  * Finds the component for an Inertia page name: `Dashboard` in the app's pages,

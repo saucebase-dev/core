@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\View as ViewInstance;
 use Inertia\Response;
+use Saucebase\Core\FrontendConfig;
 use Saucebase\Core\Settings\GeneralSettings;
 
 class InertiaServiceProvider extends ServiceProvider
@@ -23,6 +24,9 @@ class InertiaServiceProvider extends ServiceProvider
      * one that holds up under Octane, where a worker serves overlapping requests and
      * config is not per-request state; the config value is what Inertia reads when it
      * renders.
+     *
+     * `"ssr": false` in saucebase.json switches server rendering off for the whole
+     * project, so `withSSR()` does nothing there and no server bundle is built.
      */
     public function boot(): void
     {
@@ -30,6 +34,10 @@ class InertiaServiceProvider extends ServiceProvider
 
         Response::macro('withSSR', function () {
             /** @var Response $this */
+            if (! app(FrontendConfig::class)->ssr()) {
+                return $this;
+            }
+
             request()->attributes->set('inertia.ssr', true);
             Config::set('inertia.ssr.enabled', true);
 

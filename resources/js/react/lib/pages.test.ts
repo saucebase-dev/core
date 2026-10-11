@@ -7,7 +7,7 @@ vi.mock('laravel-vite-plugin/inertia-helpers', () => ({
 
 async function resolve(name: string, dev: boolean) {
     vi.resetModules();
-    vi.stubGlobal('__SAUCEBASE_DEV__', dev);
+    vi.stubGlobal('__SAUCEBASE_CONTRIBUTOR__', dev);
     vi.stubGlobal('__SAUCEBASE_FRAMEWORK__', 'react');
     vi.stubGlobal(
         '__SAUCEBASE_APP_JS__',

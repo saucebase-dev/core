@@ -48,7 +48,7 @@ class FrontendConfigTest extends TestCase
         $config = new FrontendConfig;
 
         $this->assertNull($config->getFramework());
-        $this->assertFalse($config->isDev());
+        $this->assertFalse($config->isContributor());
     }
 
     public function test_a_malformed_file_is_treated_as_no_choice_rather_than_crashing(): void
@@ -58,28 +58,39 @@ class FrontendConfigTest extends TestCase
         $config = new FrontendConfig;
 
         $this->assertNull($config->getFramework());
-        $this->assertFalse($config->isDev());
+        $this->assertFalse($config->isContributor());
     }
 
     public function test_a_chosen_stack_is_reported(): void
     {
-        $this->writeConfig(json_encode(['framework' => 'vue', 'dev' => true]));
+        $this->writeConfig(json_encode(['framework' => 'vue', 'contributor' => true]));
 
         $config = new FrontendConfig;
 
         $this->assertSame('vue', $config->getFramework());
-        $this->assertTrue($config->isDev());
+        $this->assertTrue($config->isContributor());
     }
 
     /**
-     * `dev` is compared identically, so anything short of true is false — a string
-     * "true" out of a shell script does not quietly enable dev mode.
+     * `contributor` is compared identically, so anything short of true is false — a string
+     * "true" out of a shell script does not quietly turn a checkout into a contributor one.
      */
-    public function test_dev_is_only_true_for_the_boolean(): void
+    public function test_contributor_is_only_true_for_the_boolean(): void
     {
-        $this->writeConfig(json_encode(['framework' => 'react', 'dev' => 'true']));
+        $this->writeConfig(json_encode(['framework' => 'react', 'contributor' => 'true']));
 
-        $this->assertFalse((new FrontendConfig)->isDev());
+        $this->assertFalse((new FrontendConfig)->isContributor());
+    }
+
+    public function test_server_rendering_is_on_unless_the_file_turns_it_off(): void
+    {
+        $this->assertTrue((new FrontendConfig)->ssr());
+
+        $this->writeConfig(json_encode(['framework' => 'vue']));
+        $this->assertTrue((new FrontendConfig)->ssr());
+
+        $this->writeConfig(json_encode(['framework' => 'vue', 'ssr' => false]));
+        $this->assertFalse((new FrontendConfig)->ssr());
     }
 
     /**

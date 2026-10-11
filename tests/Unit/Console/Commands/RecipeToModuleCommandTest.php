@@ -32,9 +32,9 @@ class TestableRecipeToModuleCommand extends RecipeToModuleCommand
         return parent::placeholders($name);
     }
 
-    public function writeModuleEntryPoint(string $framework, bool $isDev): void
+    public function writeModuleEntryPoint(string $framework, bool $isContributor): void
     {
-        parent::writeModuleEntryPoint($framework, $isDev);
+        parent::writeModuleEntryPoint($framework, $isContributor);
     }
 }
 

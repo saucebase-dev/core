@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
+use Saucebase\Core\FrontendConfig;
 use Saucebase\Core\Tests\TestCase;
 
 class InertiaSSRTest extends TestCase
@@ -38,6 +39,22 @@ class InertiaSSRTest extends TestCase
 
         // Verify it returns the response (chainable)
         $this->assertInstanceOf(Response::class, $response);
+    }
+
+    public function test_with_ssr_does_nothing_when_the_project_turned_server_rendering_off(): void
+    {
+        file_put_contents(base_path('saucebase.json'), json_encode(['framework' => 'vue', 'ssr' => false]));
+        $this->app->forgetInstance(FrontendConfig::class);
+        Config::set('inertia.ssr.enabled', false);
+
+        try {
+            Inertia::render('Index')->withSSR();
+
+            $this->assertFalse(config('inertia.ssr.enabled'));
+        } finally {
+            unlink(base_path('saucebase.json'));
+            $this->app->forgetInstance(FrontendConfig::class);
+        }
     }
 
     public function test_inertia_response_without_with_ssr_keeps_ssr_disabled(): void

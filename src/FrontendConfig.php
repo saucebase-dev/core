@@ -12,9 +12,16 @@ class FrontendConfig
         return $this->load()['framework'] ?? null;
     }
 
-    public function isDev(): bool
+    /** A checkout of Saucebase itself: both frameworks side by side, the UI read from core. */
+    public function isContributor(): bool
     {
-        return ($this->load()['dev'] ?? false) === true;
+        return ($this->load()['contributor'] ?? false) === true;
+    }
+
+    /** Whether pages may render on the server. On unless the project turned it off. */
+    public function ssr(): bool
+    {
+        return ($this->load()['ssr'] ?? true) !== false;
     }
 
     /** @return array<string, mixed> */

@@ -33,21 +33,28 @@ export function saucebase({
     return [
         {
             name: 'saucebase',
-            config: (userConfig) => {
+            config: (userConfig, env) => {
                 const root = path.resolve(userConfig.root ?? process.cwd());
                 const frontendFile = path.join(root, 'saucebase.json');
                 const frontend = fs.existsSync(frontendFile)
                     ? JSON.parse(fs.readFileSync(frontendFile, 'utf-8'))
                     : {};
-                const dev = frontend.dev === true;
+                const contributor = frontend.contributor === true;
+
+                if (env?.isSsrBuild && frontend.ssr === false) {
+                    console.log(
+                        '[saucebase] Server rendering is off in saucebase.json; skipping the server build.',
+                    );
+                    process.exit(0);
+                }
                 // A contributor checkout runs the UI straight from core; an installed app owns a copy.
-                const appJs = dev
+                const appJs = contributor
                     ? `${SAUCEBASE_STACK}/${framework}/js`
                     : 'resources/js';
 
                 return {
                     define: {
-                        __SAUCEBASE_DEV__: JSON.stringify(dev),
+                        __SAUCEBASE_CONTRIBUTOR__: JSON.stringify(contributor),
                         __SAUCEBASE_FRAMEWORK__: JSON.stringify(framework),
                         __SAUCEBASE_APP_JS__: JSON.stringify(`/${appJs}`),
                     },
