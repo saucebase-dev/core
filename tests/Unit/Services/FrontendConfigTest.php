@@ -8,7 +8,7 @@ use Saucebase\Core\Tests\TestCase;
 /**
  * Which front-end stack this installation has chosen, read off disk.
  *
- * `frontend.json` is written when a stack is selected, so every question this answers
+ * `saucebase.json` is written when a stack is selected, so every question this answers
  * has to survive the file not being there yet — that is the state a fresh checkout is
  * in, and the one that decides whether a visitor sees the application or the setup
  * page. Both reads are error-suppressed, which makes a malformed file indistinguishable
@@ -22,7 +22,7 @@ class FrontendConfigTest extends TestCase
     {
         parent::setUp();
 
-        $this->path = base_path('frontend.json');
+        $this->path = base_path('saucebase.json');
 
         $this->writeConfig(null);
     }

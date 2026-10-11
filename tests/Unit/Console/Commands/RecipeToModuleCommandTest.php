@@ -196,7 +196,7 @@ class RecipeToModuleCommandTest extends TestCase
 
     private function writeFrontendJson(array $data): void
     {
-        file_put_contents($this->tmpDir.'/frontend.json', json_encode($data));
+        file_put_contents($this->tmpDir.'/saucebase.json', json_encode($data));
     }
 
     private function makeCommand(): TestableRecipeToModuleCommand

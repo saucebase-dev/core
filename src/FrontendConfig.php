@@ -21,7 +21,7 @@ class FrontendConfig
     private function load(): array
     {
         if ($this->data === null) {
-            $this->data = @json_decode((string) @file_get_contents(base_path('frontend.json')), true) ?? [];
+            $this->data = @json_decode((string) @file_get_contents(base_path('saucebase.json')), true) ?? [];
         }
 
         return $this->data;

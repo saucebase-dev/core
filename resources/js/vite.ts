@@ -35,7 +35,7 @@ export function saucebase({
             name: 'saucebase',
             config: (userConfig) => {
                 const root = path.resolve(userConfig.root ?? process.cwd());
-                const frontendFile = path.join(root, 'frontend.json');
+                const frontendFile = path.join(root, 'saucebase.json');
                 const frontend = fs.existsSync(frontendFile)
                     ? JSON.parse(fs.readFileSync(frontendFile, 'utf-8'))
                     : {};

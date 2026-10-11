@@ -43,7 +43,7 @@ describe('saucebase()', () => {
     });
 
     it("points @ at core's own copy of the UI in a contributor checkout", () => {
-        fs.writeFileSync(path.join(root, 'frontend.json'), '{"dev": true}');
+        fs.writeFileSync(path.join(root, 'saucebase.json'), '{"dev": true}');
 
         const { resolve, define } = config();
 
