@@ -3,6 +3,7 @@
 namespace Saucebase\Core;
 
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\AliasLoader;
@@ -33,6 +34,7 @@ use Saucebase\Core\Sitemap\SitemapRegistry;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
 
 /**
  * The single provider Laravel discovers for this package.
@@ -144,6 +146,14 @@ class CoreServiceProvider extends ServiceProvider
         $router->aliasMiddleware('role_or_permission', RoleOrPermissionMiddleware::class);
 
         RedirectIfAuthenticated::redirectUsing(fn (Request $request): string => $this->app->make(Home::class)->url($request));
+
+        // Core has no sign-in page: until the application or a module adds a `login`
+        // route, a page for signed-in users does not exist for a guest. Laravel and
+        // Filament both send guests to route('login'), so this is caught where it fails
+        // rather than by replacing a guest redirect the application may have set.
+        $this->app->make(ExceptionHandler::class)->renderable(
+            fn (RouteNotFoundException $e) => str_contains($e->getMessage(), '[login]') ? abort(404) : null,
+        );
     }
 
     /**
