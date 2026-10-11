@@ -48,6 +48,14 @@ class InstallCommandTest extends TestCase
         $this->assertFileExists($this->appPath.'/public/images/icon-on-light.svg');
     }
 
+    public function test_the_published_example_test_migrates_the_database(): void
+    {
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        // Laravel's own example test requests the home page, which now reads the settings table.
+        $this->assertStringContainsString('use RefreshDatabase;', $this->read('tests/Feature/ExampleTest.php'));
+    }
+
     public function test_it_registers_the_admin_panel(): void
     {
         $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();

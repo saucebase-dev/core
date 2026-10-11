@@ -4,11 +4,33 @@ Everything [Saucebase](https://github.com/saucebase-dev/saucebase) adds on top o
 
 ## Install
 
+In a new Laravel application:
+
 ```bash
 composer require saucebase/core
+php artisan saucebase:install vue   # or react
+npm install && npm run build
+php artisan migrate --seed
 ```
 
-The service provider is auto-discovered.
+`saucebase:install` copies the starter pages, the build configuration and a few PHP files into the application, which owns them from then on. A framework is chosen once: the command refuses to run again after it has been set.
+
+It replaces these files of a new Laravel application, and asks first unless you pass `--force`:
+
+- `app/Models/User.php`
+- `app/Providers/AppServiceProvider.php`
+- `database/seeders/DatabaseSeeder.php`
+- `routes/web.php`
+- `public/favicon.ico`
+- `tests/Feature/ExampleTest.php`
+
+The example test is replaced because the home page now reads the settings table, so the test has to migrate the database (`RefreshDatabase`) to pass.
+
+Core has no sign-in pages. Until you add them, guests get a 404 on the dashboard and the admin panel:
+
+```bash
+composer require saucebase/auth
+```
 
 ## What lives here, and what doesn't
 
