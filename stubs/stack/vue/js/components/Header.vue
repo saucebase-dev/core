@@ -260,7 +260,6 @@ onBeforeUnmount(() => {
                                 "
                                 :href="route('home')"
                                 class="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200"
-                                @click="mobileMenuOpen = false"
                             >
                                 {{ $t('Dashboard') }}
                                 <ArrowRight class="h-3.5 w-3.5" />

@@ -21,22 +21,13 @@ export function ModuleCard({
     return (
         <div
             data-card
-            role="button"
-            tabIndex={0}
-            className={`focus-visible:ring-ring relative cursor-pointer rounded-xl transition-opacity duration-200 outline-none select-none hover:opacity-100! focus-visible:ring-2 ${!module.href ? 'opacity-50' : ''} ${moduleClass ?? ''}`}
+            className={`relative cursor-pointer transition-opacity duration-200 select-none hover:opacity-100! ${!module.href ? 'opacity-50' : ''} ${moduleClass ?? ''}`}
             style={
                 {
                     '--mod-color': `var(${module.color})`,
                     '--card-delay': cardDelay,
                 } as React.CSSProperties
             }
-            onClick={() => onSelect(module)}
-            onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    onSelect(module);
-                }
-            }}
         >
             {/* Diagonal stripe accent */}
             <div
@@ -103,9 +94,14 @@ export function ModuleCard({
                         {/* Stripe ring around icon */}
                         <div className="stripe absolute top-0 left-1/2 -ml-7 size-14 rounded-full" />
 
-                        <span className="text-foreground mt-6 text-center text-base leading-tight font-semibold">
+                        {/* The button stretches over the whole card, so the card is one native control. */}
+                        <button
+                            type="button"
+                            className="text-foreground focus-visible:after:ring-ring mt-6 cursor-pointer text-center text-base leading-tight font-semibold outline-none after:absolute after:inset-x-0 after:-top-2 after:bottom-0 after:z-20 after:rounded-xl focus-visible:after:ring-2"
+                            onClick={() => onSelect(module)}
+                        >
                             {t(module.title)}
-                        </span>
+                        </button>
                         <p className="text-muted-foreground line-clamp-3 text-center text-xs leading-snug">
                             {t(module.description)}
                         </p>

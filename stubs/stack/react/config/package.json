@@ -51,6 +51,7 @@
         "dotenv": "^17.4.2",
         "eslint": "^10.11.0",
         "eslint-config-prettier": "^10.1.8",
+        "eslint-plugin-jsx-a11y": "^6.10.2",
         "eslint-plugin-react-hooks": "^7.1.1",
         "laravel-vite-plugin": "^3.2.0",
         "lint-staged": "^17.6.0",
@@ -92,5 +93,10 @@
         ],
         "!(*.{js,ts,tsx})": "prettier --write --ignore-unknown"
     },
-    "version": "0.0.0"
+    "version": "0.0.0",
+    "overrides": {
+        "eslint-plugin-jsx-a11y": {
+            "eslint": "$eslint"
+        }
+    }
 }

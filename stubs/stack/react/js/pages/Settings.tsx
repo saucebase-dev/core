@@ -128,6 +128,7 @@ export default function Settings({
             */}
             <div
                 ref={setModalRoot}
+                // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- see above
                 tabIndex={0}
                 className="flex h-[80vh] outline-none"
                 data-testid="settings-modal"

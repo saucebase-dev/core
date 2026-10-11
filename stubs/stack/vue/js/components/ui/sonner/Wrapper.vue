@@ -14,7 +14,7 @@ const theme = computed((): 'dark' | 'light' =>
 
 const page = usePage();
 
-function handleToastAction(actionType: string = 'route', onClick: string) {
+function handleToastAction(actionType: string, onClick: string) {
     switch (actionType) {
         case 'route':
             router.visit(route(onClick));

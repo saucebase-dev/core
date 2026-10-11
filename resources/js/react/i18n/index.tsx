@@ -42,10 +42,10 @@ function loadTranslations(lang: string): Translations {
 
     const moduleData: Translations = {};
     for (const [filePath, mod] of Object.entries(moduleLangGlobs)) {
-        const match = filePath.match(
-            /\/modules\/[^/]+\/lang\/(php_)?(.+)\.json$/,
+        const match = /\/modules\/[^/]+\/lang\/(php_)?(.+)\.json$/.exec(
+            filePath,
         );
-        if (match && match[2] === lang) {
+        if (match?.[2] === lang) {
             Object.assign(moduleData, mod.default ?? {});
         }
     }

@@ -11,7 +11,7 @@ type Variant = 'success' | 'info' | 'warning' | 'error' | 'default';
 type Appearance = 'filled' | 'bordered' | 'outlined';
 
 interface AlertMessageProps {
-    message: string | unknown;
+    message: unknown;
     variant?: Variant;
     appearance?: Appearance;
     icon?: LucideIcon;

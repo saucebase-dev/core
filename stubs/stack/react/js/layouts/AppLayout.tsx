@@ -56,7 +56,7 @@ export default function AppLayout({
                                     {displayBreadcrumbs.length > 0
                                         ? displayBreadcrumbs.map(
                                               (crumb, index) => (
-                                                  <Fragment key={index}>
+                                                  <Fragment key={crumb.url ?? crumb.title}>
                                                       <BreadcrumbItem>
                                                           {crumb.url ? (
                                                               <BreadcrumbLink

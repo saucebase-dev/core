@@ -41,7 +41,9 @@ const displayBreadcrumbs = computed(() => {
 
 <template>
     <SidebarProvider v-model:open="isOpen">
-        <Head :title="title" />
+        <Head>
+            <title>{{ title }}</title>
+        </Head>
         <AppSidebar />
         <SidebarInset>
             <header

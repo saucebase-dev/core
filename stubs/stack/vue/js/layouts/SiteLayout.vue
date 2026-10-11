@@ -21,7 +21,9 @@ const ogType = computed(() => props.type ?? 'website');
 </script>
 
 <template>
-    <Head :title="title">
+    <Head>
+        <title>{{ title }}</title>
+
         <!-- Basic -->
         <meta
             v-if="pageDescription"

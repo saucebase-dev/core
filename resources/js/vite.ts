@@ -137,5 +137,5 @@ export function saucebase({
 }
 
 function moduleOf(file: string | undefined): string | null {
-    return file?.match(/\/modules\/([^/]+)\//)?.[1] ?? null;
+    return /\/modules\/([^/]+)\//.exec(file ?? '')?.[1] ?? null;
 }

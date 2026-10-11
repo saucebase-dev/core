@@ -34,7 +34,9 @@ const description = computed(() => {
 </script>
 
 <template>
-    <Head :title="`${props.status} - ${title}`" />
+    <Head>
+        <title>{{ props.status }} - {{ title }}</title>
+    </Head>
     <div
         class="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900"
     >

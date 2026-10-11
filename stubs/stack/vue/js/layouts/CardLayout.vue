@@ -42,7 +42,9 @@ withDefaults(
 <template>
     <div class="flex min-h-dvh flex-col items-center gap-6">
         <div class="mt-6">
-            <Head :title="title" />
+            <Head>
+                <title>{{ title }}</title>
+            </Head>
             <Link :href="route('index')" class="mt-6 font-medium">
                 <AppLogo size="md" />
             </Link>
