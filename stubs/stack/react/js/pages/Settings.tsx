@@ -205,9 +205,10 @@ export default function Settings({
                         </div>
 
                         <div className="flex-1 overflow-y-auto px-6 pb-6">
-                            {isPanelReady ? (
+                            {isPanelReady && (
                                 <Panel key={slug} {...panelProps} />
-                            ) : current ? (
+                            )}
+                            {!isPanelReady && current && (
                                 /* Section data still loading */
                                 <div
                                     className="space-y-4"
@@ -218,7 +219,8 @@ export default function Settings({
                                     <div className="bg-muted h-4 w-64 animate-pulse rounded" />
                                     <div className="bg-muted h-32 w-full animate-pulse rounded-lg" />
                                 </div>
-                            ) : (
+                            )}
+                            {!isPanelReady && !current && (
                                 <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
                                     {t('Select a section')}
                                 </div>

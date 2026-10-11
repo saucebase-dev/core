@@ -24,9 +24,13 @@ export const useLocalization = () => {
     const page = usePage();
 
     const initial = (page.props?.locale as string) || 'en';
-    const language = isServer
-        ? ref<string>(initial)
-        : (languageState ??= ref<string>(initial));
+    let language: Ref<string>;
+    if (isServer) {
+        language = ref(initial);
+    } else {
+        languageState ??= ref(initial);
+        language = languageState;
+    }
 
     // Get available locales mapping from Inertia props
     const locales = computed(

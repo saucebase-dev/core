@@ -67,52 +67,52 @@ function parse(hash: string): { open: boolean; section: string | null } {
     return { open: true, section: section === '' ? null : section };
 }
 
+function open(section?: string) {
+    window.location.hash = settingsHref(section);
+}
+
+/**
+ * Drop the fragment without adding a history entry, so closing the modal
+ * does not leave a dead step the back button has to walk through.
+ */
+function close() {
+    if (!parse(window.location.hash).open) {
+        return;
+    }
+
+    window.history.replaceState(
+        window.history.state,
+        '',
+        window.location.pathname + window.location.search,
+    );
+    readFragment();
+}
+
+/**
+ * Put the fragment back after something else rewrote the URL.
+ *
+ * Inertia owns the history entry and knows nothing about this fragment, so
+ * any visit it makes while the modal is open drops it. `replaceState` is
+ * used rather than assigning `location.hash` because assigning would fire
+ * `hashchange` and re-enter the open/close cycle.
+ */
+function restore(section?: string) {
+    const target = settingsHref(section);
+
+    if (window.location.hash === target) {
+        return;
+    }
+
+    window.history.replaceState(
+        window.history.state,
+        '',
+        window.location.pathname + window.location.search + target,
+    );
+    readFragment();
+}
+
 export function useSettingsModal() {
     const parsed = computed(() => parse(fragment.value));
-
-    function open(section?: string) {
-        window.location.hash = settingsHref(section);
-    }
-
-    /**
-     * Drop the fragment without adding a history entry, so closing the modal
-     * does not leave a dead step the back button has to walk through.
-     */
-    function close() {
-        if (!parse(window.location.hash).open) {
-            return;
-        }
-
-        window.history.replaceState(
-            window.history.state,
-            '',
-            window.location.pathname + window.location.search,
-        );
-        readFragment();
-    }
-
-    /**
-     * Put the fragment back after something else rewrote the URL.
-     *
-     * Inertia owns the history entry and knows nothing about this fragment, so
-     * any visit it makes while the modal is open drops it. `replaceState` is
-     * used rather than assigning `location.hash` because assigning would fire
-     * `hashchange` and re-enter the open/close cycle.
-     */
-    function restore(section?: string) {
-        const target = settingsHref(section);
-
-        if (window.location.hash === target) {
-            return;
-        }
-
-        window.history.replaceState(
-            window.history.state,
-            '',
-            window.location.pathname + window.location.search + target,
-        );
-        readFragment();
-    }
 
     return {
         isOpen: computed(() => parsed.value.open),
