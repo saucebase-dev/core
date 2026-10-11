@@ -37,14 +37,14 @@ class SettingsNavigationTest extends TestCase
         Filament::bootCurrentPanel();
 
         $registeredSettingsGroup = collect($panel->getNavigationGroups())
-            ->contains(fn(NavigationGroup|string $group): bool => $group instanceof NavigationGroup
+            ->contains(fn (NavigationGroup|string $group): bool => $group instanceof NavigationGroup
                 ? $group->getLabel() === __('Settings')
                 : $group === __('Settings'));
 
         $navigation = collect(Filament::getNavigation())->values();
 
         $settingsGroup = $navigation
-            ->first(fn(NavigationGroup $group): bool => $group->getLabel() === __('Settings'));
+            ->first(fn (NavigationGroup $group): bool => $group->getLabel() === __('Settings'));
 
         $this->assertFalse($registeredSettingsGroup);
         $this->assertInstanceOf(NavigationGroup::class, $settingsGroup);
