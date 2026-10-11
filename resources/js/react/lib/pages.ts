@@ -31,9 +31,11 @@ export function resolveModularPageComponent(
 
     return resolvePageComponent(
         `${__SAUCEBASE_APP_JS__}/pages/${name}.tsx`,
-        import.meta.glob<ResolvedComponent>([
-            '/resources/js/pages/**/*.tsx',
-            '/vendor/saucebase/core/stubs/stack/react/js/pages/**/*.tsx',
-        ]),
+        // One or the other, so an installed app does not also build core's copy of its pages.
+        __SAUCEBASE_CONTRIBUTOR__
+            ? import.meta.glob<ResolvedComponent>(
+                  '/vendor/saucebase/core/stubs/stack/react/js/pages/**/*.tsx',
+              )
+            : import.meta.glob<ResolvedComponent>('/resources/js/pages/**/*.tsx'),
     );
 }

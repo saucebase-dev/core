@@ -29,9 +29,11 @@ export function resolveModularPageComponent(name: string) {
 
     return resolvePageComponent(
         `${__SAUCEBASE_APP_JS__}/pages/${name}.vue`,
-        import.meta.glob<DefineComponent>([
-            '/resources/js/pages/**/*.vue',
-            '/vendor/saucebase/core/stubs/stack/vue/js/pages/**/*.vue',
-        ]),
+        // One or the other, so an installed app does not also build core's copy of its pages.
+        __SAUCEBASE_CONTRIBUTOR__
+            ? import.meta.glob<DefineComponent>(
+                  '/vendor/saucebase/core/stubs/stack/vue/js/pages/**/*.vue',
+              )
+            : import.meta.glob<DefineComponent>('/resources/js/pages/**/*.vue'),
     );
 }
