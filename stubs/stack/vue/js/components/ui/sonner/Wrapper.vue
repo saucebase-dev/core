@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Sonner from '@/components/ui/sonner/Sonner.vue';
-import type { Toast } from '@/types';
 import { useColorMode } from '@vueuse/core';
 import { router, usePage } from '@inertiajs/vue3';
 import { computed, watch } from 'vue';
@@ -31,7 +30,7 @@ function handleToastAction(actionType: string = 'route', onClick: string) {
     }
 }
 
-function showToast(data: Toast) {
+function showToast(data: Saucebase.Core.Data.ToastData) {
     const position = data.position || 'bottom-right';
     const options: any = { position };
 

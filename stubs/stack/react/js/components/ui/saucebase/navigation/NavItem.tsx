@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useT } from '@saucebase/react/i18n';
 import { handleAction } from '@saucebase/react/lib/navigation';
-import type { MenuBadge, MenuItem } from '@/types/navigation';
+import type { MenuBadge, MenuItem } from '@saucebase/core/types';
 import { Link } from '@inertiajs/react';
 import { ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';

@@ -1,4 +1,3 @@
-import type { Toast } from '@/types';
 import { router } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
@@ -7,7 +6,7 @@ import DynamicDialog from './DynamicDialog';
 import SettingsModal from './SettingsModal';
 import { Toaster } from './ui/sonner';
 
-function fireToast(toastProp: Toast) {
+function fireToast(toastProp: Saucebase.Core.Data.ToastData) {
     if (!toastProp?.message) return;
 
     const options = {
@@ -45,7 +44,7 @@ export default function App({ children }: AppProps) {
     useEffect(() => {
         return router.on('navigate', (event) => {
             const toastProp = event.detail.page.props.toast as
-                | Toast
+                | Saucebase.Core.Data.ToastData
                 | undefined;
             if (toastProp) fireToast(toastProp);
         });

@@ -13,7 +13,7 @@ import {
     SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { useSidebarState } from '@/hooks/useSidebarState';
-import type { Breadcrumb as BreadcrumbType } from '@/types';
+import type { Breadcrumb as BreadcrumbType } from '@saucebase/core/types';
 import { Head, usePage } from '@inertiajs/react';
 import { useT } from '@saucebase/react/i18n';
 import { Fragment, type ReactNode } from 'react';

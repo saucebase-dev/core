@@ -36,6 +36,8 @@ export function resolveModularPageComponent(
             ? import.meta.glob<ResolvedComponent>(
                   '/vendor/saucebase/core/stubs/stack/react/js/pages/**/*.tsx',
               )
-            : import.meta.glob<ResolvedComponent>('/resources/js/pages/**/*.tsx'),
+            : import.meta.glob<ResolvedComponent>(
+                  '/resources/js/pages/**/*.tsx',
+              ),
     );
 }

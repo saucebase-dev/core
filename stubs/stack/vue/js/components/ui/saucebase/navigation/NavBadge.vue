@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Badge } from '@/components/ui/badge';
-import type { MenuBadge } from '@/types/navigation';
+import type { MenuBadge } from '@saucebase/core/types';
 import { computed } from 'vue';
 
 const props = defineProps<{

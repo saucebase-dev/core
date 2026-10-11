@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { SidebarGroup, SidebarMenu } from '@/components/ui/sidebar';
-import type { MenuItem } from '@/types/navigation';
+import type { MenuItem } from '@saucebase/core/types';
 import NavItem from './NavItem.vue';
 
 defineProps<{

@@ -1,20 +1,9 @@
 import type { ComponentType } from 'react';
+import type { GlobalComponentSlot } from '../../types';
 
-/**
- * Where a module may hang a component without core knowing the module exists.
- *
- * `top` and `bottom` wrap the page, above and below everything a layout renders.
- * `sidebar-brand` replaces the block above the sidebar navigation, whose default is
- * core's own `AppBrand`. `user-subtitle` replaces the email under the user's first
- * name in the sidebar's user menu.
- *
- * Adding a slot means adding a case here and rendering it in the layout that owns that
- * region. Modules register from their `app.tsx`, which `moduleSetup.ts` runs at
- * boot, so an adopter wires nothing by hand.
- */
-export type GlobalComponentSlot =
-    'top' | 'bottom' | 'sidebar-brand' | 'user-subtitle';
+export type { GlobalComponentSlot };
 
+/** Modules register from their `app` entry, which `moduleSetup.ts` runs at boot, so an adopter wires nothing by hand. */
 const slots: Record<GlobalComponentSlot, ComponentType[]> = {
     top: [],
     bottom: [],

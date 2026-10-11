@@ -1,4 +1,5 @@
-import type { Settings } from '@saucebase/core/lib/settings';
+import type { PageProps as InertiaPageProps } from '@inertiajs/core';
+import '@saucebase/core/types';
 
 export interface User {
     id: number;
@@ -9,57 +10,13 @@ export interface User {
     role?: string;
 }
 
-export interface Breadcrumb {
-    title: string;
-    url?: string;
-    active?: boolean;
-    attributes?: {
-        label?: string;
-        [key: string]: any;
-    };
-    children?: any[];
-    depth?: number;
-}
-
-export interface Toast {
-    message: string;
-    type: 'default' | 'success' | 'error' | 'info' | 'warning' | 'loading';
-    position?:
-        | 'top-left'
-        | 'top-right'
-        | 'bottom-left'
-        | 'bottom-right'
-        | 'top-center'
-        | 'bottom-center';
-    description?: string;
-    action?: {
-        label: string;
-        type?: 'route' | 'url' | 'external_url' | 'function';
-        onClick?: string;
-    };
-    duration?: number;
-}
-
+/**
+ * A page's own props on top of every shared prop.
+ *
+ * Built from the augmented Inertia interface rather than a copy of the list, so
+ * a prop core or a module shares (auth's `auth`, for one) is covered here
+ * without this file having to name it.
+ */
 export type PageProps<
     T extends Record<string, unknown> = Record<string, unknown>,
-> = T & {
-    locale?: string;
-    locales?: Record<string, string>;
-    modules?: Record<string, string>;
-    navigation?: Record<string, any>;
-    breadcrumbs?: Breadcrumb[];
-    toast?: Toast;
-    settings: Settings;
-};
-
-declare module '@inertiajs/core' {
-    interface PageProps {
-        locale?: string;
-        locales?: Record<string, string>;
-        modules?: Record<string, string>;
-        navigation?: Record<string, any>;
-        breadcrumbs?: Breadcrumb[];
-        toast?: Toast;
-        settings: Settings;
-    }
-}
+> = T & InertiaPageProps;

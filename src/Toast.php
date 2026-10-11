@@ -4,55 +4,47 @@ namespace Saucebase\Core;
 
 use Illuminate\Support\Facades\Session;
 use Inertia\Inertia;
+use Saucebase\Core\Data\ToastActionData;
+use Saucebase\Core\Data\ToastData;
+use Saucebase\Core\Enums\ToastPosition;
+use Saucebase\Core\Enums\ToastType;
+use Spatie\LaravelData\Optional;
 
 class Toast
 {
-    /* Type constants */
-    const TYPE_DEFAULT = 'default';
+    const TYPE_DEFAULT = ToastType::Default->value;
 
-    const TYPE_SUCCESS = 'success';
+    const TYPE_SUCCESS = ToastType::Success->value;
 
-    const TYPE_ERROR = 'error';
+    const TYPE_ERROR = ToastType::Error->value;
 
-    const TYPE_INFO = 'info';
+    const TYPE_INFO = ToastType::Info->value;
 
-    const TYPE_WARNING = 'warning';
+    const TYPE_WARNING = ToastType::Warning->value;
 
-    const TYPE_LOADING = 'loading';
+    const TYPE_LOADING = ToastType::Loading->value;
 
-    /* Position constants */
-    const POSITION_TOP_LEFT = 'top-left';
+    const POSITION_TOP_LEFT = ToastPosition::TopLeft->value;
 
-    const POSITION_TOP_CENTER = 'top-center';
+    const POSITION_TOP_CENTER = ToastPosition::TopCenter->value;
 
-    const POSITION_TOP_RIGHT = 'top-right';
+    const POSITION_TOP_RIGHT = ToastPosition::TopRight->value;
 
-    const POSITION_BOTTOM_LEFT = 'bottom-left';
+    const POSITION_BOTTOM_LEFT = ToastPosition::BottomLeft->value;
 
-    const POSITION_BOTTOM_CENTER = 'bottom-center';
+    const POSITION_BOTTOM_CENTER = ToastPosition::BottomCenter->value;
 
-    const POSITION_BOTTOM_RIGHT = 'bottom-right';
+    const POSITION_BOTTOM_RIGHT = ToastPosition::BottomRight->value;
 
     const POSITION_DEFAULT = self::POSITION_BOTTOM_RIGHT;
 
-    private const TYPES = [
-        self::TYPE_DEFAULT,
-        self::TYPE_SUCCESS,
-        self::TYPE_ERROR,
-        self::TYPE_INFO,
-        self::TYPE_WARNING,
-        self::TYPE_LOADING,
-    ];
-
-    private const POSITIONS = [
-        self::POSITION_TOP_LEFT,
-        self::POSITION_TOP_CENTER,
-        self::POSITION_TOP_RIGHT,
-        self::POSITION_BOTTOM_LEFT,
-        self::POSITION_BOTTOM_CENTER,
-        self::POSITION_BOTTOM_RIGHT,
-    ];
-
+    /**
+     * What the frontend receives. An unknown type or position falls back to the default
+     * rather than failing a request over a toast.
+     *
+     * @param  array{label: string, type?: string, onClick?: string}|null  $action
+     * @return array<string, mixed>
+     */
     private static function payload(
         string $message,
         string $type,
@@ -61,23 +53,14 @@ class Toast
         ?int $duration = null,
         ?string $position = null
     ): array {
-
-        if (! in_array($type, self::TYPES, true)) {
-            $type = self::TYPE_DEFAULT;
-        }
-
-        if ($position !== null && ! in_array($position, self::POSITIONS, true)) {
-            $position = self::POSITION_DEFAULT;
-        }
-
-        return array_filter([
-            'message' => $message,
-            'type' => $type,
-            'description' => $description,
-            'action' => $action,
-            'duration' => $duration,
-            'position' => $position,
-        ], fn ($value) => $value !== null);
+        return (new ToastData(
+            message: $message,
+            type: ToastType::tryFrom($type) ?? ToastType::Default,
+            description: $description ?? new Optional,
+            action: $action === null ? new Optional : ToastActionData::from($action),
+            duration: $duration ?? new Optional,
+            position: $position === null ? new Optional : (ToastPosition::tryFrom($position) ?? ToastPosition::from(self::POSITION_DEFAULT)),
+        ))->toArray();
     }
 
     /**

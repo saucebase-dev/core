@@ -14,7 +14,7 @@ import {
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { handleAction } from '@saucebase/vue/lib/navigation';
-import type { MenuBadge, MenuItem } from '@/types/navigation';
+import type { MenuBadge, MenuItem } from '@saucebase/core/types';
 import { Link } from '@inertiajs/vue3';
 import { computed, inject } from 'vue';
 import IconChevronRight from '~icons/lucide/chevron-right';

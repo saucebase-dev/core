@@ -7,7 +7,7 @@ import {
     SidebarHeader,
 } from '@/components/ui/sidebar/index';
 import type { User } from '@/types';
-import type { Navigation } from '@/types/navigation';
+import type { Navigation } from '@saucebase/core/types';
 import { hasGlobalComponent } from '@saucebase/vue/lib/globalComponents';
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';

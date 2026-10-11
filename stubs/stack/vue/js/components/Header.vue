@@ -3,7 +3,7 @@ import { useAuth } from '@saucebase/vue/composables/useAuth';
 import { modules } from '@saucebase/vue/composables/useModules';
 import { handleAction } from '@saucebase/vue/lib/navigation';
 import { cn } from '@/lib/utils';
-import type { MenuItem } from '@/types/navigation';
+import type { MenuItem } from '@saucebase/core/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import { ArrowRight, ExternalLink } from '@lucide/vue';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';

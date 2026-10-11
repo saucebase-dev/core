@@ -8,7 +8,7 @@ import {
     SidebarHeader,
 } from '@/components/ui/sidebar';
 import type { PageProps, User } from '@/types';
-import type { Navigation } from '@/types/navigation';
+import type { Navigation } from '@saucebase/core/types';
 import { usePage } from '@inertiajs/react';
 import {
     getGlobalComponents,

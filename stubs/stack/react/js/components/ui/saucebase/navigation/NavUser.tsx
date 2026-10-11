@@ -25,7 +25,7 @@ import {
 } from '@saucebase/react/lib/globalComponents';
 import { handleAction } from '@saucebase/react/lib/navigation';
 import type { User } from '@/types';
-import type { MenuItem } from '@/types/navigation';
+import type { MenuItem } from '@saucebase/core/types';
 import { Link } from '@inertiajs/react';
 import type { ComponentProps } from 'react';
 import { ChevronsUpDown, UserCircle } from 'lucide-react';

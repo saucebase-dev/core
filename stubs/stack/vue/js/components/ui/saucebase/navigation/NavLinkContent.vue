@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MenuBadge } from '@/types/navigation';
+import type { MenuBadge } from '@saucebase/core/types';
 import { computed } from 'vue';
 import IconExternalLink from '~icons/lucide/arrow-up-right';
 import NavBadge from './NavBadge.vue';

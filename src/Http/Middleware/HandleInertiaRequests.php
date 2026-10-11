@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Config;
 use Inertia\Middleware;
 use InterNACHI\Modular\Support\ModuleRegistry;
 use Saucebase\Breadcrumbs\Breadcrumbs;
+use Saucebase\Core\Data\GeneralSettingsData;
 use Saucebase\Core\Navigation\Navigation;
 use Saucebase\Core\Settings\GeneralSettings;
 use Saucebase\Core\Settings\SectionRegistry;
@@ -54,25 +55,7 @@ class HandleInertiaRequests extends Middleware
             'settings.sections' => fn () => app(SectionRegistry::class)->forFrontend(),
             'breadcrumbs' => fn () => $this->getBreadcrumbs(),
             'toast' => fn () => $request->session()->pull('toast'),
-            'settings.general' => function (): array {
-                $settings = app(GeneralSettings::class);
-
-                return [
-                    ...$settings->toCollection()->only([
-                        'site_name',
-                        'site_tagline',
-                        'site_description',
-                    ])->all(),
-
-                    // Resolved URLs rather than stored paths, so the frontend never has
-                    // to know whether an asset is one core ships or one someone uploaded.
-                    // All four are always present — there is no unset state to handle.
-                    'site_logo_on_light' => $settings->logoOnLightUrl(),
-                    'site_logo_on_dark' => $settings->logoOnDarkUrl(),
-                    'site_icon_on_light' => $settings->iconOnLightUrl(),
-                    'site_icon_on_dark' => $settings->iconOnDarkUrl(),
-                ];
-            },
+            'settings.general' => fn (): GeneralSettingsData => GeneralSettingsData::fromSettings(app(GeneralSettings::class)),
             // Ziggy data is computed lazily so it can be skipped on partial reloads
             'ziggy' => fn () => [
                 ...(new Ziggy)->toArray(),

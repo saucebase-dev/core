@@ -1,6 +1,4 @@
-import { PageProps as InertiaPageProps } from '@inertiajs/core';
-import { route as ziggyRoute } from 'ziggy-js';
-import { PageProps as AppPageProps } from './';
+import type { route as ziggyRoute } from 'ziggy-js';
 
 declare global {
     var route: typeof ziggyRoute;
@@ -9,12 +7,5 @@ declare global {
 declare module 'vue' {
     interface ComponentCustomProperties {
         route: typeof ziggyRoute;
-    }
-}
-
-declare module '@inertiajs/core' {
-    interface PageProps extends InertiaPageProps, AppPageProps {}
-    interface InertiaConfig {
-        flashDataType: Toast;
     }
 }

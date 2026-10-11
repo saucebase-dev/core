@@ -1,3 +1,5 @@
+/// <reference path="../types/generated.d.ts" />
+
 import type { Page } from '@inertiajs/core';
 
 /** One section of the settings modal, contributed by core or by a module. */
@@ -10,22 +12,7 @@ export type SettingsSection = {
 
 export type Settings = {
     sections: SettingsSection[];
-    general: {
-        site_name: string;
-        site_tagline: string | null;
-        site_description: string | null;
-        /**
-         * The uploaded asset's URL, or null when none was uploaded — render
-         * `BRAND_FALLBACKS` in its place.
-         *
-         * The suffix names the background the asset sits on, not the colour of its
-         * ink — `on_dark` is the light-coloured artwork.
-         */
-        site_logo_on_light: string | null;
-        site_logo_on_dark: string | null;
-        site_icon_on_light: string | null;
-        site_icon_on_dark: string | null;
-    };
+    general: Saucebase.Core.Data.GeneralSettingsData;
     [domain: string]: unknown;
 };
 

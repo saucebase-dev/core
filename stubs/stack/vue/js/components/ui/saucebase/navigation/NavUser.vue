@@ -25,7 +25,7 @@ import { settingsHref } from '@saucebase/vue/composables/useSettingsModal';
 import { hasGlobalComponent } from '@saucebase/vue/lib/globalComponents';
 import { handleAction } from '@saucebase/vue/lib/navigation';
 import type { User } from '@/types';
-import type { MenuBadge, MenuItem } from '@/types/navigation';
+import type { MenuBadge, MenuItem } from '@saucebase/core/types';
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import IconChevronsUpDown from '~icons/lucide/chevrons-up-down';

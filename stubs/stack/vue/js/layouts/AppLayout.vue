@@ -17,7 +17,7 @@ import {
     SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { useSidebarState } from '@/composables/useSidebarState';
-import { Breadcrumb as BreadcrumbType } from '@/types';
+import type { Breadcrumb as BreadcrumbType } from '@saucebase/core/types';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 

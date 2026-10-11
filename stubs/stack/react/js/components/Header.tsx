@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import type { MenuItem } from '@/types/navigation';
+import type { MenuItem } from '@saucebase/core/types';
 import { Link, usePage } from '@inertiajs/react';
 import { useAuth } from '@saucebase/react/hooks/useAuth';
 import { useModules } from '@saucebase/react/hooks/useModules';

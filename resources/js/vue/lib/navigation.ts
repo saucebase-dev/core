@@ -1,12 +1,13 @@
 import type { Component } from 'vue';
+import type { ActionHandler } from '../../types';
+
+export type { ActionHandler };
 
 /**
  * What a navigation item does when it names an `action` instead of a URL, and which
  * component draws the icon it names. The app and modules fill both from their entries;
  * nothing is registered here.
  */
-export type ActionHandler = (event: MouseEvent) => void | Promise<void>;
-
 const actionRegistry: Record<string, ActionHandler> = {};
 const iconRegistry: Record<string, Component> = {};
 
