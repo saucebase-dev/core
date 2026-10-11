@@ -60,6 +60,7 @@ class InstallCommand extends Command
         $this->components->bulletList([
             'npm install && npm run build',
             'php artisan migrate --seed',
+            'composer require saucebase/auth (sign-in pages: the dashboard and the admin panel need them)',
         ]);
 
         return self::SUCCESS;

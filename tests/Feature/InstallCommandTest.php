@@ -91,6 +91,14 @@ class InstallCommandTest extends TestCase
         $this->assertStringContainsString('resources/js', $this->read('tsconfig.json'));
     }
 
+    /** Core has no sign-in pages, and the dashboard and admin panel redirect guests to one. */
+    public function test_it_says_to_add_the_auth_module(): void
+    {
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])
+            ->expectsOutputToContain('composer require saucebase/auth')
+            ->assertSuccessful();
+    }
+
     public function test_it_keeps_other_settings_in_saucebase_json(): void
     {
         $this->files->put($this->appPath.'/saucebase.json', '{"ssr": false}');
