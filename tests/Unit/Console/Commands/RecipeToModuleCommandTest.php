@@ -194,7 +194,7 @@ class RecipeToModuleCommandTest extends TestCase
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private function writeFrontendJson(array $data): void
+    private function writeSaucebaseJson(array $data): void
     {
         file_put_contents($this->tmpDir.'/saucebase.json', json_encode($data));
     }
@@ -218,7 +218,7 @@ class RecipeToModuleCommandTest extends TestCase
 
     public function test_aborts_when_no_framework_is_selected(): void
     {
-        $this->writeFrontendJson(['framework' => null]);
+        $this->writeSaucebaseJson(['framework' => null]);
 
         $this->artisan('saucebase:recipe', ['module' => 'TestExit'])
             ->expectsPromptsError('No frontend framework selected. Run `saucebase stack vue` or `saucebase stack react` first.');
@@ -242,7 +242,7 @@ class RecipeToModuleCommandTest extends TestCase
         $this->assertFileDoesNotExist($this->jsRoot().'/app.ts');
     }
 
-    // ── writeModuleEntryPoint: dev mode ───────────────────────────────────────
+    // ── writeModuleEntryPoint: contributor checkout ───────────────────────────────────────
 
     public function test_dev_mode_react_writes_proxy(): void
     {

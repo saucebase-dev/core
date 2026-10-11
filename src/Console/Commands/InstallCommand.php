@@ -5,7 +5,7 @@ namespace Saucebase\Core\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
-use Saucebase\Core\FrontendConfig;
+use Saucebase\Core\ProjectConfig;
 
 /**
  * Turns a new Laravel application into a Saucebase one.
@@ -28,7 +28,7 @@ class InstallCommand extends Command
     /** How the stack stubs name their own location, which an installed application must not keep. */
     private const CORE_STACK = 'vendor/saucebase/core/stubs/stack';
 
-    public function handle(Filesystem $files, FrontendConfig $config): int
+    public function handle(Filesystem $files, ProjectConfig $config): int
     {
         if ($config->getFramework() !== null) {
             $this->components->error("Saucebase is already installed with {$config->getFramework()}.");

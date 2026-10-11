@@ -1,18 +1,31 @@
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import type { DefineComponent } from 'vue';
 
-declare const __SAUCEBASE_APP_JS__: string;
 declare const __SAUCEBASE_CONTRIBUTOR__: boolean;
-declare const __SAUCEBASE_FRAMEWORK__: string;
 
 /** A contributor checkout keeps each framework's module files in their own folder; an installed app is flat. */
-const tree = __SAUCEBASE_CONTRIBUTOR__ ? `${__SAUCEBASE_FRAMEWORK__}/` : '';
+const tree = __SAUCEBASE_CONTRIBUTOR__ ? 'vue/' : '';
+
+let appPages: Record<string, () => Promise<DefineComponent>> = {};
+
+/**
+ * Tells the resolver which pages are the app's. The app globs its own `pages` folder
+ * from its entry and registers the result once, so where they live is the app's
+ * business and not this file's.
+ */
+export function registerAppPages(
+    pages: Record<string, () => Promise<DefineComponent>>,
+): void {
+    appPages = pages;
+}
 
 /**
  * Finds the component for an Inertia page name: `Dashboard` in the app's pages,
  * `Billing::Checkout` in the Billing module's.
  */
-export function resolveModularPageComponent(name: string) {
+export function resolveModularPageComponent(
+    name: string,
+): Promise<DefineComponent> {
     if (name.includes('::')) {
         const [moduleName, componentPath] = name.split('::', 2);
         const moduleFolderName = moduleName
@@ -27,13 +40,5 @@ export function resolveModularPageComponent(name: string) {
         );
     }
 
-    return resolvePageComponent(
-        `${__SAUCEBASE_APP_JS__}/pages/${name}.vue`,
-        // One or the other, so an installed app does not also build core's copy of its pages.
-        __SAUCEBASE_CONTRIBUTOR__
-            ? import.meta.glob<DefineComponent>(
-                  '/vendor/saucebase/core/stubs/stack/vue/js/pages/**/*.vue',
-              )
-            : import.meta.glob<DefineComponent>('/resources/js/pages/**/*.vue'),
-    );
+    return resolvePageComponent(`./pages/${name}.vue`, appPages);
 }

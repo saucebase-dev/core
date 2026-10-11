@@ -4,10 +4,13 @@ import { initializeModals } from '@saucebase/core/lib/modal';
 import { siteTitle } from '@saucebase/core/lib/settings';
 import { useLocalization } from '@saucebase/vue/composables/useLocalization';
 import { resolveLanguage } from '@saucebase/vue/lib/language';
-import { resolveModularPageComponent } from '@saucebase/vue/lib/pages';
+import {
+    registerAppPages,
+    resolveModularPageComponent,
+} from '@saucebase/vue/lib/pages';
 import { useColorMode } from '@vueuse/core';
 import { i18nVue, loadLanguageAsync } from 'laravel-vue-i18n';
-import { createApp, h } from 'vue';
+import { createApp, h, type DefineComponent } from 'vue';
 import { ZiggyVue } from 'ziggy-js';
 import { registerNavigationDefaults } from './lib/navigation';
 
@@ -29,6 +32,8 @@ registerNavigationDefaults();
 const moduleSetups = discoverModuleSetups();
 
 initializeModals(putConfig);
+
+registerAppPages(import.meta.glob<DefineComponent>('./pages/**/*.vue'));
 
 createInertiaApp({
     title: siteTitle,

@@ -55,8 +55,6 @@ export function saucebase({
                 return {
                     define: {
                         __SAUCEBASE_CONTRIBUTOR__: JSON.stringify(contributor),
-                        __SAUCEBASE_FRAMEWORK__: JSON.stringify(framework),
-                        __SAUCEBASE_APP_JS__: JSON.stringify(`/${appJs}`),
                     },
                     resolve: {
                         // Keep vendor/ paths when core is symlinked (a Composer path repository),

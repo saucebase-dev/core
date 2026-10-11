@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\View as ViewInstance;
 use Inertia\Response;
-use Saucebase\Core\FrontendConfig;
+use Saucebase\Core\ProjectConfig;
 use Saucebase\Core\Settings\GeneralSettings;
 
 class InertiaServiceProvider extends ServiceProvider
@@ -34,7 +34,7 @@ class InertiaServiceProvider extends ServiceProvider
 
         Response::macro('withSSR', function () {
             /** @var Response $this */
-            if (! app(FrontendConfig::class)->ssr()) {
+            if (! app(ProjectConfig::class)->ssr()) {
                 return $this;
             }
 

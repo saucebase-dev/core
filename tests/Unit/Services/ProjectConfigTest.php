@@ -2,7 +2,7 @@
 
 namespace Saucebase\Core\Tests\Unit\Services;
 
-use Saucebase\Core\FrontendConfig;
+use Saucebase\Core\ProjectConfig;
 use Saucebase\Core\Tests\TestCase;
 
 /**
@@ -14,7 +14,7 @@ use Saucebase\Core\Tests\TestCase;
  * page. Both reads are error-suppressed, which makes a malformed file indistinguishable
  * from a missing one at the call site; these pin that down as deliberate.
  */
-class FrontendConfigTest extends TestCase
+class ProjectConfigTest extends TestCase
 {
     private string $path;
 
@@ -45,7 +45,7 @@ class FrontendConfigTest extends TestCase
     {
         $this->assertFileDoesNotExist($this->path);
 
-        $config = new FrontendConfig;
+        $config = new ProjectConfig;
 
         $this->assertNull($config->getFramework());
         $this->assertFalse($config->isContributor());
@@ -55,7 +55,7 @@ class FrontendConfigTest extends TestCase
     {
         $this->writeConfig('{ not json');
 
-        $config = new FrontendConfig;
+        $config = new ProjectConfig;
 
         $this->assertNull($config->getFramework());
         $this->assertFalse($config->isContributor());
@@ -65,7 +65,7 @@ class FrontendConfigTest extends TestCase
     {
         $this->writeConfig(json_encode(['framework' => 'vue', 'contributor' => true]));
 
-        $config = new FrontendConfig;
+        $config = new ProjectConfig;
 
         $this->assertSame('vue', $config->getFramework());
         $this->assertTrue($config->isContributor());
@@ -79,18 +79,18 @@ class FrontendConfigTest extends TestCase
     {
         $this->writeConfig(json_encode(['framework' => 'react', 'contributor' => 'true']));
 
-        $this->assertFalse((new FrontendConfig)->isContributor());
+        $this->assertFalse((new ProjectConfig)->isContributor());
     }
 
     public function test_server_rendering_is_on_unless_the_file_turns_it_off(): void
     {
-        $this->assertTrue((new FrontendConfig)->ssr());
+        $this->assertTrue((new ProjectConfig)->ssr());
 
         $this->writeConfig(json_encode(['framework' => 'vue']));
-        $this->assertTrue((new FrontendConfig)->ssr());
+        $this->assertTrue((new ProjectConfig)->ssr());
 
         $this->writeConfig(json_encode(['framework' => 'vue', 'ssr' => false]));
-        $this->assertFalse((new FrontendConfig)->ssr());
+        $this->assertFalse((new ProjectConfig)->ssr());
     }
 
     /**
@@ -101,12 +101,12 @@ class FrontendConfigTest extends TestCase
     {
         $this->writeConfig(json_encode(['framework' => 'vue']));
 
-        $config = new FrontendConfig;
+        $config = new ProjectConfig;
         $this->assertSame('vue', $config->getFramework());
 
         $this->writeConfig(json_encode(['framework' => 'react']));
 
         $this->assertSame('vue', $config->getFramework());
-        $this->assertSame('react', (new FrontendConfig)->getFramework());
+        $this->assertSame('react', (new ProjectConfig)->getFramework());
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Saucebase\Core;
 
-class FrontendConfig
+class ProjectConfig
 {
     /** @var array<string, mixed>|null */
     private ?array $data = null;

@@ -1,53 +1,54 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// Returns the path it was asked for, so the tests read which file a page name maps to.
+// Returns the path it was asked for and the pages it was given, so the tests read which
+// file a page name maps to and where it is looked up.
 vi.mock('laravel-vite-plugin/inertia-helpers', () => ({
-    resolvePageComponent: (path: string) => path,
+    resolvePageComponent: (path: string, pages: object) => ({ path, pages }),
 }));
 
-async function resolve(name: string, dev: boolean) {
+const appPages = {};
+
+async function resolve(name: string, contributor: boolean) {
     vi.resetModules();
-    vi.stubGlobal('__SAUCEBASE_CONTRIBUTOR__', dev);
-    vi.stubGlobal('__SAUCEBASE_FRAMEWORK__', 'vue');
-    vi.stubGlobal(
-        '__SAUCEBASE_APP_JS__',
-        dev ? '/vendor/saucebase/core/stubs/stack/vue/js' : '/resources/js',
-    );
+    vi.stubGlobal('__SAUCEBASE_CONTRIBUTOR__', contributor);
 
-    const { resolveModularPageComponent } = await import('./pages');
+    const { registerAppPages, resolveModularPageComponent } =
+        await import('./pages');
+    registerAppPages(appPages);
 
-    return resolveModularPageComponent(name);
+    return resolveModularPageComponent(name) as unknown as {
+        path: string;
+        pages: object;
+    };
 }
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe('resolveModularPageComponent', () => {
-    it('finds app pages in an installed app', async () => {
-        expect(await resolve('Dashboard', false)).toBe(
-            '/resources/js/pages/Dashboard.vue',
-        );
-        expect(await resolve('Errors/NotFound', false)).toBe(
-            '/resources/js/pages/Errors/NotFound.vue',
-        );
-    });
+    it('finds app pages among the ones the app registered', async () => {
+        const page = await resolve('Dashboard', false);
 
-    it('finds app pages in a contributor checkout', async () => {
-        expect(await resolve('Dashboard', true)).toBe(
-            '/vendor/saucebase/core/stubs/stack/vue/js/pages/Dashboard.vue',
+        expect(page.path).toBe('./pages/Dashboard.vue');
+        expect(page.pages).toBe(appPages);
+        expect((await resolve('Errors/NotFound', true)).path).toBe(
+            './pages/Errors/NotFound.vue',
         );
     });
 
     it('finds module pages, turning the module name into its folder', async () => {
-        expect(await resolve('Billing::Checkout', false)).toBe(
+        const page = await resolve('Billing::Checkout', false);
+
+        expect(page.path).toBe(
             '/modules/billing/resources/js/pages/Checkout.vue',
         );
-        expect(await resolve('BillingPortal::Plans/Index', false)).toBe(
+        expect(page.pages).not.toBe(appPages);
+        expect((await resolve('BillingPortal::Plans/Index', false)).path).toBe(
             '/modules/billing-portal/resources/js/pages/Plans/Index.vue',
         );
     });
 
     it('finds module pages in a contributor checkout', async () => {
-        expect(await resolve('Billing::Checkout', true)).toBe(
+        expect((await resolve('Billing::Checkout', true)).path).toBe(
             '/modules/billing/resources/js/vue/pages/Checkout.vue',
         );
     });

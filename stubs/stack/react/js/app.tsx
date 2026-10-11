@@ -1,7 +1,7 @@
 import App from '@/components/App';
 import { initializeTheme } from '@/hooks/useTheme';
 import '@css/app.css';
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, type ResolvedComponent } from '@inertiajs/react';
 import {
     initFromPageProps,
     ModalRoot,
@@ -17,7 +17,10 @@ import {
     executeAfterMountCallbacks,
     executeModuleSetups,
 } from '@saucebase/react/lib/moduleSetup';
-import { resolveModularPageComponent } from '@saucebase/react/lib/pages';
+import {
+    registerAppPages,
+    resolveModularPageComponent,
+} from '@saucebase/react/lib/pages';
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 import { registerNavigationDefaults } from './lib/navigation';
@@ -29,6 +32,8 @@ registerNavigationDefaults();
 const moduleSetups = discoverModuleSetups();
 
 initializeModals(putConfig);
+
+registerAppPages(import.meta.glob<ResolvedComponent>('./pages/**/*.tsx'));
 
 createInertiaApp({
     title: siteTitle,

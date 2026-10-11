@@ -38,8 +38,6 @@ describe('saucebase()', () => {
         expect(resolve.alias['@']).toBe(path.join(root, 'resources/js'));
         expect(resolve.alias['@modules']).toBe(path.join(root, 'modules'));
         expect(define.__SAUCEBASE_CONTRIBUTOR__).toBe('false');
-        expect(define.__SAUCEBASE_APP_JS__).toBe('"/resources/js"');
-        expect(define.__SAUCEBASE_FRAMEWORK__).toBe('"vue"');
     });
 
     it("points @ at core's own copy of the UI in a contributor checkout", () => {
@@ -54,9 +52,6 @@ describe('saucebase()', () => {
             path.join(root, 'vendor/saucebase/core/stubs/stack/vue/js'),
         );
         expect(define.__SAUCEBASE_CONTRIBUTOR__).toBe('true');
-        expect(define.__SAUCEBASE_APP_JS__).toBe(
-            '"/vendor/saucebase/core/stubs/stack/vue/js"',
-        );
     });
 
     it('skips the server build when saucebase.json turns server rendering off', () => {

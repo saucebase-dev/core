@@ -5,7 +5,7 @@ namespace Saucebase\Core\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use RuntimeException;
-use Saucebase\Core\FrontendConfig;
+use Saucebase\Core\ProjectConfig;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 use Symfony\Component\Finder\Finder;
 
@@ -63,7 +63,7 @@ class RecipeToModuleCommand extends Command
             return true;
         }
 
-        $frontendConfig = app(FrontendConfig::class);
+        $frontendConfig = app(ProjectConfig::class);
         $framework = $frontendConfig->getFramework();
 
         if ($framework === null) {

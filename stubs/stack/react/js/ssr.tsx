@@ -1,13 +1,18 @@
 import App from '@/components/App';
-import { createInertiaApp } from '@inertiajs/react';
+import { createInertiaApp, type ResolvedComponent } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
 import { siteTitle } from '@saucebase/core/lib/settings';
 import { I18nProvider } from '@saucebase/react/i18n';
-import { resolveModularPageComponent } from '@saucebase/react/lib/pages';
+import {
+    registerAppPages,
+    resolveModularPageComponent,
+} from '@saucebase/react/lib/pages';
 import ReactDOMServer from 'react-dom/server';
 import { registerNavigationDefaults } from './lib/navigation';
 
 registerNavigationDefaults();
+
+registerAppPages(import.meta.glob<ResolvedComponent>('./pages/**/*.tsx'));
 
 createServer((page) => {
     return createInertiaApp({
