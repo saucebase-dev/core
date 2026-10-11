@@ -5,7 +5,7 @@ namespace Saucebase\Core\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use RuntimeException;
-use Saucebase\Core\Services\FrontendConfig;
+use Saucebase\Core\ProjectConfig;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 use Symfony\Component\Finder\Finder;
 
@@ -63,7 +63,7 @@ class RecipeToModuleCommand extends Command
             return true;
         }
 
-        $frontendConfig = app(FrontendConfig::class);
+        $frontendConfig = app(ProjectConfig::class);
         $framework = $frontendConfig->getFramework();
 
         if ($framework === null) {
@@ -72,7 +72,7 @@ class RecipeToModuleCommand extends Command
             return true;
         }
 
-        $isDev = $frontendConfig->isDev();
+        $isContributor = $frontendConfig->isContributor();
 
         $this->template = $this->getTemplate();
         $this->templatePath = base_path($this->template);
@@ -85,7 +85,7 @@ class RecipeToModuleCommand extends Command
         }
 
         $this->generate();
-        $this->writeModuleEntryPoint($framework, $isDev);
+        $this->writeModuleEntryPoint($framework, $isContributor);
         $this->registerInTaskfile();
         $this->registerInComposer();
 
@@ -343,11 +343,11 @@ class RecipeToModuleCommand extends Command
         return ucwords(str_replace('_', ' ', Str::snake($value)));
     }
 
-    protected function writeModuleEntryPoint(string $framework, bool $isDev): void
+    protected function writeModuleEntryPoint(string $framework, bool $isContributor): void
     {
         $entryPoint = $this->moduleConfigPath.$this->moduleFolder.'/resources/js/app.ts';
 
-        if (! $isDev) {
+        if (! $isContributor) {
             // Install mode: for React, remove the stale app.ts proxy — app.tsx is the real entry.
             if ($framework === 'react' && file_exists($entryPoint)) {
                 $this->fs->remove($entryPoint);

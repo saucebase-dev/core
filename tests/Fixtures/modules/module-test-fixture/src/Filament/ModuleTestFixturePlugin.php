@@ -18,4 +18,9 @@ class ModuleTestFixturePlugin implements Plugin
     {
         return 'module-test-fixture';
     }
+
+    public static function getNavigationGroupSort(): int
+    {
+        return 10;
+    }
 }

@@ -5,8 +5,9 @@ namespace Saucebase\Core\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Config;
 use InterNACHI\Modular\Support\ModuleRegistry;
+use Saucebase\Core\TypeScript\TypeScriptConfig;
+use Spatie\TypeScriptTransformer\TypeScriptTransformerConfig;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -89,24 +90,16 @@ class GenerateModuleTypesCommand extends Command
 
         $typesDir = module_path($name, 'resources/js/types');
 
-        if (! is_dir($typesDir)) {
-            mkdir($typesDir, 0755, true);
-        }
-
         $this->components->task("Generate types · {$name}", function () use ($appPath, $typesDir): bool {
-            $originalDiscoverTypes = Config::get('typescript-transformer.auto_discover_types');
-            $originalOutputFile = Config::get('typescript-transformer.output_file');
+            app()->instance(TypeScriptTransformerConfig::class, TypeScriptConfig::make($appPath, $typesDir));
 
-            Config::set('typescript-transformer.auto_discover_types', [$appPath]);
-            Config::set('typescript-transformer.output_file', "{$typesDir}/generated.d.ts");
+            try {
+                $output = $this->getOutput()->isVerbose() ? $this->output : null;
 
-            $output = $this->getOutput()->isVerbose() ? $this->output : null;
-            Artisan::call('typescript:transform', [], $output);
-
-            Config::set('typescript-transformer.auto_discover_types', $originalDiscoverTypes);
-            Config::set('typescript-transformer.output_file', $originalOutputFile);
-
-            return true;
+                return Artisan::call('typescript:transform', [], $output) === self::SUCCESS;
+            } finally {
+                app()->forgetInstance(TypeScriptTransformerConfig::class);
+            }
         });
 
         return self::SUCCESS;

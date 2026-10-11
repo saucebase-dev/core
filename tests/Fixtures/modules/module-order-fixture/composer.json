@@ -1,0 +1,11 @@
+{
+    "name": "saucebase/module-order-fixture",
+    "description": "Second fixture module for core's tests. It exists to be sorted against module-test-fixture: it declares no navigation group sort and is discovered first, alphabetically.",
+    "type": "saucebase-module",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Modules\\ModuleOrderFixture\\": "src/"
+        }
+    }
+}

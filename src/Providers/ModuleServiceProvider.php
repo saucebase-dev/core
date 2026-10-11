@@ -30,6 +30,7 @@ abstract class ModuleServiceProvider extends ServiceProvider
         // internachi currently only discovers lang/ inside resources/, but modules keep it at root.
         $this->registerTranslations();
         $this->registerPublicAssets();
+        $this->registerTestMigrations();
         $this->shareInertiaData();
     }
 
@@ -76,6 +77,19 @@ abstract class ModuleServiceProvider extends ServiceProvider
 
         $this->publishes([module_path($this->moduleName(), $configPath) => config_path($this->moduleName().'.php')], $configPath);
         $this->mergeConfigFrom(module_path($this->moduleName(), $configPath), $this->moduleName());
+    }
+
+    /**
+     * Tables for test-only models, migrated with the rest so a test never runs DDL inside
+     * its transaction (on MySQL that commits it).
+     */
+    protected function registerTestMigrations(): void
+    {
+        $path = module_path($this->moduleName(), 'tests/Support/migrations');
+
+        if ($this->app->runningUnitTests() && is_dir($path)) {
+            $this->loadMigrationsFrom($path);
+        }
     }
 
     protected function registerPublicAssets(): void

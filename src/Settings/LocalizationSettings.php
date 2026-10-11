@@ -14,7 +14,7 @@ use Spatie\LaravelSettings\Settings;
  *
  * - The filesystem decides which locales *exist*. A locale is real only if translation
  *   files shipped for it, so {@see available()} looks for them rather than trusting a list.
- * - `config('app.available_locales')` decides what each one is *called*.
+ * - `config('saucebase.locales')` decides what each one is *called*.
  * - This object decides which of them the admin *offers*.
  *
  * Deliberately separate from {@see GeneralSettings}: the tenancy module clones and
@@ -46,14 +46,16 @@ class LocalizationSettings extends Settings
         $paths = [
             ...glob(lang_path('*'), GLOB_ONLYDIR) ?: [],
             ...glob(base_path('modules/*/lang/*'), GLOB_ONLYDIR) ?: [],
+            // `translatable:export` writes `lang/<locale>.json` and no directory.
+            ...array_map(fn (string $file): string => basename($file, '.json'), glob(lang_path('*.json')) ?: []),
         ];
 
         $locales = [];
 
         foreach (array_unique(array_map('basename', $paths)) as $code) {
-            // `lang/vendor/` holds published package translations grouped by package, not
-            // a locale of its own.
-            if ($code === 'vendor') {
+            // Not locales: `lang/vendor/` holds published package translations grouped by
+            // package, and `php_*.json` is laravel-vue-i18n's build output.
+            if ($code === 'vendor' || str_starts_with($code, 'php_')) {
                 continue;
             }
 
@@ -98,7 +100,7 @@ class LocalizationSettings extends Settings
      */
     private function displayName(string $code): string
     {
-        $configured = config('app.available_locales', [])[$code] ?? null;
+        $configured = config('saucebase.locales', [])[$code] ?? null;
 
         if (is_string($configured)) {
             return $configured;

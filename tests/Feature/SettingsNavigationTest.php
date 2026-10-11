@@ -5,9 +5,10 @@ namespace Saucebase\Core\Tests\Feature;
 use Filament\Facades\Filament;
 use Filament\Navigation\NavigationGroup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Saucebase\Core\Filament\Admin\Pages\GeneralSettings;
+use Saucebase\Core\Filament\Pages\GeneralSettings;
 use Saucebase\Core\Tests\Fixtures\User;
 use Saucebase\Core\Tests\TestCase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class SettingsNavigationTest extends TestCase
@@ -24,7 +25,9 @@ class SettingsNavigationTest extends TestCase
     public function test_filament_builds_the_settings_navigation_group_from_page_metadata(): void
     {
         $admin = User::factory()->create();
-        $admin->assignRole('admin');
+        assert($admin instanceof User);
+
+        $admin->assignRole('admin')->givePermissionTo(Permission::findOrCreate('manage settings'));
 
         $this->actingAs($admin);
 
@@ -54,12 +57,27 @@ class SettingsNavigationTest extends TestCase
     public function test_settings_pages_do_not_render_duplicate_sub_navigation(): void
     {
         $admin = User::factory()->create();
-        $admin->assignRole('admin');
+        assert($admin instanceof User);
+
+        $admin->assignRole('admin')->givePermissionTo(Permission::findOrCreate('manage settings'));
 
         $this->actingAs($admin);
 
         $page = app(GeneralSettings::class);
 
         $this->assertSame([], $page->getSubNavigation());
+    }
+
+    /** A settings page is site-wide unless its module overrides `canAccess()`. */
+    public function test_a_settings_page_needs_the_manage_settings_permission(): void
+    {
+        $user = User::factory()->create();
+        assert($user instanceof User);
+
+        $this->actingAs($user);
+        $this->assertFalse(GeneralSettings::canAccess());
+
+        $this->actingAs(User::factory()->create()->givePermissionTo(Permission::findOrCreate('manage settings')));
+        $this->assertTrue(GeneralSettings::canAccess());
     }
 }

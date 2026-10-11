@@ -50,6 +50,28 @@ class LocalizationSettingsTest extends TestCase
         $this->assertSame('Português', $available['pt_BR']);
     }
 
+    /**
+     * `translatable:export` writes `lang/<locale>.json` and no directory, so the file alone
+     * must offer the language. The `php_*.json` beside it are laravel-vue-i18n's build output.
+     */
+    public function test_a_json_translation_file_offers_its_locale(): void
+    {
+        $files = [lang_path('es.json'), lang_path('php_es.json')];
+
+        foreach ($files as $file) {
+            file_put_contents($file, '{}');
+        }
+
+        try {
+            $available = app(LocalizationSettings::class)->available();
+        } finally {
+            array_map(unlink(...), $files);
+        }
+
+        $this->assertArrayHasKey('es', $available);
+        $this->assertArrayNotHasKey('php_es', $available);
+    }
+
     public function test_disabling_a_locale_removes_it_from_the_shared_prop(): void
     {
         $this->setEnabledLocales(['en'], 'en');

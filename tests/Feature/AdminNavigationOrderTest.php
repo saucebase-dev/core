@@ -7,6 +7,7 @@ use Filament\Navigation\NavigationGroup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Saucebase\Core\Tests\Fixtures\User;
 use Saucebase\Core\Tests\TestCase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 /**
@@ -35,7 +36,8 @@ class AdminNavigationOrderTest extends TestCase
     private function navigationLabels(): array
     {
         $user = User::factory()->create();
-        $user->assignRole('admin');
+        assert($user instanceof User);
+        $user->assignRole('admin')->givePermissionTo(Permission::findOrCreate('manage settings'));
 
         $this->actingAs($user);
 

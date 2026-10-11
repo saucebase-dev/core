@@ -5,6 +5,7 @@ namespace Saucebase\Core\Tests\Feature;
 use Filament\Facades\Filament;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Modules\ModuleTestFixture\Filament\ModuleTestFixturePlugin;
 use Modules\ModuleTestFixture\Providers\ModuleTestFixtureServiceProvider;
@@ -35,6 +36,15 @@ class ModuleIntegrationTest extends TestCase
     public function test_the_module_provider_registers_its_translations_under_the_module_namespace(): void
     {
         $this->assertSame('Module test fixture', __('module-test-fixture::module-test-fixture.title'));
+    }
+
+    /**
+     * Test-only tables migrate with the rest, before a test's transaction opens: DDL inside
+     * a test commits that transaction on MySQL.
+     */
+    public function test_the_module_test_migrations_run_under_unit_tests(): void
+    {
+        $this->assertTrue(Schema::hasTable('fixture_test_rows'));
     }
 
     public function test_a_settings_section_is_discovered_in_the_module(): void
@@ -92,6 +102,21 @@ class ModuleIntegrationTest extends TestCase
             ->assertSuccessful();
 
         $this->assertFileExists(module_path('module-test-fixture', 'resources/js/types/generated.d.ts'));
+    }
+
+    public function test_generated_types_contain_only_classes_marked_for_typescript(): void
+    {
+        $this->artisan('module:generate-types', ['module' => ['module-test-fixture']])
+            ->assertSuccessful();
+
+        $types = file_get_contents(module_path('module-test-fixture', 'resources/js/types/generated.d.ts'));
+
+        $this->assertStringContainsString("FixtureStatus = 'draft' | 'published'", $types);
+        $this->assertStringContainsString('title: string', $types);
+        $this->assertStringContainsString('count: number | null', $types);
+        $this->assertStringContainsString('status: Modules.ModuleTestFixture.Enums.FixtureStatus', $types);
+        $this->assertStringNotContainsString('InternalFixture', $types);
+        $this->assertStringNotContainsString('Paginator', $types);
     }
 
     public function test_the_type_generation_command_reports_an_unknown_module(): void

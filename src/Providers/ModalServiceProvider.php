@@ -2,6 +2,8 @@
 
 namespace Saucebase\Core\Providers;
 
+use Illuminate\Http\Request;
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Inertia\Ssr\SsrState;
@@ -41,6 +43,30 @@ class ModalServiceProvider extends ServiceProvider
                 Str::after($request->fullUrl(), $request->getSchemeAndHttpHost()),
                 '/',
             );
+        });
+    }
+
+    /**
+     * Run the session once per HTTP request, even when a modal renders its base page.
+     *
+     * The base page is a second request in the same process. Through `StartSession`
+     * it would load and save the session a second time, and under JSON serialization
+     * that save turns the error bag into an array the first request then reads: a
+     * form in the modal loses its validation errors. Instead the second request skips
+     * `StartSession` and is handed the session the first one already started.
+     */
+    public function register(): void
+    {
+        if (! class_exists(Modal::class)) {
+            return;
+        }
+
+        Modal::excludeMiddlewareOnBaseUrl(StartSession::class);
+
+        $this->app->rebinding('request', function ($app, Request $request): void {
+            if (! $request->hasSession() && $app->bound('session.store') && $app['session.store']->isStarted()) {
+                $request->setLaravelSession($app['session.store']);
+            }
         });
     }
 }
