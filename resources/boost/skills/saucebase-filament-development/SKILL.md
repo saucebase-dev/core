@@ -101,7 +101,7 @@ public static function canAccess(): bool
 ```
 
 The module's `Database\Seeders\DatabaseSeeder` creates it with `Permission::findOrCreate('manage blog')`,
-granted to nobody; the app's `RolesDatabaseSeeder` decides which roles get it, and `admin` passes every
+granted to nobody; the app's `DatabaseSeeder` decides which roles get it, and `admin` passes every
 check. Add a policy only when a module needs finer control than the whole area (edit but not delete).
 
 ---

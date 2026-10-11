@@ -21,7 +21,7 @@ module plugin.
   opens the panel; each module's admin area is its own `manage {module}` permission, checked in
   `canAccess()` and created by the module's `DatabaseSeeder`, and site-wide settings pages are
   `manage settings`. The `admin` role passes every check through core's
-  `Gate::before`. Roles are defined in the app's `RolesDatabaseSeeder`; `admin` and `user` (the role
+  `Gate::before`. Roles are defined in core's `RolesDatabaseSeeder`; `admin` and `user` (the role
   every sign-up gets) are fixed names modules may assign. The one exception is demo data: a module's
   `Demo…DatabaseSeeder` may create a staff role for its own area (`blog admin`, `blog@saucebase.dev`).
 - Where a signed-in user lands is the app's choice: `Home::using(fn (Request $request, string $reason) => …)`
