@@ -13,15 +13,14 @@ const { toast } = vi.hoisted(() => {
 });
 
 vi.mock('sonner', () => ({ toast }));
-vi.mock('react', () => ({ useEffect: (effect: () => void) => effect() }));
 
-import { useToastListener } from './toastActions';
+import { showToast } from './toastActions';
 
 beforeEach(() => vi.clearAllMocks());
 
-describe('useToastListener', () => {
+describe('showToast', () => {
     it('shows the flashed toast with its type and options', () => {
-        useToastListener({
+        showToast({
             message: 'Saved',
             type: 'success',
             description: 'All good',
@@ -37,17 +36,17 @@ describe('useToastListener', () => {
 
     it('uses the matching toast for every type', () => {
         for (const type of ['error', 'info', 'warning', 'loading'] as const) {
-            useToastListener({ message: 'Hi', type });
+            showToast({ message: 'Hi', type });
 
             expect(toast[type]).toHaveBeenCalledTimes(1);
         }
 
-        useToastListener({ message: 'Hi', type: 'default' });
+        showToast({ message: 'Hi', type: 'default' });
         expect(toast).toHaveBeenCalledTimes(1);
     });
 
-    it('shows nothing when the page flashed no toast', () => {
-        useToastListener(undefined);
+    it('shows nothing for a toast without a message', () => {
+        showToast({ message: '', type: 'success' });
 
         expect(toast).not.toHaveBeenCalled();
         expect(toast.success).not.toHaveBeenCalled();

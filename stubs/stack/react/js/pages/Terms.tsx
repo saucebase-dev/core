@@ -135,7 +135,7 @@ export default function Terms() {
                             >
                                 hello@example.com
                             </a>
-                            .
+                            {'.'}
                         </p>
                     </section>
                 </div>

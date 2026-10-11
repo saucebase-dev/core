@@ -21,7 +21,9 @@ export function ModuleCard({
     return (
         <div
             data-card
-            className={`relative cursor-pointer transition-opacity duration-200 select-none hover:opacity-100! ${!module.href ? 'opacity-50' : ''} ${moduleClass ?? ''}`}
+            role="button"
+            tabIndex={0}
+            className={`focus-visible:ring-ring relative cursor-pointer rounded-xl transition-opacity duration-200 outline-none select-none hover:opacity-100! focus-visible:ring-2 ${!module.href ? 'opacity-50' : ''} ${moduleClass ?? ''}`}
             style={
                 {
                     '--mod-color': `var(${module.color})`,
@@ -29,6 +31,12 @@ export function ModuleCard({
                 } as React.CSSProperties
             }
             onClick={() => onSelect(module)}
+            onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onSelect(module);
+                }
+            }}
         >
             {/* Diagonal stripe accent */}
             <div

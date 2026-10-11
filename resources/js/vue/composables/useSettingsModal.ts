@@ -182,7 +182,7 @@ export function useSettingsModalSync(): void {
             isOpen,
             (open) => {
                 if (open) {
-                    openModal(section.value);
+                    void openModal(section.value);
                 } else {
                     modal?.close();
                     modal = null;

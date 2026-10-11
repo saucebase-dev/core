@@ -8,13 +8,16 @@ const emit = defineEmits<{ select: [module: Module] }>();
 <template>
     <div
         data-card
-        class="relative cursor-pointer transition-opacity duration-200 select-none hover:opacity-100!"
+        role="button"
+        tabindex="0"
+        class="focus-visible:ring-ring relative cursor-pointer rounded-xl transition-opacity duration-200 outline-none select-none hover:opacity-100! focus-visible:ring-2"
         :class="[!module.href ? 'opacity-50' : '', moduleClass]"
         :style="{
             '--mod-color': `var(${module.color})`,
             '--card-delay': `${400 + index * 150}ms`,
         }"
         @click="emit('select', module)"
+        @keydown.enter.space.prevent="emit('select', module)"
     >
         <!-- Diagonal stripe accent — stationary, fades in after card lands -->
         <div

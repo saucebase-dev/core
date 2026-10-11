@@ -52,9 +52,12 @@ onUnmounted(() => {
             enter-from-class="opacity-0"
             leave-to-class="opacity-0"
         >
-            <div
+            <button
                 v-if="selectedMod"
-                class="bg-background/50 fixed inset-0 z-50 backdrop-blur-md"
+                type="button"
+                tabindex="-1"
+                aria-hidden="true"
+                class="bg-background/50 fixed inset-0 z-50 cursor-default backdrop-blur-md"
                 @click="emit('close')"
             />
         </Transition>
@@ -69,10 +72,7 @@ onUnmounted(() => {
                 v-if="selectedMod"
                 class="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-6 shadow-lg"
             >
-                <div
-                    class="pointer-events-auto relative w-full max-w-xl"
-                    @click.stop
-                >
+                <div class="pointer-events-auto relative w-full max-w-xl">
                     <!-- Modal card body -->
                     <div
                         class="bg-card/90 border-border relative z-10 flex flex-col gap-3 rounded-xl border p-6 shadow-[0px_5px_0_0_color-mix(in_oklch,var(--color-white)_85%,black)] dark:shadow-[0px_5px_0_0_color-mix(in_oklch,var(--color-white)_20%,black)]"

@@ -1,3 +1,9 @@
+const DEFAULT_FORMAT: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+};
+
 /**
  * A day, in the app's language, as the same text on the server and in the
  * browser.
@@ -11,11 +17,7 @@
 export function formatDate(
     value: string | Date | null | undefined,
     locale: string | undefined,
-    options: Intl.DateTimeFormatOptions = {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    },
+    options: Intl.DateTimeFormatOptions = DEFAULT_FORMAT,
 ): string {
     if (!value) {
         return '';

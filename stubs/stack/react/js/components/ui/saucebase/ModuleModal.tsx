@@ -91,8 +91,11 @@ export function ModuleModal({ selectedMod, onClose }: ModuleModalProps) {
     return createPortal(
         <>
             {/* Backdrop — enter 200ms, leave 150ms */}
-            <div
-                className="bg-background/50 fixed inset-0 z-50 backdrop-blur-md"
+            <button
+                type="button"
+                tabIndex={-1}
+                aria-hidden="true"
+                className="bg-background/50 fixed inset-0 z-50 cursor-default backdrop-blur-md"
                 style={{
                     opacity: isOpen ? 1 : 0,
                     transition: isOpen
@@ -116,10 +119,7 @@ export function ModuleModal({ selectedMod, onClose }: ModuleModalProps) {
                         : 'opacity 200ms ease-in, transform 200ms ease-in',
                 }}
             >
-                <div
-                    className="pointer-events-auto relative w-full max-w-xl"
-                    onClick={(e) => e.stopPropagation()}
-                >
+                <div className="pointer-events-auto relative w-full max-w-xl">
                     <div
                         className="bg-card/90 border-border relative z-10 flex flex-col gap-3 rounded-xl border p-6 shadow-[0px_5px_0_0_color-mix(in_oklch,var(--color-white)_85%,black)] dark:shadow-[0px_5px_0_0_color-mix(in_oklch,var(--color-white)_20%,black)]"
                         style={

@@ -109,7 +109,7 @@ export default function Privacy() {
                             >
                                 hello@example.com
                             </a>
-                            .
+                            {'.'}
                         </p>
                     </section>
                 </div>

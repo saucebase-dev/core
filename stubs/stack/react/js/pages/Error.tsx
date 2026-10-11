@@ -20,7 +20,7 @@ interface ErrorProps {
     status: number;
 }
 
-export default function Error({ status }: ErrorProps) {
+export default function ErrorPage({ status }: ErrorProps) {
     const t = useT();
     const title = t(titles[status] ?? 'Error');
     const description = t(descriptions[status] ?? 'An error occurred.');

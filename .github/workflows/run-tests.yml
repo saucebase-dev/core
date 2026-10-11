@@ -91,7 +91,7 @@ jobs:
           cache-dependency-path: resources/js/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Execute tests
         run: npm test

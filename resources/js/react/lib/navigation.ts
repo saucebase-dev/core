@@ -25,7 +25,7 @@ export function handleAction(actionId: string, event: MouseEvent): void {
     const handler = actionRegistry[actionId];
 
     if (handler) {
-        handler(event);
+        void handler(event);
     } else {
         console.warn(`No handler registered for action: ${actionId}`);
     }

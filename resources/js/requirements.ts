@@ -50,7 +50,7 @@ export function unmetRequirements(
 
 function isOlder(installed: string, minimum: string): boolean {
     const [a, b] = [installed, minimum].map((version) =>
-        version.split('.').map((part) => parseInt(part, 10) || 0),
+        version.split('.').map((part) => Number.parseInt(part, 10) || 0),
     );
 
     for (let i = 0; i < 3; i++) {
