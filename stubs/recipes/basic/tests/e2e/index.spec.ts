@@ -1,8 +1,8 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '@e2e/fixtures';
 
 test.describe('{Module} index page', () => {
-    test('responds successfully when navigating to root', async ({ page }) => {
-        const response = await page.goto('/');
+    test('responds successfully', async ({ page }) => {
+        const response = await page.goto('/{module-}');
 
         expect(response, 'Expected a navigation response').toBeTruthy();
         expect(

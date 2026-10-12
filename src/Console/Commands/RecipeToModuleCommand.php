@@ -136,7 +136,8 @@ class RecipeToModuleCommand extends Command
 
     /**
      * The recipes core ships and the ones the application adds, by folder name.
-     * A recipe is a folder in `stubs/recipes`; its `recipe.json` names it for the prompt.
+     * A recipe is a folder in `stubs/recipes` with a `composer.json`, which makes what it
+     * produces installable; its `recipe.json` names it for the prompt.
      * An application's recipe replaces core's of the same folder name.
      *
      * @return array<string, array{name: string, path: string}>
@@ -147,6 +148,10 @@ class RecipeToModuleCommand extends Command
 
         foreach ([dirname(__DIR__, 3).'/stubs/recipes', base_path('stubs/recipes')] as $root) {
             foreach (glob($root.'/*', GLOB_ONLYDIR) ?: [] as $path) {
+                if (! is_file($path.'/composer.json')) {
+                    continue;
+                }
+
                 $described = json_decode((string) @file_get_contents($path.'/recipe.json'), true);
 
                 $recipes[basename($path)] = [
@@ -172,7 +177,10 @@ class RecipeToModuleCommand extends Command
             error("Unknown recipe \"{$input}\". Choose one of: ".implode(', ', array_keys($recipes)));
         }
 
-        return (string) select('Which recipe would you like to use?', array_map(fn (array $recipe): string => $recipe['name'], $recipes));
+        return (string) select(
+            'Which recipe would you like to use?',
+            array_map(fn (array $recipe): string => $recipe['name'], $recipes),
+        );
     }
 
     private function validateForNonInteractive(): bool

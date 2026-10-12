@@ -129,7 +129,7 @@ jobs:
         working-directory: app
         run: |
           php artisan saucebase:recipe Notes basic --no-interaction
-          composer update modules/notes --no-interaction --no-progress
+          composer require "modules/notes:*" --no-interaction --no-progress
           npm run build
           php artisan test
 

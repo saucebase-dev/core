@@ -121,8 +121,9 @@ class InstallCommand extends Command
         ]));
 
         $repositories = (array) ($composer->repositories ?? []);
+        $urls = array_column(json_decode((string) json_encode($repositories), true), 'url');
 
-        if (! in_array('modules/*', array_column(json_decode((string) json_encode($repositories), true), 'url'), true)) {
+        if (! in_array('modules/*', $urls, true)) {
             $composer->repositories = [...array_values($repositories), [
                 'type' => 'path',
                 'url' => 'modules/*',

@@ -87,6 +87,7 @@ class RecipeCommandTest extends TestCase
         $this->installedWith('vue');
         $this->files->ensureDirectoryExists($this->appPath.'/stubs/recipes/api-only/src');
         $this->files->put($this->appPath.'/stubs/recipes/api-only/recipe.json', json_encode(['name' => 'API only']));
+        $this->files->put($this->appPath.'/stubs/recipes/api-only/composer.json', json_encode(['name' => '{COMPOSER_VENDOR}/{module-}']));
         $this->files->put($this->appPath.'/stubs/recipes/api-only/src/ModuleClient.php', '<?php // {Module}');
 
         $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'api-only'])->assertSuccessful();
@@ -94,11 +95,33 @@ class RecipeCommandTest extends TestCase
         $this->assertSame('<?php // Notes', $this->read('src/NotesClient.php'));
     }
 
+    public function test_a_folder_without_a_composer_file_is_not_a_recipe(): void
+    {
+        $this->installedWith('vue');
+        $this->files->ensureDirectoryExists($this->appPath.'/stubs/recipes/notes-only');
+        $this->files->put($this->appPath.'/stubs/recipes/notes-only/README.md', 'Not a package.');
+
+        // Composer could not install what it produced.
+        $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'notes-only', '--no-interaction' => true])
+            ->assertFailed();
+    }
+
+    public function test_the_recipe_tests_the_page_it_creates(): void
+    {
+        $this->installedWith('vue');
+
+        $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'basic'])->assertSuccessful();
+
+        $this->assertStringContainsString("page.goto('/notes')", $this->read('tests/e2e/index.spec.ts'));
+        $this->assertStringContainsString("from '@e2e/fixtures'", $this->read('tests/e2e/index.spec.ts'));
+    }
+
     public function test_it_offers_the_recipes_by_name(): void
     {
         $this->installedWith('vue');
         $this->files->ensureDirectoryExists($this->appPath.'/stubs/recipes/api-only');
         $this->files->put($this->appPath.'/stubs/recipes/api-only/recipe.json', json_encode(['name' => 'API only']));
+        $this->files->put($this->appPath.'/stubs/recipes/api-only/composer.json', json_encode(['name' => '{COMPOSER_VENDOR}/{module-}']));
 
         $this->artisan('saucebase:recipe', ['module' => 'Notes'])
             ->expectsChoice('Which recipe would you like to use?', 'basic', ['basic' => 'Basic', 'api-only' => 'API only'])
