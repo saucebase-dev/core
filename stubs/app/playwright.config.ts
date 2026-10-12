@@ -1,8 +1,8 @@
 /// <reference types="node" />
 import { defineConfig, devices } from '@playwright/test';
 import type { LaravelOptions } from '@saucebase/laravel-playwright';
-import { collectModulePlaywrightConfigs } from './vendor/saucebase/core/resources/js/modules.ts';
 import 'dotenv/config';
+import { collectModulePlaywrightConfigs } from './vendor/saucebase/core/resources/js/modules.ts';
 
 const BASE_URL = process.env.APP_URL ?? 'http://localhost';
 
@@ -41,13 +41,12 @@ async function createConfig() {
         {
             name: '@Core',
             testDir: './tests/e2e',
-            use: {}, // will be extended below
             dependencies: ['database.setup'], // Ensure database setup runs before core tests
         } as ModulePlaywrightConfig,
         // Add more projects here if needed
     ]
         .concat(moduleProjects)
-        .map((project) => {
+        .flatMap((project) => {
             // Extend each project with the selected devices
             return testDevices.map((device) => {
                 return {
@@ -56,8 +55,7 @@ async function createConfig() {
                     use: { ...devices[device], ...(project.use ?? {}) },
                 };
             });
-        })
-        .flat();
+        });
 
     /**
      * @see https://playwright.dev/docs/test-configuration

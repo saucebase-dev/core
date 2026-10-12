@@ -87,6 +87,15 @@ class InstallCommandTest extends TestCase
         $this->assertStringContainsString('<env name="APP_ENV" value="testing"/>', $this->read('phpunit.xml'));
     }
 
+    public function test_it_says_when_it_cannot_set_the_memory_limit(): void
+    {
+        $this->files->put($this->appPath.'/phpunit.xml', "<phpunit>\n</phpunit>\n");
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])
+            ->expectsOutputToContain('Set memory_limit to 2048M in phpunit.xml')
+            ->assertSuccessful();
+    }
+
     public function test_it_publishes_the_admin_panel_assets_and_keeps_them_current(): void
     {
         $this->files->put($this->appPath.'/composer.json', json_encode([

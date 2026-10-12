@@ -126,12 +126,16 @@ class InstallCommand extends Command
             return;
         }
 
-        $files->put($path, preg_replace(
-            '/^(\s*)<php>\R/m',
-            '$0$1    <ini name="memory_limit" value="2048M"/>'.PHP_EOL,
-            $files->get($path),
-            1,
-        ));
+        $line = '$0$1    <ini name="memory_limit" value="2048M"/>'.PHP_EOL;
+        $contents = preg_replace('/^(\s*)<php>\R/m', $line, $files->get($path), 1, $count);
+
+        if ($count === 0) {
+            $this->components->warn('Set memory_limit to 2048M in phpunit.xml: the larger modules need it to run their tests.');
+
+            return;
+        }
+
+        $files->put($path, $contents);
     }
 
     private function publishStack(Filesystem $files, string $stack, string $framework): void

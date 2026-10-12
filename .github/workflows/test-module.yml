@@ -140,7 +140,7 @@ jobs:
               run: tar -xzf app.tar.gz
 
             - name: Setup PHP
-              uses: shivammathur/setup-php@v2
+              uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
               with:
                   php-version: '8.4'
                   extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, intl, exif, gd, bcmath
@@ -155,11 +155,11 @@ jobs:
 
             - name: Install npm dependencies
               working-directory: app
-              run: npm ci
+              run: npm ci --ignore-scripts
 
             - name: Install Playwright
               working-directory: app
-              run: npx playwright install chromium --with-deps
+              run: ./node_modules/.bin/playwright install chromium --with-deps
 
             - name: Prepare E2E variant
               if: inputs.e2e_setup != ''
@@ -183,17 +183,22 @@ jobs:
 
             - name: Wait for server
               run: |
-                  timeout 30 bash -c "until curl -f ${APP_URL} > /dev/null 2>&1; do
-                    echo 'Waiting for server...'
-                    sleep 2
-                  done"
-                  echo "Server is ready!"
+                  # The application under test is served locally, over plain HTTP.
+                  for _ in $(seq 15); do
+                      if curl -fs "$APP_URL" > /dev/null; then # NOSONAR
+                          echo "Server is ready!"
+                          exit 0
+                      fi
+                      echo 'Waiting for server...'
+                      sleep 2
+                  done
+                  exit 1
 
             - name: Run E2E tests
               working-directory: app
               env:
                   MODULE: ${{ inputs.module }}
-              run: npx playwright test "modules/$MODULE/tests/e2e" --max-failures=2
+              run: ./node_modules/.bin/playwright test "modules/$MODULE/tests/e2e" --max-failures=2
 
             - name: Upload Playwright report
               if: failure()
