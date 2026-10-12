@@ -35,12 +35,16 @@ Core has no sign-in pages. Until you add them, guests get a 404 on the dashboard
 composer require saucebase/auth
 ```
 
-After adding a module, generate its TypeScript types and run its migrations:
+After adding a module, run its migrations:
 
 ```bash
-php artisan module:generate-types --all
 php artisan migrate
 ```
+
+The install also adds two lines to `post-autoload-dump` in `composer.json`, so they run after every Composer command:
+
+- `filament:upgrade` republishes the admin panel's assets, which a Filament update replaces.
+- `module:generate-types --all` generates the TypeScript types of the installed modules, which ship without them.
 
 ## What lives here, and what doesn't
 
