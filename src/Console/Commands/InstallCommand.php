@@ -162,6 +162,8 @@ class InstallCommand extends Command
     {
         $resources = $this->laravel->resourcePath();
 
+        // Laravel's own entry file, which nothing builds once the framework's is there.
+        $files->delete($resources.'/js/app.js');
         $files->copyDirectory("{$stack}/{$framework}/js", $resources.'/js');
         $files->copyDirectory("{$stack}/{$framework}/views", $resources.'/views');
         $files->copyDirectory("{$stack}/css", $resources.'/css');

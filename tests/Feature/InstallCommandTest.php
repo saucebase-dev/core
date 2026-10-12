@@ -171,6 +171,18 @@ class InstallCommandTest extends TestCase
         $this->assertSame(['framework' => $framework], json_decode($this->read('saucebase.json'), true));
     }
 
+    /** Laravel's own entry file is no longer the one Vite builds. */
+    public function test_it_removes_the_entry_file_laravel_ships(): void
+    {
+        $this->files->ensureDirectoryExists($this->appPath.'/resources/js');
+        $this->files->put($this->appPath.'/resources/js/app.js', "import './bootstrap';\n");
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        $this->assertFileDoesNotExist($this->appPath.'/resources/js/app.js');
+        $this->assertFileExists($this->appPath.'/resources/js/app.ts');
+    }
+
     /** @return array<string, array{string, string}> */
     public static function frameworks(): array
     {
