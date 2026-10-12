@@ -76,24 +76,23 @@ class InstallCommandTest extends TestCase
         $this->assertFileExists($this->appPath.'/tests/Support/ModuleSupport.php');
     }
 
-    public function test_it_gives_the_tests_the_memory_the_modules_need(): void
-    {
-        $this->files->put($this->appPath.'/phpunit.xml', "<phpunit>\n    <php>\n        <env name=\"APP_ENV\" value=\"testing\"/>\n    </php>\n</phpunit>\n");
-
-        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
-
-        // The larger modules run out of PHP's default 128 MB.
-        $this->assertStringContainsString('<ini name="memory_limit" value="2048M"/>', $this->read('phpunit.xml'));
-        $this->assertStringContainsString('<env name="APP_ENV" value="testing"/>', $this->read('phpunit.xml'));
-    }
-
-    public function test_it_says_when_it_cannot_set_the_memory_limit(): void
+    public function test_it_publishes_the_test_configuration(): void
     {
         $this->files->put($this->appPath.'/phpunit.xml', "<phpunit>\n</phpunit>\n");
 
-        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])
-            ->expectsOutputToContain('Set memory_limit to 2048M in phpunit.xml')
-            ->assertSuccessful();
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        $phpunit = $this->read('phpunit.xml');
+
+        // The larger modules run out of PHP's default 128 MB.
+        $this->assertStringContainsString('<ini name="memory_limit" value="2048M"/>', $phpunit);
+        $this->assertStringContainsString('./modules/*/tests', $phpunit);
+
+        // A container sets these for the running application, and PHPUnit keeps a variable that
+        // already exists: unforced, the tests would run against the application's own database.
+        foreach (['APP_ENV', 'DB_CONNECTION', 'DB_DATABASE', 'QUEUE_CONNECTION', 'SESSION_DRIVER'] as $name) {
+            $this->assertMatchesRegularExpression('/<env name="'.$name.'" value="[^"]*" force="true"\/>/', $phpunit, $name);
+        }
     }
 
     public function test_it_publishes_the_admin_panel_assets_and_keeps_them_current(): void
@@ -169,6 +168,18 @@ class InstallCommandTest extends TestCase
         $this->assertFileExists($this->appPath.'/vite.config.js');
         $this->assertFileExists($this->appPath.'/package-lock.json');
         $this->assertSame(['framework' => $framework], json_decode($this->read('saucebase.json'), true));
+    }
+
+    /** Laravel's own entry file is no longer the one Vite builds. */
+    public function test_it_removes_the_entry_file_laravel_ships(): void
+    {
+        $this->files->ensureDirectoryExists($this->appPath.'/resources/js');
+        $this->files->put($this->appPath.'/resources/js/app.js', "import './bootstrap';\n");
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        $this->assertFileDoesNotExist($this->appPath.'/resources/js/app.js');
+        $this->assertFileExists($this->appPath.'/resources/js/app.ts');
     }
 
     /** @return array<string, array{string, string}> */

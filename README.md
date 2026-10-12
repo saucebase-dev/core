@@ -35,7 +35,7 @@ The example test is replaced because the home page now reads the settings table,
 The install gives the application what a module's tests build on:
 
 - `tests/TestCase.php` seeds the roles and has `createUser()`. Module tests extend it.
-- `phpunit.xml` gets a 2048 MB memory limit, which the larger modules need.
+- `phpunit.xml` is replaced with one that adds the `Modules` test suite and a 2048 MB memory limit, which the larger modules need. It forces the test environment and database, so tests run inside a container never touch the application's own database.
 - `playwright.config.ts`, `tests/e2e/` and `tests/Support/` are the browser test setup. Module specs import `@e2e/fixtures`.
 
 Run a module's tests from the application:
