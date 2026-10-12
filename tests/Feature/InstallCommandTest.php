@@ -56,6 +56,46 @@ class InstallCommandTest extends TestCase
         $this->assertStringContainsString('use RefreshDatabase;', $this->read('tests/Feature/ExampleTest.php'));
     }
 
+    public function test_it_publishes_what_module_tests_build_on(): void
+    {
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        // A module's tests extend the application's test case and expect the seeded roles.
+        $this->assertStringContainsString('protected $seed = true;', $this->read('tests/TestCase.php'));
+        $this->assertStringContainsString('function createUser()', $this->read('tests/TestCase.php'));
+
+        // A module's browser tests import the fixtures, which call these classes by name.
+        $this->assertFileExists($this->appPath.'/playwright.config.ts');
+        $this->assertFileExists($this->appPath.'/tests/e2e/fixtures/index.ts');
+        $this->assertFileExists($this->appPath.'/tests/e2e/helpers/auth.ts');
+        $this->assertFileExists($this->appPath.'/tests/e2e/helpers/modules.ts');
+        $this->assertFileExists($this->appPath.'/tests/e2e/database.setup.ts');
+        $this->assertFileExists($this->appPath.'/tests/e2e/assets.setup.ts');
+        $this->assertFileExists($this->appPath.'/tests/Support/TestFixtures.php');
+        $this->assertFileExists($this->appPath.'/tests/Support/AuthHelper.php');
+        $this->assertFileExists($this->appPath.'/tests/Support/ModuleSupport.php');
+    }
+
+    public function test_it_gives_the_tests_the_memory_the_modules_need(): void
+    {
+        $this->files->put($this->appPath.'/phpunit.xml', "<phpunit>\n    <php>\n        <env name=\"APP_ENV\" value=\"testing\"/>\n    </php>\n</phpunit>\n");
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        // The larger modules run out of PHP's default 128 MB.
+        $this->assertStringContainsString('<ini name="memory_limit" value="2048M"/>', $this->read('phpunit.xml'));
+        $this->assertStringContainsString('<env name="APP_ENV" value="testing"/>', $this->read('phpunit.xml'));
+    }
+
+    public function test_it_says_when_it_cannot_set_the_memory_limit(): void
+    {
+        $this->files->put($this->appPath.'/phpunit.xml', "<phpunit>\n</phpunit>\n");
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])
+            ->expectsOutputToContain('Set memory_limit to 2048M in phpunit.xml')
+            ->assertSuccessful();
+    }
+
     public function test_it_publishes_the_admin_panel_assets_and_keeps_them_current(): void
     {
         $this->files->put($this->appPath.'/composer.json', json_encode([

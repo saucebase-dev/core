@@ -1,0 +1,208 @@
+name: Module Tests
+
+# Tests a module the way an application gets it: a new Laravel application,
+# Saucebase installed into it, then the module on top.
+
+on:
+    workflow_call:
+        inputs:
+            module:
+                required: true
+                type: string
+                description: 'Lowercase module name, e.g. billing'
+            dependencies:
+                required: false
+                type: string
+                default: ''
+                description: 'Space-separated released Composer packages, e.g. saucebase/auth'
+            extra_patches:
+                required: false
+                type: string
+                default: ''
+                description: 'Space-separated optional patches, relative to the module, applied after its own, e.g. patches/optional/bill-workspaces.patch'
+            core_ref:
+                required: false
+                type: string
+                default: ''
+                description: 'Branch, tag, or commit of saucebase/core to test against. Empty uses the released package.'
+            artifact_suffix:
+                required: false
+                type: string
+                default: ''
+                description: 'Suffix for artifact names when a caller runs multiple variants'
+            serve_port:
+                required: false
+                type: string
+                default: '8000'
+                description: 'Port the E2E server listens on. Use 80 for modules whose URLs are host-based (subdomains), since a host derived from APP_URL drops the port.'
+            e2e_variants:
+                required: false
+                type: string
+                default: '[""]'
+                description: 'JSON list of names; E2E runs once per name, e.g. ["domain","slug"]'
+            e2e_setup:
+                required: false
+                type: string
+                default: ''
+                description: 'Shell run in the app before the E2E server starts, with the variant name in $E2E_VARIANT'
+
+env:
+    # The non-empty branch must sit on `true`: '' is falsy in GitHub
+    # expressions, so `cond && '' || format(...)` always falls through.
+    APP_URL: http://localhost${{ inputs.serve_port != '80' && format(':{0}', inputs.serve_port) || '' }}
+
+jobs:
+    detect-frameworks:
+        runs-on: ubuntu-latest
+        outputs:
+            matrix: ${{ steps.read.outputs.matrix }}
+        steps:
+            - name: Checkout module
+              uses: actions/checkout@v6
+              with:
+                  path: module-src
+            - name: Read supported frameworks from composer.json
+              id: read
+              run: |
+                  fw=$(jq -c '.extra.saucebase.frameworks // ["vue"]' module-src/composer.json 2>/dev/null || echo '["vue"]')
+                  echo "matrix=$fw" >> $GITHUB_OUTPUT
+
+    phpunit:
+        needs: detect-frameworks
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        strategy:
+            matrix:
+                framework: ${{ fromJSON(needs.detect-frameworks.outputs.matrix) }}
+        name: PHPUnit ${{ inputs.module }} (${{ matrix.framework }})
+
+        steps:
+            - name: Checkout module
+              uses: actions/checkout@v6
+              with:
+                  path: module-src
+
+            # Always checked out, for the action that builds the application. The
+            # package itself comes from this checkout only when core_ref is given.
+            - name: Checkout core
+              uses: actions/checkout@v6
+              with:
+                  repository: saucebase-dev/core
+                  ref: ${{ inputs.core_ref || 'main' }}
+                  path: core
+
+            - name: Create the application
+              uses: ./core/.github/actions/fresh-app
+              with:
+                  framework: ${{ matrix.framework }}
+                  core-path: ${{ inputs.core_ref != '' && 'core' || '' }}
+                  module: ${{ inputs.module }}
+                  module-path: module-src
+                  dependencies: ${{ inputs.dependencies }}
+                  extra-patches: ${{ inputs.extra_patches }}
+                  app-url: ${{ env.APP_URL }}
+
+            - name: Run PHPUnit tests
+              working-directory: app
+              env:
+                  MODULE: ${{ inputs.module }}
+              run: php artisan test "modules/$MODULE/tests"
+
+            - name: Archive the application
+              run: tar --exclude='app/node_modules' -czf app.tar.gz app/
+
+            - name: Upload the application
+              uses: actions/upload-artifact@v6
+              with:
+                  name: app-${{ inputs.module }}-${{ matrix.framework }}${{ inputs.artifact_suffix }}
+                  path: app.tar.gz
+                  retention-days: 1
+
+    e2e:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        needs: [detect-frameworks, phpunit]
+        strategy:
+            matrix:
+                framework: ${{ fromJSON(needs.detect-frameworks.outputs.matrix) }}
+                variant: ${{ fromJSON(inputs.e2e_variants) }}
+        name: E2E ${{ inputs.module }} (${{ matrix.framework }}${{ matrix.variant != '' && format(', {0}', matrix.variant) || '' }})
+        env:
+            SERVE_PORT: ${{ inputs.serve_port }}
+
+        steps:
+            - name: Download the application
+              uses: actions/download-artifact@v7
+              with:
+                  name: app-${{ inputs.module }}-${{ matrix.framework }}${{ inputs.artifact_suffix }}
+
+            - name: Extract the application
+              run: tar -xzf app.tar.gz
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+              with:
+                  php-version: '8.4'
+                  extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, intl, exif, gd, bcmath
+                  coverage: none
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: '22'
+                  cache: npm
+                  cache-dependency-path: app/package-lock.json
+
+            - name: Install npm dependencies
+              working-directory: app
+              run: npm ci --ignore-scripts
+
+            - name: Install Playwright
+              working-directory: app
+              run: ./node_modules/.bin/playwright install chromium --with-deps
+
+            - name: Prepare E2E variant
+              if: inputs.e2e_setup != ''
+              working-directory: app
+              env:
+                  E2E_VARIANT: ${{ matrix.variant }}
+                  E2E_SETUP: ${{ inputs.e2e_setup }}
+              run: bash -euo pipefail -c "$E2E_SETUP"
+
+            - name: Start Laravel server
+              working-directory: app
+              run: |
+                  # Ports below 1024 are privileged by default. Lower the threshold
+                  # rather than serving as root, so the app never writes root-owned
+                  # logs, sessions, or SQLite files. Already root (act, containers)
+                  # can bind anything and may not have sysctl.
+                  if [ "$SERVE_PORT" -lt 1024 ] && [ "$(id -u)" -ne 0 ]; then
+                      sudo sysctl -w "net.ipv4.ip_unprivileged_port_start=$SERVE_PORT"
+                  fi
+                  php artisan serve --host=0.0.0.0 --port="$SERVE_PORT" &
+
+            - name: Wait for server
+              run: |
+                  for _ in $(seq 15); do
+                      if curl -fs "localhost:$SERVE_PORT" > /dev/null; then
+                          echo "Server is ready!"
+                          exit 0
+                      fi
+                      echo 'Waiting for server...'
+                      sleep 2
+                  done
+                  exit 1
+
+            - name: Run E2E tests
+              working-directory: app
+              env:
+                  MODULE: ${{ inputs.module }}
+              run: ./node_modules/.bin/playwright test "modules/$MODULE/tests/e2e" --max-failures=2
+
+            - name: Upload Playwright report
+              if: failure()
+              uses: actions/upload-artifact@v6
+              with:
+                  name: playwright-report-${{ inputs.module }}-${{ matrix.framework }}${{ inputs.artifact_suffix }}${{ matrix.variant != '' && format('-{0}', matrix.variant) || '' }}
+                  path: app/playwright-report/
+                  retention-days: 7

@@ -26,8 +26,34 @@ It replaces these files of a new Laravel application, and asks first unless you 
 - `routes/web.php`
 - `public/favicon.ico`
 - `tests/Feature/ExampleTest.php`
+- `tests/TestCase.php`
 
 The example test is replaced because the home page now reads the settings table, so the test has to migrate the database (`RefreshDatabase`) to pass.
+
+## Tests
+
+The install gives the application what a module's tests build on:
+
+- `tests/TestCase.php` seeds the roles and has `createUser()`. Module tests extend it.
+- `phpunit.xml` gets a 2048 MB memory limit, which the larger modules need.
+- `playwright.config.ts`, `tests/e2e/` and `tests/Support/` are the browser test setup. Module specs import `@e2e/fixtures`.
+
+Run a module's tests from the application:
+
+```bash
+php artisan test modules/auth/tests
+```
+
+Browser tests need one more package and a secret in `.env`:
+
+```bash
+composer require --dev saucebase/laravel-playwright
+echo "PLAYWRIGHT_SECRET=$(openssl rand -hex 16)" >> .env
+npx playwright install chromium
+npx playwright test modules/auth/tests/e2e
+```
+
+They run against the built frontend on `APP_URL`, so the application has to be served there.
 
 Core has no sign-in pages. Until you add them, guests get a 404 on the dashboard and the admin panel:
 

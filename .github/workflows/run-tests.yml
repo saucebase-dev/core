@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         with:
           php-version: ${{ matrix.php }}
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, fileinfo
@@ -57,7 +57,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         with:
           php-version: '8.4'
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, fileinfo
@@ -95,6 +95,34 @@ jobs:
 
       - name: Execute tests
         run: npm test
+
+  fresh-app:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [vue, react]
+
+    name: Fresh app (${{ matrix.framework }})
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          path: core
+
+      # A new Laravel application with this checkout installed into it, as the README says.
+      - name: Create the application
+        uses: ./core/.github/actions/fresh-app
+        with:
+          framework: ${{ matrix.framework }}
+          core-path: core
+
+      - name: Execute the application's tests
+        working-directory: app
+        run: php artisan test
 
   phplint:
       permissions:

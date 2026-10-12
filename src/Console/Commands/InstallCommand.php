@@ -58,6 +58,7 @@ class InstallCommand extends Command
         ServiceProvider::addProviderToBootstrapFile('App\Providers\Filament\AdminPanelProvider');
         $this->callSilently('filament:assets');
         $this->runAfterEveryComposerInstall($files);
+        $this->giveTestsMoreMemory($files);
 
         $this->publishStack($files, $stubs.'/stack', $framework);
 
@@ -114,6 +115,29 @@ class InstallCommand extends Command
         ]));
 
         $files->put($path, json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).PHP_EOL);
+    }
+
+    /** The larger modules' tests run out of PHP's default 128 MB. */
+    private function giveTestsMoreMemory(Filesystem $files): void
+    {
+        $path = $this->laravel->basePath('phpunit.xml');
+
+        if (! $files->exists($path) || str_contains($files->get($path), 'memory_limit')) {
+            return;
+        }
+
+        $line = '$0$1    <ini name="memory_limit" value="2048M"/>'.PHP_EOL;
+        $contents = preg_replace('/^(\s*)<php>\R/m', $line, $files->get($path), 1, $count);
+
+        if ($count === 0) {
+            $this->components->warn(
+                'Set memory_limit to 2048M in phpunit.xml: the larger modules need it to run their tests.',
+            );
+
+            return;
+        }
+
+        $files->put($path, $contents);
     }
 
     private function publishStack(Filesystem $files, string $stack, string $framework): void

@@ -1,0 +1,129 @@
+name: 'Fresh Saucebase application'
+description: 'Create a new Laravel application and install Saucebase into it, the way the README says, ready for tests.'
+
+inputs:
+    framework:
+        description: 'Frontend framework to install (vue or react)'
+        required: true
+    core-path:
+        description: 'Path to a checkout of saucebase/core, relative to the workspace. Empty installs the released package.'
+        required: false
+        default: ''
+    module:
+        description: 'Lowercase name of the module under test, e.g. billing. Empty installs no module.'
+        required: false
+        default: ''
+    module-path:
+        description: 'Path to the checkout of the module under test, relative to the workspace'
+        required: false
+        default: ''
+    dependencies:
+        description: 'Space-separated released Composer packages the module needs, e.g. saucebase/auth'
+        required: false
+        default: ''
+    extra-patches:
+        description: 'Space-separated optional patches, relative to the module, applied after its own'
+        required: false
+        default: ''
+    app-url:
+        description: 'URL the application is served on during browser tests'
+        required: false
+        default: 'http://localhost:8000'
+    php-version:
+        description: 'PHP version to use'
+        required: false
+        default: '8.4'
+    node-version:
+        description: 'Node.js version to use'
+        required: false
+        default: '22'
+
+runs:
+    using: 'composite'
+    steps:
+        - name: Setup PHP
+          uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+          with:
+              php-version: ${{ inputs.php-version }}
+              extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, intl, exif, gd, bcmath
+              coverage: none
+
+        - name: Setup Node.js
+          uses: actions/setup-node@v6
+          with:
+              node-version: ${{ inputs.node-version }}
+
+        - name: Create a new Laravel application
+          shell: bash
+          run: composer create-project laravel/laravel app --no-interaction --no-progress --prefer-dist
+
+        - name: Install Saucebase
+          shell: bash
+          working-directory: app
+          env:
+              CORE_PATH: ${{ inputs.core-path }}
+              FRAMEWORK: ${{ inputs.framework }}
+          run: |
+              # Composer refuses an unlisted plugin outright when it cannot ask.
+              composer config allow-plugins.saucebase/module-installer true
+              if [ -n "$CORE_PATH" ]; then
+                  # Copied, not linked, so the application sees core the way a release arrives.
+                  composer config repositories.core "{\"type\":\"path\",\"url\":\"$GITHUB_WORKSPACE/$CORE_PATH\",\"options\":{\"symlink\":false}}"
+              fi
+              composer require saucebase/core --no-interaction --no-progress
+              php artisan saucebase:install "$FRAMEWORK" --force
+              composer require --dev saucebase/laravel-playwright --no-interaction --no-progress
+
+        - name: Install modules
+          if: inputs.module != ''
+          shell: bash
+          working-directory: app
+          env:
+              MODULE: ${{ inputs.module }}
+              MODULE_PATH: ${{ inputs.module-path }}
+              DEPENDENCIES: ${{ inputs.dependencies }}
+              EXTRA_PATCHES: ${{ inputs.extra-patches }}
+          run: |
+              for dep in $DEPENDENCIES; do
+                  composer require "$dep" --no-interaction --no-progress
+              done
+              composer config "repositories.$MODULE" "{\"type\":\"path\",\"url\":\"$GITHUB_WORKSPACE/$MODULE_PATH\",\"options\":{\"symlink\":false}}"
+              composer require "saucebase/$MODULE:*" --no-interaction --no-progress
+
+              apply_patches() {
+                  for f in "$1"/*.patch; do
+                      [ -f "$f" ] || continue
+                      echo "Applying patch: $f"
+                      patch -p1 < "$f"
+                  done
+              }
+              # Dependencies first, in the order given, then the module itself.
+              for dep in $DEPENDENCIES; do
+                  apply_patches "modules/${dep#saucebase/}/patches"
+              done
+              apply_patches "modules/$MODULE/patches"
+              for f in $EXTRA_PATCHES; do
+                  echo "Applying optional patch: $f"
+                  patch -p1 < "modules/$MODULE/$f"
+              done
+
+        - name: Configure the environment
+          shell: bash
+          working-directory: app
+          env:
+              APP_URL: ${{ inputs.app-url }}
+          run: |
+              sed -i "s|^APP_URL=.*|APP_URL=$APP_URL|" .env
+              echo "PLAYWRIGHT_SECRET=fresh-app-secret" >> .env
+
+        - name: Build the frontend
+          shell: bash
+          working-directory: app
+          run: |
+              npm ci --ignore-scripts
+              npm run build
+
+        - name: Run migrations
+          shell: bash
+          working-directory: app
+          run: php artisan migrate --seed --force
