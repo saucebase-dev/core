@@ -130,7 +130,9 @@ class InstallCommand extends Command
         $contents = preg_replace('/^(\s*)<php>\R/m', $line, $files->get($path), 1, $count);
 
         if ($count === 0) {
-            $this->components->warn('Set memory_limit to 2048M in phpunit.xml: the larger modules need it to run their tests.');
+            $this->components->warn(
+                'Set memory_limit to 2048M in phpunit.xml: the larger modules need it to run their tests.',
+            );
 
             return;
         }

@@ -52,7 +52,7 @@ async function createConfig() {
                 return {
                     ...project,
                     name: `${project.name} [${device}]`,
-                    use: { ...devices[device], ...(project.use ?? {}) },
+                    use: { ...devices[device], ...project.use },
                 };
             });
         });
