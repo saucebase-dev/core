@@ -203,6 +203,17 @@ class InstallCommandTest extends TestCase
         $this->assertStringContainsString('resources/js', $this->read('tsconfig.json'));
     }
 
+    /**
+     * Tailwind scans every file git does not ignore. A new application does not ignore the
+     * SSR build, whose source maps hold class names with escaped quotes that are invalid CSS.
+     */
+    public function test_the_styles_do_not_scan_the_ssr_build(): void
+    {
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        $this->assertStringContainsString("@source not '../../bootstrap/ssr';", $this->read('resources/css/app.css'));
+    }
+
     /** Core has no sign-in pages, and the dashboard and admin panel redirect guests to one. */
     public function test_it_says_to_add_the_auth_module(): void
     {
