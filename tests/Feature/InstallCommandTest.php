@@ -56,6 +56,30 @@ class InstallCommandTest extends TestCase
         $this->assertStringContainsString('use RefreshDatabase;', $this->read('tests/Feature/ExampleTest.php'));
     }
 
+    public function test_it_publishes_the_admin_panel_assets_and_keeps_them_current(): void
+    {
+        $this->files->put($this->appPath.'/composer.json', json_encode([
+            'name' => 'acme/app',
+            'extra' => ['laravel' => ['dont-discover' => []]],
+            'scripts' => ['post-autoload-dump' => ['@php artisan package:discover --ansi']],
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        // Without its published assets the admin panel renders unstyled and its scripts 404.
+        $this->assertDirectoryExists($this->appPath.'/public/js/filament');
+
+        // After every Composer run: a Filament update brings new assets, a new module brings types to generate.
+        $composer = json_decode($this->read('composer.json'), true);
+        $this->assertSame([
+            '@php artisan package:discover --ansi',
+            '@php artisan filament:upgrade',
+            '@php artisan module:generate-types --all --no-interaction --ansi',
+        ], $composer['scripts']['post-autoload-dump']);
+        $this->assertSame('acme/app', $composer['name']);
+        $this->assertStringContainsString('"dont-discover": []', $this->read('composer.json'));
+    }
+
     public function test_it_registers_the_admin_panel(): void
     {
         $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();

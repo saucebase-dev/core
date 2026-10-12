@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
 use Saucebase\Core\ProjectConfig;
+use stdClass;
 
 /**
  * Turns a new Laravel application into a Saucebase one.
@@ -55,6 +56,8 @@ class InstallCommand extends Command
         $files->copyDirectory($stubs.'/app', $this->laravel->basePath());
         $files->copyDirectory(dirname(__DIR__, 3).'/public', $this->laravel->publicPath());
         ServiceProvider::addProviderToBootstrapFile('App\Providers\Filament\AdminPanelProvider');
+        $this->callSilently('filament:assets');
+        $this->runAfterEveryComposerInstall($files);
 
         $this->publishStack($files, $stubs.'/stack', $framework);
 
@@ -87,6 +90,30 @@ class InstallCommand extends Command
         $this->components->bulletList($existing);
 
         return $this->confirm('Replace these files?');
+    }
+
+    /**
+     * What a Composer run can leave stale: a Filament update brings new admin panel
+     * assets, and a newly required module arrives without its generated types.
+     */
+    private function runAfterEveryComposerInstall(Filesystem $files): void
+    {
+        $path = $this->laravel->basePath('composer.json');
+
+        if (! $files->exists($path)) {
+            return;
+        }
+
+        // Decoded as objects, so an empty `{}` is not written back as `[]`.
+        $composer = json_decode($files->get($path));
+        $composer->scripts ??= new stdClass;
+        $composer->scripts->{'post-autoload-dump'} = array_values(array_unique([
+            ...(array) ($composer->scripts->{'post-autoload-dump'} ?? []),
+            '@php artisan filament:upgrade',
+            '@php artisan module:generate-types --all --no-interaction --ansi',
+        ]));
+
+        $files->put($path, json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).PHP_EOL);
     }
 
     private function publishStack(Filesystem $files, string $stack, string $framework): void
