@@ -16,7 +16,11 @@ use function Laravel\Prompts\text;
 
 class RecipeToModuleCommand extends Command
 {
-    protected $signature = 'saucebase:recipe {module?} {template?} {--vendor= : Composer vendor prefix (e.g. saucebase)} {--type=library : Composer package type}';
+    protected $signature = 'saucebase:recipe
+                            {module? : The name of the module to create}
+                            {recipe? : The recipe to create it from, by its folder name (e.g. basic)}
+                            {--vendor= : Composer vendor prefix (e.g. saucebase)}
+                            {--type=laravel-module : Composer package type}';
 
     protected $description = 'Create starter module from a recipe';
 
@@ -27,8 +31,6 @@ class RecipeToModuleCommand extends Command
     protected string $composerVendor = '';
 
     protected string $composerType = '';
-
-    protected string $template = '';
 
     protected string $templatePath = '';
 
@@ -44,48 +46,48 @@ class RecipeToModuleCommand extends Command
         $this->fs = new SymfonyFilesystem;
     }
 
-    public function handle(): bool
+    public function handle(): int
     {
         if (! $this->input->isInteractive() && ! $this->validateForNonInteractive()) {
-            return false;
+            return self::FAILURE;
         }
 
         $this->moduleName = $this->getModuleName();
         $this->composerVendor = $this->option('vendor')
             ?: config('app-modules.modules_vendor')
             ?: Str::kebab(config('app-modules.modules_namespace', 'Modules'));
-        $this->composerType = $this->option('type') ?: 'library';
+        $this->composerType = $this->option('type') ?: 'laravel-module';
         $this->moduleConfigPath = base_path(config('app-modules.modules_directory', 'modules')).'/';
 
         if (file_exists($this->moduleConfigPath.$this->moduleFolder)) {
             error("{$this->moduleFolder} module already exists.");
 
-            return true;
+            return self::FAILURE;
         }
 
         $frontendConfig = app(ProjectConfig::class);
         $framework = $frontendConfig->getFramework();
 
         if ($framework === null) {
-            error('No frontend framework selected. Run `saucebase stack vue` or `saucebase stack react` first.');
+            error('No frontend framework selected. Run `php artisan saucebase:install` first.');
 
-            return true;
+            return self::FAILURE;
         }
 
         $isContributor = $frontendConfig->isContributor();
 
-        $this->template = $this->getTemplate();
-        $this->templatePath = base_path($this->template);
+        $this->templatePath = $this->recipes()[$this->getRecipe()]['path'];
         $this->tempFolder = base_path('saucebase-temp');
 
-        if (! file_exists($this->templatePath)) {
-            error("{$this->templatePath} path does not exist. Check your config/saucebase.php.");
+        $this->generate();
+        $this->fs->remove($this->moduleConfigPath.$this->moduleFolder.'/recipe.json');
 
-            return true;
+        if ($isContributor) {
+            $this->writeModuleEntryPoint($framework);
+        } else {
+            $this->keepOnlyFramework($framework);
         }
 
-        $this->generate();
-        $this->writeModuleEntryPoint($framework, $isContributor);
         $this->registerInTaskfile();
         $this->registerInComposer();
 
@@ -94,7 +96,7 @@ class RecipeToModuleCommand extends Command
         info("  composer update {$this->composerVendor}/{$this->moduleFolder}");
         info('  `npm run build` or `npm run dev` to build the frontend assets');
 
-        return true;
+        return self::SUCCESS;
     }
 
     protected function getModuleName(): string
@@ -132,36 +134,66 @@ class RecipeToModuleCommand extends Command
         $this->moduleFolder = Str::kebab($this->moduleName);
     }
 
-    protected function getTemplate(): string
+    /**
+     * The recipes core ships and the ones the application adds, by folder name.
+     * A recipe is a folder in `stubs/recipes` with a `composer.json`, which makes what it
+     * produces installable; its `recipe.json` names it for the prompt.
+     * An application's recipe replaces core's of the same folder name.
+     *
+     * @return array<string, array{name: string, path: string}>
+     */
+    protected function recipes(): array
     {
-        $templates = config('saucebase.template');
-        $input = $this->argument('template') ?? '';
+        $recipes = [];
 
-        if ($input !== '') {
-            if (array_key_exists($input, $templates)) {
-                return $templates[$input];
+        foreach ([dirname(__DIR__, 3).'/stubs/recipes', base_path('stubs/recipes')] as $root) {
+            foreach (glob($root.'/*', GLOB_ONLYDIR) ?: [] as $path) {
+                if (! is_file($path.'/composer.json')) {
+                    continue;
+                }
+
+                $described = json_decode((string) @file_get_contents($path.'/recipe.json'), true);
+
+                $recipes[basename($path)] = [
+                    'name' => $described['name'] ?? Str::headline(basename($path)),
+                    'path' => $path,
+                ];
             }
-
-            error("Invalid template \"{$input}\". Valid values: ".implode(', ', array_keys($templates)));
         }
 
-        $selected = select('Which recipe would you like to use?', array_keys($templates));
+        return $recipes;
+    }
 
-        return $templates[$selected];
+    protected function getRecipe(): string
+    {
+        $recipes = $this->recipes();
+        $input = $this->argument('recipe') ?? '';
+
+        if (array_key_exists($input, $recipes)) {
+            return $input;
+        }
+
+        if ($input !== '') {
+            error("Unknown recipe \"{$input}\". Choose one of: ".implode(', ', array_keys($recipes)));
+        }
+
+        return (string) select(
+            'Which recipe would you like to use?',
+            array_map(fn (array $recipe): string => $recipe['name'], $recipes),
+        );
     }
 
     private function validateForNonInteractive(): bool
     {
-        $templates = config('saucebase.template');
+        $recipes = array_keys($this->recipes());
         $missing = [];
 
         if (blank($this->argument('module'))) {
-            $missing[] = 'module (e.g. php artisan saucebase:recipe MyModule "Basic Recipe")';
+            $missing[] = 'module (e.g. php artisan saucebase:recipe MyModule basic)';
         }
 
-        $template = $this->argument('template') ?? '';
-        if ($template === '' || ! array_key_exists($template, $templates)) {
-            $missing[] = 'template — valid values: '.implode(', ', array_keys($templates));
+        if (! in_array($this->argument('recipe') ?? '', $recipes, true)) {
+            $missing[] = 'recipe, one of: '.implode(', ', $recipes);
         }
 
         foreach ($missing as $msg) {
@@ -343,20 +375,29 @@ class RecipeToModuleCommand extends Command
         return ucwords(str_replace('_', ' ', Str::snake($value)));
     }
 
-    protected function writeModuleEntryPoint(string $framework, bool $isContributor): void
+    /**
+     * An installed application has one framework: its files move up into
+     * `resources/js` and the other framework's are dropped.
+     */
+    protected function keepOnlyFramework(string $framework): void
     {
-        $entryPoint = $this->moduleConfigPath.$this->moduleFolder.'/resources/js/app.ts';
+        $js = $this->moduleConfigPath.$this->moduleFolder.'/resources/js';
 
-        if (! $isContributor) {
-            // Install mode: for React, remove the stale app.ts proxy — app.tsx is the real entry.
-            if ($framework === 'react' && file_exists($entryPoint)) {
-                $this->fs->remove($entryPoint);
-            }
-
+        if (! is_dir("{$js}/{$framework}")) {
             return;
         }
 
-        // Dev mode: both subdirs exist, write the proxy.
+        // The recipe's `app.ts` only points at a framework folder that is about to go.
+        $this->fs->remove("{$js}/app.ts");
+        $this->fs->mirror("{$js}/{$framework}", $js);
+        $this->fs->remove(["{$js}/vue", "{$js}/react"]);
+    }
+
+    /** A contributor checkout keeps both frameworks, and `app.ts` points at the selected one. */
+    protected function writeModuleEntryPoint(string $framework): void
+    {
+        $entryPoint = $this->moduleConfigPath.$this->moduleFolder.'/resources/js/app.ts';
+
         file_put_contents($entryPoint, "export * from './{$framework}/app';\n");
 
         $rel = "modules/{$this->moduleFolder}/resources/js/app.ts";

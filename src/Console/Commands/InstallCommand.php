@@ -57,7 +57,7 @@ class InstallCommand extends Command
         $files->copyDirectory(dirname(__DIR__, 3).'/public', $this->laravel->publicPath());
         ServiceProvider::addProviderToBootstrapFile('App\Providers\Filament\AdminPanelProvider');
         $this->callSilently('filament:assets');
-        $this->runAfterEveryComposerInstall($files);
+        $this->configureComposer($files);
         $this->giveTestsMoreMemory($files);
 
         $this->publishStack($files, $stubs.'/stack', $framework);
@@ -94,10 +94,16 @@ class InstallCommand extends Command
     }
 
     /**
-     * What a Composer run can leave stale: a Filament update brings new admin panel
-     * assets, and a newly required module arrives without its generated types.
+     * Two things in the application's composer.json.
+     *
+     * Scripts for what a Composer run can leave stale: a Filament update brings new
+     * admin panel assets, and a newly required module arrives without its generated types.
+     *
+     * And the `modules/*` repository, so Composer finds a module the application wrote
+     * itself. It is not canonical: a module that came from a registry and was copied
+     * into `modules/` still gets its updates from that registry.
      */
-    private function runAfterEveryComposerInstall(Filesystem $files): void
+    private function configureComposer(Filesystem $files): void
     {
         $path = $this->laravel->basePath('composer.json');
 
@@ -113,6 +119,18 @@ class InstallCommand extends Command
             '@php artisan filament:upgrade',
             '@php artisan module:generate-types --all --no-interaction --ansi',
         ]));
+
+        $repositories = (array) ($composer->repositories ?? []);
+        $urls = array_column(json_decode((string) json_encode($repositories), true), 'url');
+
+        if (! in_array('modules/*', $urls, true)) {
+            $composer->repositories = [...array_values($repositories), [
+                'type' => 'path',
+                'url' => 'modules/*',
+                'canonical' => false,
+                'options' => ['symlink' => true],
+            ]];
+        }
 
         $files->put($path, json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).PHP_EOL);
     }

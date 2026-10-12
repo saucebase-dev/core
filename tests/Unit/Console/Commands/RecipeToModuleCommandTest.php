@@ -32,9 +32,9 @@ class TestableRecipeToModuleCommand extends RecipeToModuleCommand
         return parent::placeholders($name);
     }
 
-    public function writeModuleEntryPoint(string $framework, bool $isContributor): void
+    public function writeModuleEntryPoint(string $framework): void
     {
-        parent::writeModuleEntryPoint($framework, $isContributor);
+        parent::writeModuleEntryPoint($framework);
     }
 }
 
@@ -221,25 +221,9 @@ class RecipeToModuleCommandTest extends TestCase
         $this->writeSaucebaseJson(['framework' => null]);
 
         $this->artisan('saucebase:recipe', ['module' => 'TestExit'])
-            ->expectsPromptsError('No frontend framework selected. Run `saucebase stack vue` or `saucebase stack react` first.');
+            ->expectsPromptsError('No frontend framework selected. Run `php artisan saucebase:install` first.');
 
         $this->assertDirectoryDoesNotExist($this->tmpDir.'/modules/test-exit');
-    }
-
-    // ── writeModuleEntryPoint: install mode ───────────────────────────────────
-
-    public function test_install_mode_vue_keeps_app_ts(): void
-    {
-        $this->makeCommand()->writeModuleEntryPoint('vue', false);
-
-        $this->assertFileExists($this->jsRoot().'/app.ts');
-    }
-
-    public function test_install_mode_react_removes_stale_app_ts(): void
-    {
-        $this->makeCommand()->writeModuleEntryPoint('react', false);
-
-        $this->assertFileDoesNotExist($this->jsRoot().'/app.ts');
     }
 
     // ── writeModuleEntryPoint: contributor checkout ───────────────────────────────────────
@@ -248,7 +232,7 @@ class RecipeToModuleCommandTest extends TestCase
     {
         $this->files->makeDirectory($this->jsRoot().'/react', 0755, true);
 
-        $this->makeCommand()->writeModuleEntryPoint('react', true);
+        $this->makeCommand()->writeModuleEntryPoint('react');
 
         $this->assertStringContainsString(
             "export * from './react/app'",
@@ -260,7 +244,7 @@ class RecipeToModuleCommandTest extends TestCase
     {
         $this->files->makeDirectory($this->jsRoot().'/vue', 0755, true);
 
-        $this->makeCommand()->writeModuleEntryPoint('vue', true);
+        $this->makeCommand()->writeModuleEntryPoint('vue');
 
         $this->assertStringContainsString(
             "export * from './vue/app'",

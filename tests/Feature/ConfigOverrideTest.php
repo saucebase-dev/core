@@ -91,10 +91,6 @@ class ConfigOverrideTest extends TestCase
 
     public function test_core_owns_the_saucebase_config(): void
     {
-        $this->assertSame(
-            ['Basic Recipe' => 'stubs/saucebase/recipes/basic'],
-            config('saucebase.template'),
-        );
         $this->assertSame(['module.json'], config('saucebase.ignore_files'));
     }
 }

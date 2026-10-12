@@ -124,6 +124,15 @@ jobs:
         working-directory: app
         run: php artisan test
 
+      # What a customer does next: a module of their own, from the recipe core ships.
+      - name: Create a module from the recipe
+        working-directory: app
+        run: |
+          php artisan saucebase:recipe Notes basic --no-interaction
+          composer require "modules/notes:*" --no-interaction --no-progress
+          npm run build
+          php artisan test
+
   phplint:
       permissions:
           contents: write
