@@ -120,6 +120,35 @@ class InstallCommandTest extends TestCase
         $this->assertStringContainsString('"dont-discover": []', $this->read('composer.json'));
     }
 
+    public function test_it_lets_the_application_hold_modules_of_its_own(): void
+    {
+        $this->files->put($this->appPath.'/composer.json', json_encode(['name' => 'acme/app']));
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        // Without it Composer cannot find a module that only exists in modules/. Not canonical,
+        // so a module that came from a registry still gets its updates from there.
+        $this->assertSame([[
+            'type' => 'path',
+            'url' => 'modules/*',
+            'canonical' => false,
+            'options' => ['symlink' => true],
+        ]], json_decode($this->read('composer.json'), true)['repositories']);
+
+        // Composer refuses the repository while the folder it points into does not exist.
+        $this->assertDirectoryExists($this->appPath.'/modules');
+    }
+
+    public function test_it_keeps_the_repositories_the_application_already_has(): void
+    {
+        $existing = ['type' => 'path', 'url' => 'modules/*', 'options' => ['symlink' => true]];
+        $this->files->put($this->appPath.'/composer.json', json_encode(['name' => 'acme/app', 'repositories' => [$existing]]));
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        $this->assertSame([$existing], json_decode($this->read('composer.json'), true)['repositories']);
+    }
+
     public function test_it_registers_the_admin_panel(): void
     {
         $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();

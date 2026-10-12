@@ -61,13 +61,23 @@ Core has no sign-in pages. Until you add them, guests get a 404 on the dashboard
 composer require saucebase/auth
 ```
 
+To write a module of your own, start from a recipe:
+
+```bash
+php artisan saucebase:recipe Notes basic
+composer update modules/notes
+npm run build
+```
+
+Core ships the `basic` recipe. Add your own as a folder in `stubs/recipes/`, with a `recipe.json` (`{"name": "API only"}`) that names it in the prompt; run the command without a recipe to choose from the list.
+
 After adding a module, run its migrations:
 
 ```bash
 php artisan migrate
 ```
 
-The install also adds two lines to `post-autoload-dump` in `composer.json`, so they run after every Composer command:
+The install also changes `composer.json`. It adds the `modules/*` path repository, so Composer finds the modules you write yourself, and two lines to `post-autoload-dump`, so they run after every Composer command:
 
 - `filament:upgrade` republishes the admin panel's assets, which a Filament update replaces.
 - `module:generate-types --all` generates the TypeScript types of the installed modules, which ship without them.

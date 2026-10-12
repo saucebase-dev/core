@@ -10,8 +10,5 @@ return [
         'en' => 'English',
     ],
 
-    'template' => [
-        'Basic Recipe' => 'stubs/saucebase/recipes/basic',
-    ],
     'ignore_files' => ['module.json'],
 ];

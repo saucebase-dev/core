@@ -24,10 +24,14 @@ Write each behavior's failing test before its implementation.
 ## Scaffolding
 
 ```bash
-php artisan saucebase:recipe Example "Basic Recipe"
+php artisan saucebase:recipe Example basic
 composer update <vendor>/example
 npm run build   # or restart `npm run dev`
 ```
+
+`basic` is the recipe's folder name. Core ships it in `stubs/recipes/basic`; an application adds its
+own as `stubs/recipes/<name>/`, with a `recipe.json` (`{"name": "…"}`) naming it in the prompt. Run the
+command with no recipe to choose from the list.
 
 The recipe creates `modules/example/`, including its own `resources/boost` guideline and
 `saucebase-example-development` skill. Keep both current as the module grows: the guideline holds the
