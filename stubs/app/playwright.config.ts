@@ -121,4 +121,4 @@ async function createConfig() {
     });
 }
 
-export default createConfig();
+export default await createConfig();
