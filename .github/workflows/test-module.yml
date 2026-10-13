@@ -58,7 +58,7 @@ jobs:
             matrix: ${{ steps.read.outputs.matrix }}
         steps:
             - name: Checkout module
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
               with:
                   path: module-src
             - name: Read supported frameworks from composer.json
@@ -78,14 +78,14 @@ jobs:
 
         steps:
             - name: Checkout module
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
               with:
                   path: module-src
 
             # Always checked out, for the action that builds the application. The
             # package itself comes from this checkout only when core_ref is given.
             - name: Checkout core
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
               with:
                   repository: saucebase-dev/core
                   ref: ${{ inputs.core_ref || 'main' }}
@@ -112,7 +112,7 @@ jobs:
               run: tar --exclude='app/node_modules' -czf app.tar.gz app/
 
             - name: Upload the application
-              uses: actions/upload-artifact@v6
+              uses: actions/upload-artifact@v7
               with:
                   name: app-${{ inputs.module }}-${{ matrix.framework }}${{ inputs.artifact_suffix }}
                   path: app.tar.gz
@@ -132,7 +132,7 @@ jobs:
 
         steps:
             - name: Download the application
-              uses: actions/download-artifact@v7
+              uses: actions/download-artifact@v8
               with:
                   name: app-${{ inputs.module }}-${{ matrix.framework }}${{ inputs.artifact_suffix }}
 
@@ -147,7 +147,7 @@ jobs:
                   coverage: none
 
             - name: Setup Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v7
               with:
                   node-version: '22'
                   cache: npm
@@ -201,7 +201,7 @@ jobs:
 
             - name: Upload Playwright report
               if: failure()
-              uses: actions/upload-artifact@v6
+              uses: actions/upload-artifact@v7
               with:
                   name: playwright-report-${{ inputs.module }}-${{ matrix.framework }}${{ inputs.artifact_suffix }}${{ matrix.variant != '' && format('-{0}', matrix.variant) || '' }}
                   path: app/playwright-report/

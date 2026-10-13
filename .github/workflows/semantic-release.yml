@@ -36,20 +36,20 @@ jobs:
             - name: Generate token from GitHub App
               id: generate-token
               continue-on-error: true
-              uses: actions/create-github-app-token@v1
+              uses: actions/create-github-app-token@v2
               with:
                   app-id: ${{ secrets.APP_ID }}
                   private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
             - name: Checkout code
-              uses: actions/checkout@v5
+              uses: actions/checkout@v7
               with:
                   fetch-depth: 0
                   token: ${{ steps.generate-token.outputs.token || secrets.GITHUB_TOKEN }}
 
             - name: Calculate semantic version
               id: version
-              uses: paulhatch/semantic-version@a8f8f59fd7f0625188492e945240f12d7ad2dca3 # v5.4.0
+              uses: paulhatch/semantic-version@4d6da96a9bc3116da3613309a11ff75fba58eb8d # v6.0.4
               with:
                   tag_prefix: 'v'
                   major_pattern: '/!:|BREAKING CHANGE:/'
@@ -104,7 +104,7 @@ jobs:
 
             - name: Create GitHub release
               if: steps.check.outputs.skip == 'false'
-              uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+              uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
               with:
                   token: ${{ secrets.GITHUB_TOKEN }}
                   tag_name: ${{ steps.version.outputs.version_tag }}
