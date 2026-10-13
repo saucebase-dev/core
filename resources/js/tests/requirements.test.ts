@@ -88,6 +88,16 @@ describe('versionLine', () => {
         );
     });
 
+    it('leaves out a version whose file is half written', () => {
+        composer('v1.8.2');
+        fs.writeFileSync(
+            path.join(root, 'vendor', 'composer', 'installed.json'),
+            '{"packages": [',
+        );
+
+        expect(() => versionLine(root, 'vue')).not.toThrow();
+    });
+
     it('paints the names when asked, and leaves the versions plain', () => {
         composer('v1.8.2');
         install('vue', '3.5.13');

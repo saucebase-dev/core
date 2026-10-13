@@ -60,11 +60,11 @@ export function versionLine(
     colors = false,
 ): string {
     const read = (file: string) => {
-        const full = path.join(root, file);
-
-        return fs.existsSync(full)
-            ? JSON.parse(fs.readFileSync(full, 'utf-8'))
-            : null;
+        try {
+            return JSON.parse(fs.readFileSync(path.join(root, file), 'utf-8'));
+        } catch {
+            return null;
+        }
     };
     const paint = (rgb: string, text: string) =>
         colors ? `\x1b[1;38;2;${rgb}m${text}\x1b[0m` : text;
