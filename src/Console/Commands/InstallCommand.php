@@ -5,6 +5,7 @@ namespace Saucebase\Core\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
+use Saucebase\Core\Console\Traits\DisplaysBanner;
 use Saucebase\Core\ProjectConfig;
 use stdClass;
 
@@ -18,6 +19,8 @@ use stdClass;
  */
 class InstallCommand extends Command
 {
+    use DisplaysBanner;
+
     protected $signature = 'saucebase:install
                             {framework? : The frontend framework to install (vue or react)}
                             {--force : Replace existing files without asking}';
@@ -29,8 +32,20 @@ class InstallCommand extends Command
     /** How the stack stubs name their own location, which an installed application must not keep. */
     private const CORE_STACK = 'vendor/saucebase/core/stubs/stack';
 
+    /** What a build, a test run or `filament:assets` writes, which a repository should not hold. */
+    private const GENERATED = [
+        '/bootstrap/ssr',
+        '/playwright-report',
+        '/test-results',
+        '/public/css/filament',
+        '/public/js/filament',
+        '/public/fonts/filament',
+    ];
+
     public function handle(Filesystem $files, ProjectConfig $config): int
     {
+        $this->displayBanner();
+
         if ($config->getFramework() !== null) {
             $this->components->error("Saucebase is already installed with {$config->getFramework()}.");
 
@@ -58,6 +73,7 @@ class InstallCommand extends Command
         ServiceProvider::addProviderToBootstrapFile('App\Providers\Filament\AdminPanelProvider');
         $this->callSilently('filament:assets');
         $this->configureComposer($files);
+        $this->ignoreGeneratedFiles($files);
 
         $this->publishStack($files, $stubs.'/stack', $framework);
 
@@ -69,6 +85,18 @@ class InstallCommand extends Command
         ]);
 
         return self::SUCCESS;
+    }
+
+    /** Added to the application's own .gitignore, which keeps every line it already has. */
+    private function ignoreGeneratedFiles(Filesystem $files): void
+    {
+        $path = $this->laravel->basePath('.gitignore');
+        $current = $files->exists($path) ? $files->get($path) : '';
+        $missing = array_diff(self::GENERATED, array_map(trim(...), explode("\n", $current)));
+
+        if ($missing !== []) {
+            $files->put($path, ($current === '' ? '' : rtrim($current, "\n")."\n\n")."# Saucebase\n".implode("\n", $missing)."\n");
+        }
     }
 
     /** A new Laravel application already has some of these files, and they are about to be replaced. */

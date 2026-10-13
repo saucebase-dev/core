@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { useSettings } from '@saucebase/vue/composables/useSettings';
 import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import IconHeart from '~icons/heroicons/heart';
 
 const settings = useSettings();
+
+const name = computed(() => settings.value.general.site_name);
+
+// A monospace letter is 0.6em wide, so this is the name's natural width at the
+// font size of 100 the drawing uses.
+const width = computed(() => name.value.length * 60);
 </script>
 
 <template>
@@ -51,17 +58,30 @@ const settings = useSettings();
                 </div>
             </div>
         </div>
-        <div
-            class="absolute inset-x-0 bottom-0 z-0 w-full translate-y-[20%] scale-105 px-4 font-mono"
-        >
-            <p
-                class="text-center text-[min(21vw,400px)] leading-none font-black -tracking-widest select-none"
+        <!--
+            Drawn as SVG so the name always spans the width it is given: `textLength`
+            stretches or squeezes it to fit, whatever its length, the font or the
+            window. The name is already in the footer as text, so this copy is hidden
+            from assistive technology.
+        -->
+        <div class="absolute inset-x-0 bottom-0 z-0 px-4" aria-hidden="true">
+            <svg
+                v-if="name"
+                :viewBox="`0 0 ${width} 104`"
+                :style="{ maxWidth: `${name.length * 140}px` }"
+                class="text-foreground/10 mx-auto block w-full font-mono font-black select-none"
                 data-testid="footer-watermark"
             >
-                <span class="text-foreground/10">
-                    {{ settings.general.site_name }}
-                </span>
-            </p>
+                <text
+                    y="80"
+                    font-size="100"
+                    :textLength="width"
+                    lengthAdjust="spacingAndGlyphs"
+                    fill="currentColor"
+                >
+                    {{ name }}
+                </text>
+            </svg>
         </div>
     </footer>
 </template>

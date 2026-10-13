@@ -89,4 +89,28 @@ test.describe('Branding', () => {
             page.locator('img[src="/images/logo-on-light.svg"]'),
         ).toHaveAttribute('alt', siteName);
     });
+
+    for (const width of [390, 820, 1600]) {
+        test(`fits the large name inside the footer at ${width}px`, async ({
+            page,
+        }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto('/');
+
+            const footer = await page.locator('footer').boundingBox();
+            const name = await page
+                .getByTestId('footer-watermark')
+                .boundingBox();
+
+            // The footer hides what overflows it, so a name that reaches past an edge is cut.
+            expect(name!.x).toBeGreaterThanOrEqual(footer!.x);
+            expect(name!.x + name!.width).toBeLessThanOrEqual(
+                footer!.x + footer!.width,
+            );
+            expect(name!.y).toBeGreaterThanOrEqual(footer!.y);
+            expect(name!.y + name!.height).toBeLessThanOrEqual(
+                footer!.y + footer!.height,
+            );
+        });
+    }
 });
