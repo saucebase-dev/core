@@ -8,6 +8,7 @@ import {
     REQUIREMENTS,
     type Requirements,
     unmetRequirements,
+    versionLine,
 } from './requirements.ts';
 
 /** Where Composer installs this package's JavaScript, relative to the app root. */
@@ -123,6 +124,15 @@ export function saucebase({
                     path.join(server.config.root, SAUCEBASE_JS),
                     path.join(server.config.root, SAUCEBASE_STACK),
                 ]);
+
+                // After Laravel's own lines, which it prints shortly after the server starts listening.
+                server.httpServer?.once('listening', () => {
+                    setTimeout(() => {
+                        server.config.logger.info(
+                            `\n  ${versionLine(server.config.root, framework, !process.env.NO_COLOR)}\n`,
+                        );
+                    }, 200);
+                });
             },
         },
         tailwindcss(),

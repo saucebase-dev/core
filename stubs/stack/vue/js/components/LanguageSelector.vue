@@ -72,6 +72,7 @@ const currentLanguage = computed(() => {
                 <button
                     :class="props.triggerClass"
                     :aria-label="$t('Language Selector')"
+                    data-testid="language-selector"
                 >
                     <slot name="trigger" :current-language="currentLanguage">
                         <component

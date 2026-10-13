@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import { useSettings } from '@saucebase/vue/composables/useSettings';
 import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import IconHeart from '~icons/heroicons/heart';
 
 const settings = useSettings();
+
+const name = computed(() => settings.value.general.site_name);
+
+// Sized by letter count so the name stays on one line, and sunk a little below the edge.
+const nameStyle = computed(() => ({
+    fontSize: `min(22vw, 420px, calc((100vw - 20px) * ${2 / (name.value.length + 0.2)}))`,
+    transform: `translateY(${/[gjpqy]/.test(name.value) ? -0.05 : 0.2}em)`,
+}));
 </script>
 
 <template>
@@ -51,15 +60,14 @@ const settings = useSettings();
                 </div>
             </div>
         </div>
-        <div
-            class="absolute inset-x-0 bottom-0 z-0 w-full translate-y-[20%] scale-105 px-4 font-mono"
-        >
+        <div class="absolute inset-x-0 bottom-2.5 z-0 w-full font-mono">
             <p
-                class="text-center text-[min(21vw,400px)] leading-none font-black -tracking-widest select-none"
+                class="text-center leading-none font-black -tracking-widest whitespace-nowrap select-none"
+                :style="nameStyle"
                 data-testid="footer-watermark"
             >
-                <span class="text-foreground/10">
-                    {{ settings.general.site_name }}
+                <span class="text-foreground/10 inline-block pr-[0.1em]">
+                    {{ name }}
                 </span>
             </p>
         </div>

@@ -31,7 +31,7 @@ test.describe('Adding a language', () => {
 
         // The header renders it twice, for wide and narrow screens.
         await page
-            .getByRole('button', { name: 'Language Selector' })
+            .getByTestId('language-selector')
             .filter({ visible: true })
             .click();
         const switched = page.waitForResponse(

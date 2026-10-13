@@ -48,6 +48,51 @@ export function unmetRequirements(
     return problems;
 }
 
+/**
+ * What is installed, as one line for the dev server: `SAUCEBASE CORE v1.8.2  React v19.2.8`.
+ * Read from Composer's and npm's own records, so it is never a hard-coded number.
+ *
+ * @param colors  Paint the names: Saucebase in its two brand colours, the framework in its own.
+ */
+export function versionLine(
+    root: string,
+    framework: 'vue' | 'react',
+    colors = false,
+): string {
+    const read = (file: string) => {
+        try {
+            return JSON.parse(fs.readFileSync(path.join(root, file), 'utf-8'));
+        } catch {
+            return null;
+        }
+    };
+    const paint = (rgb: string, text: string) =>
+        colors ? `\x1b[1;38;2;${rgb}m${text}\x1b[0m` : text;
+
+    const core: string | undefined = read(
+        'vendor/composer/installed.json',
+    )?.packages?.find(
+        (installed: { name: string }) => installed.name === 'saucebase/core',
+    )?.version;
+    const library: string | undefined = read(
+        `node_modules/${framework}/package.json`,
+    )?.version;
+
+    return [
+        [paint('38;185;217', 'SAUCE') + paint('122;123;232', 'BASE CORE'), core]
+            .filter(Boolean)
+            .join(' '),
+        [
+            framework === 'vue'
+                ? paint('66;184;131', 'Vue')
+                : paint('97;218;251', 'React'),
+            library && `v${library}`,
+        ]
+            .filter(Boolean)
+            .join(' '),
+    ].join('  ');
+}
+
 function isOlder(installed: string, minimum: string): boolean {
     const [a, b] = [installed, minimum].map((version) =>
         version.split('.').map((part) => Number.parseInt(part, 10) || 0),

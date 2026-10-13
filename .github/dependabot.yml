@@ -1,0 +1,14 @@
+version: 2
+
+updates:
+    # Third-party actions are pinned to a commit, which never moves on its own. Dependabot
+    # reads the version comment beside each one and opens a pull request with the new commit.
+    - package-ecosystem: github-actions
+      directories:
+          - /
+          - /.github/actions/fresh-app
+      schedule:
+          interval: weekly
+      groups:
+          actions:
+              patterns: ['*']

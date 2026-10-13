@@ -52,6 +52,7 @@ export default function LanguageSelector({
                     <button
                         className={triggerClass}
                         aria-label={t('Language Selector')}
+                        data-testid="language-selector"
                     >
                         {CurrentIcon ? (
                             <CurrentIcon className="size-4.5 rounded-full" />

@@ -31,6 +31,7 @@ class InstallCommandTest extends TestCase
     protected function tearDown(): void
     {
         $this->files->deleteDirectory($this->appPath);
+        putenv('COLUMNS');
 
         parent::tearDown();
     }
@@ -215,6 +216,59 @@ class InstallCommandTest extends TestCase
     }
 
     /** Core has no sign-in pages, and the dashboard and admin panel redirect guests to one. */
+    public function test_it_opens_with_the_saucebase_banner(): void
+    {
+        putenv('COLUMNS=120');
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])
+            ->expectsOutputToContain('Your foundation is ready!')
+            ->assertSuccessful();
+    }
+
+    public function test_it_keeps_the_banner_out_of_an_unattended_run(): void
+    {
+        putenv('COLUMNS=120');
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true, '--no-interaction' => true])
+            ->doesntExpectOutputToContain('Your foundation is ready!')
+            ->assertSuccessful();
+    }
+
+    public function test_a_narrow_terminal_gets_the_name_instead_of_wrapped_artwork(): void
+    {
+        putenv('COLUMNS=60');
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])
+            ->doesntExpectOutputToContain('888')
+            ->doesntExpectOutputToContain('Your foundation is ready!')
+            ->assertSuccessful();
+    }
+
+    public function test_it_ignores_the_files_saucebase_generates(): void
+    {
+        $this->files->put($this->appPath.'/.gitignore', "/vendor\n/public/build\n");
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        $ignored = $this->read('.gitignore');
+
+        // Laravel's own lines stay.
+        $this->assertStringStartsWith("/vendor\n/public/build\n", $ignored);
+
+        foreach (['/bootstrap/ssr', '/playwright-report', '/test-results', '/public/css/filament', '/public/js/filament', '/public/fonts/filament'] as $path) {
+            $this->assertStringContainsString("\n{$path}\n", $ignored);
+        }
+    }
+
+    public function test_it_does_not_ignore_a_path_twice(): void
+    {
+        $this->files->put($this->appPath.'/.gitignore', "/vendor\n/bootstrap/ssr\n");
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        $this->assertSame(1, substr_count($this->read('.gitignore'), '/bootstrap/ssr'));
+    }
+
     public function test_it_says_to_add_the_auth_module(): void
     {
         $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])

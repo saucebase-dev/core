@@ -6,6 +6,13 @@ import { Heart } from 'lucide-react';
 export default function Footer() {
     const t = useT();
     const settings = useSettings();
+    const name = settings.general.site_name;
+
+    // Sized by letter count so the name stays on one line, and sunk a little below the edge.
+    const nameStyle = {
+        fontSize: `min(22vw, 420px, calc((100vw - 20px) * ${2 / (name.length + 0.2)}))`,
+        transform: `translateY(${/[gjpqy]/.test(name) ? -0.05 : 0.2}em)`,
+    };
 
     return (
         <footer className="relative mt-auto w-full overflow-hidden pb-12 sm:pb-48">
@@ -53,13 +60,14 @@ export default function Footer() {
                     </div>
                 </div>
             </div>
-            <div className="absolute bottom-0 z-0 translate-y-[20%] scale-105 px-4 font-mono">
+            <div className="absolute inset-x-0 bottom-2.5 z-0 w-full font-mono">
                 <p
-                    className="text-center text-[21vw] leading-none font-black -tracking-widest select-none"
+                    className="text-center leading-none font-black -tracking-widest whitespace-nowrap select-none"
+                    style={nameStyle}
                     data-testid="footer-watermark"
                 >
-                    <span className="text-foreground/10">
-                        {settings.general.site_name}
+                    <span className="text-foreground/10 inline-block pr-[0.1em]">
+                        {name}
                     </span>
                 </p>
             </div>
