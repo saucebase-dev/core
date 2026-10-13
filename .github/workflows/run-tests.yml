@@ -39,7 +39,7 @@ jobs:
           echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: Install dependencies
-        uses: ramsey/composer-install@v3
+        uses: ramsey/composer-install@a8d0d959dab41457692a5e2041bd9b757a119e3f # 3.2.1
 
       - name: List installed dependencies
         run: composer show -D
@@ -64,7 +64,7 @@ jobs:
           coverage: none
 
       - name: Install dependencies
-        uses: ramsey/composer-install@v3
+        uses: ramsey/composer-install@a8d0d959dab41457692a5e2041bd9b757a119e3f # 3.2.1
 
       - name: Run static analysis
         run: vendor/bin/phpstan analyse --memory-limit=2G --no-progress
@@ -98,7 +98,7 @@ jobs:
 
   fresh-app:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     strategy:
       fail-fast: false
@@ -124,6 +124,43 @@ jobs:
         working-directory: app
         run: php artisan test
 
+      # Core's own browser tests. They are not published: an application owns its pages.
+      - name: Add core's browser tests
+        run: |
+          cp -R core/tests/e2e app/tests/e2e/core
+          mv app/tests/e2e/core/Support/*.php app/tests/Support/
+
+      - name: Install Playwright
+        working-directory: app
+        run: ./node_modules/.bin/playwright install chromium --with-deps
+
+      - name: Start Laravel server
+        working-directory: app
+        run: php artisan serve --host=0.0.0.0 --port=8000 &
+
+      - name: Wait for server
+        run: |
+          for _ in $(seq 15); do
+              if curl -fs localhost:8000 > /dev/null; then
+                  echo "Server is ready!"
+                  exit 0
+              fi
+              echo 'Waiting for server...'
+              sleep 2
+          done
+          exit 1
+
+      - name: Execute core's browser tests
+        working-directory: app
+        run: ./node_modules/.bin/playwright test tests/e2e/core
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-report-${{ matrix.framework }}
+          path: app/playwright-report/
+
       # What a customer does next: a module of their own, from the recipe core ships.
       - name: Create a module from the recipe
         working-directory: app
@@ -142,11 +179,11 @@ jobs:
             with:
                 ref: ${{ github.head_ref }}
           - name: "laravel-pint"
-            uses: aglipanci/laravel-pint-action@latest
+            uses: aglipanci/laravel-pint-action@36de00d5f5a8a4e12d443e01671daa12a18f4c79 # 2.6
             with:
                 configPath: './pint.json'
 
           - name: Commit changes
-            uses: stefanzweifel/git-auto-commit-action@v7
+            uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
             with:
                 commit_message: PHP Linting (Pint)

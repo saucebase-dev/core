@@ -21,11 +21,6 @@ export function registerNavigationDefaults(): void {
         localStorage.setItem('theme', isDark ? 'light' : 'dark');
     });
 
-    registerAction('ui.language.select', (event: MouseEvent) => {
-        event.preventDefault();
-        console.warn('Language selection not yet implemented');
-    });
-
     registerIcon('dashboard', SquareTerminal);
     registerIcon('github', IconGithub);
     registerIcon('discord', IconDiscord);

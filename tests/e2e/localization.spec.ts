@@ -1,0 +1,49 @@
+import { expect, test } from '@e2e/fixtures';
+
+/**
+ * Adding a language takes its translation file and the admin's switch, nothing else: the
+ * selector offers it and the choice sticks. English is the only language that ships, so the
+ * spec adds one for itself.
+ *
+ * The file is only seen by the server: the frontend bundles `lang/*.json` at build time, so
+ * strings stay English here. What is ours is discovery, the admin switch, the selector and
+ * the stored choice.
+ */
+test.describe('Adding a language', () => {
+    test.beforeAll(async ({ laravel }) => {
+        await laravel.callFunction(
+            'Tests\\Support\\LocalizationSupport::addLanguage',
+            ['pt_BR'],
+        );
+    });
+
+    test.afterAll(async ({ laravel }) => {
+        await laravel.callFunction(
+            'Tests\\Support\\LocalizationSupport::removeLanguage',
+            ['pt_BR'],
+        );
+    });
+
+    // On the landing page: the signed-in pages offer the selector from the user menu,
+    // which needs the auth module.
+    test('the selector offers it and the choice sticks', async ({ page }) => {
+        await page.goto('/');
+
+        // The header renders it twice, for wide and narrow screens.
+        await page
+            .getByRole('button', { name: 'Language Selector' })
+            .filter({ visible: true })
+            .click();
+        const switched = page.waitForResponse(
+            (response) =>
+                response.url().endsWith('/locale/pt_BR') && response.ok(),
+        );
+        await page.getByTestId('language-option-pt_BR').click();
+        await switched;
+
+        // The server's answer, read before the frontend's i18n rewrites `<html lang>` to the
+        // bundled language it fell back to: a new language reaches the bundle on the next build.
+        const reloaded = await page.reload();
+        expect(await reloaded?.text()).toContain('<html lang="pt-BR"');
+    });
+});

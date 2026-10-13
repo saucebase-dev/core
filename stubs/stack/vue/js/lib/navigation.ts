@@ -21,12 +21,6 @@ export function registerNavigationDefaults(): void {
         setCookie('appearance', next);
     });
 
-    // TODO: Implement language selection logic
-    registerAction('ui.language.select', (event: MouseEvent) => {
-        event.preventDefault();
-        console.warn('Language selection not yet implemented');
-    });
-
     registerIcon('dashboard', IconSquareTerminal);
     registerIcon('github', IconGithub);
     registerIcon('discord', IconDiscord);
