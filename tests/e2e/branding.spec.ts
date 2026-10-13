@@ -91,26 +91,31 @@ test.describe('Branding', () => {
     });
 
     for (const width of [390, 820, 1600]) {
-        test(`fits the large name inside the footer at ${width}px`, async ({
+        test(`keeps the large name on one line inside the footer at ${width}px`, async ({
             page,
         }) => {
             await page.setViewportSize({ width, height: 900 });
             await page.goto('/');
+            // The size is worked out for the monospace font, so measure once it has loaded.
+            await page.evaluate(() => document.fonts.ready);
 
             const footer = await page.locator('footer').boundingBox();
-            const name = await page
-                .getByTestId('footer-watermark')
-                .boundingBox();
+            const name = page.getByTestId('footer-watermark').locator('span');
+            const box = await name.boundingBox();
 
-            // The footer hides what overflows it, so a name that reaches past an edge is cut.
-            expect(name!.x).toBeGreaterThanOrEqual(footer!.x);
-            expect(name!.x + name!.width).toBeLessThanOrEqual(
+            // The footer hides what overflows it, so a name that reaches past a side is cut.
+            // The bottom is not measured: the letters stand 10px above it, but their line box
+            // reaches lower, and a box is all this can read.
+            expect(box!.x).toBeGreaterThanOrEqual(footer!.x);
+            expect(box!.x + box!.width).toBeLessThanOrEqual(
                 footer!.x + footer!.width,
             );
-            expect(name!.y).toBeGreaterThanOrEqual(footer!.y);
-            expect(name!.y + name!.height).toBeLessThanOrEqual(
-                footer!.y + footer!.height,
+
+            // A name that wrapped would stand two lines tall.
+            const fontSize = await name.evaluate((element) =>
+                Number.parseFloat(getComputedStyle(element).fontSize),
             );
+            expect(box!.height).toBeLessThan(fontSize * 1.5);
         });
     }
 });

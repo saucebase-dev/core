@@ -8,9 +8,11 @@ const settings = useSettings();
 
 const name = computed(() => settings.value.general.site_name);
 
-// A monospace letter is 0.6em wide, so this is the name's natural width at the
-// font size of 100 the drawing uses.
-const width = computed(() => name.value.length * 60);
+// Sized by letter count so the name stays on one line, and sunk a little below the edge.
+const nameStyle = computed(() => ({
+    fontSize: `min(22vw, 420px, calc((100vw - 20px) * ${2 / (name.value.length + 0.2)}))`,
+    transform: `translateY(${/[gjpqy]/.test(name.value) ? -0.05 : 0.2}em)`,
+}));
 </script>
 
 <template>
@@ -58,30 +60,16 @@ const width = computed(() => name.value.length * 60);
                 </div>
             </div>
         </div>
-        <!--
-            Drawn as SVG so the name always spans the width it is given: `textLength`
-            stretches or squeezes it to fit, whatever its length, the font or the
-            window. The name is already in the footer as text, so this copy is hidden
-            from assistive technology.
-        -->
-        <div class="absolute inset-x-0 bottom-0 z-0 px-4" aria-hidden="true">
-            <svg
-                v-if="name"
-                :viewBox="`0 0 ${width} 104`"
-                :style="{ maxWidth: `${name.length * 140}px` }"
-                class="text-foreground/10 mx-auto block w-full font-mono font-black select-none"
+        <div class="absolute inset-x-0 bottom-2.5 z-0 w-full font-mono">
+            <p
+                class="text-center leading-none font-black -tracking-widest whitespace-nowrap select-none"
+                :style="nameStyle"
                 data-testid="footer-watermark"
             >
-                <text
-                    y="80"
-                    font-size="100"
-                    :textLength="width"
-                    lengthAdjust="spacingAndGlyphs"
-                    fill="currentColor"
-                >
+                <span class="text-foreground/10 inline-block pr-[0.1em]">
                     {{ name }}
-                </text>
-            </svg>
+                </span>
+            </p>
         </div>
     </footer>
 </template>

@@ -8,9 +8,11 @@ export default function Footer() {
     const settings = useSettings();
     const name = settings.general.site_name;
 
-    // A monospace letter is 0.6em wide, so this is the name's natural width at the
-    // font size of 100 the drawing uses.
-    const width = name.length * 60;
+    // Sized by letter count so the name stays on one line, and sunk a little below the edge.
+    const nameStyle = {
+        fontSize: `min(22vw, 420px, calc((100vw - 20px) * ${2 / (name.length + 0.2)}))`,
+        transform: `translateY(${/[gjpqy]/.test(name) ? -0.05 : 0.2}em)`,
+    };
 
     return (
         <footer className="relative mt-auto w-full overflow-hidden pb-12 sm:pb-48">
@@ -58,34 +60,16 @@ export default function Footer() {
                     </div>
                 </div>
             </div>
-            {/*
-                Drawn as SVG so the name always spans the width it is given: `textLength`
-                stretches or squeezes it to fit, whatever its length, the font or the
-                window. The name is already in the footer as text, so this copy is hidden
-                from assistive technology.
-            */}
-            <div
-                className="absolute inset-x-0 bottom-0 z-0 px-4"
-                aria-hidden="true"
-            >
-                {name && (
-                    <svg
-                        viewBox={`0 0 ${width} 104`}
-                        style={{ maxWidth: `${name.length * 140}px` }}
-                        className="text-foreground/10 mx-auto block w-full font-mono font-black select-none"
-                        data-testid="footer-watermark"
-                    >
-                        <text
-                            y="80"
-                            fontSize="100"
-                            textLength={width}
-                            lengthAdjust="spacingAndGlyphs"
-                            fill="currentColor"
-                        >
-                            {name}
-                        </text>
-                    </svg>
-                )}
+            <div className="absolute inset-x-0 bottom-2.5 z-0 w-full font-mono">
+                <p
+                    className="text-center leading-none font-black -tracking-widest whitespace-nowrap select-none"
+                    style={nameStyle}
+                    data-testid="footer-watermark"
+                >
+                    <span className="text-foreground/10 inline-block pr-[0.1em]">
+                        {name}
+                    </span>
+                </p>
             </div>
         </footer>
     );
