@@ -12,6 +12,9 @@ module plugin.
   `Exception`, commands in `Command`, form requests in `Request`.
 - Traits live in `Traits/`, never `Concerns/`, including internal helpers (`Filament/Traits/`,
   `Console/Traits/`), so the directory says what the file is.
+- A module's policy for its own model lives in `src/Policies/<Model>Policy.php`, where Laravel
+  discovers it; never register it with `Gate::policy()`. Register only a policy for a model the
+  module does not own, such as auth's `UserPolicy` for the app's `App\Models\User`.
 - A module's agent context lives in its `resources/boost/`. `composer boost:update` runs `modules:boost`,
   which links each module into the vendor path Boost scans and lists it in `boost.json`, so never list
   modules there by hand.

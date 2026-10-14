@@ -10,6 +10,34 @@
 @source '../../modules/*/resources/js/**/*.{vue,jsx,tsx}';
 @source not '../../bootstrap/ssr';
 
+/* The fonts theme.css names, from the @fontsource-variable packages, under the names it uses. */
+@font-face {
+    font-family: 'Outfit';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 100 900;
+    src: url('@fontsource-variable/outfit/files/outfit-latin-wght-normal.woff2')
+        format('woff2-variations');
+}
+
+@font-face {
+    font-family: 'Source Serif 4';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 200 900;
+    src: url('@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-normal.woff2')
+        format('woff2-variations');
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 100 800;
+    src: url('@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2')
+        format('woff2-variations');
+}
+
 @custom-variant dark (&:is(.dark *, [data-theme="dark"] *));
 
 @layer base {
