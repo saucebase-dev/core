@@ -1,95 +1,52 @@
 # Saucebase Core
 
-Everything [Saucebase](https://github.com/saucebase-dev/saucebase) adds on top of a bare Laravel application: navigation, localization, module infrastructure, the settings modal, and the Inertia layer.
+[![Latest Version](https://img.shields.io/packagist/v/saucebase/core.svg)](https://packagist.org/packages/saucebase/core)
+[![Downloads](https://img.shields.io/packagist/dt/saucebase/core.svg)](https://packagist.org/packages/saucebase/core)
+[![Tests](https://github.com/saucebase-dev/core/actions/workflows/run-tests.yml/badge.svg)](https://github.com/saucebase-dev/core/actions/workflows/run-tests.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=saucebase-dev_core&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=saucebase-dev_core)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+What [Saucebase](https://github.com/saucebase-dev/saucebase) adds to a Laravel app: the Vue or React starter UI, modules, navigation, the settings modal, localization and the admin panel.
 
 ## Install
 
-In a new Laravel application:
+The quickest way is a new app with everything set up:
+
+```bash
+curl -fsSL https://install.saucebase.dev | bash
+```
+
+Into an existing Laravel app:
 
 ```bash
 composer config allow-plugins.saucebase/module-installer true
 composer require saucebase/core
+composer require --dev saucebase/laravel-playwright
 php artisan saucebase:install vue   # or react
 npm install && npm run build
 php artisan migrate --seed
 ```
 
-The first line trusts the Composer plugin that installs modules into `modules/`. Composer asks about it when run by hand, but refuses the plugin outright when run unattended (`--no-interaction`, CI).
+`saucebase:install` copies the starter UI and a few files into the app, which owns them from then on. It asks before replacing files unless you pass `--force`.
 
-`saucebase:install` copies the starter pages, the build configuration and a few PHP files into the application, which owns them from then on. A framework is chosen once: the command refuses to run again after it has been set.
+### With an AI agent
 
-It replaces these files of a new Laravel application, and asks first unless you pass `--force`:
+Paste this into Claude Code, Cursor or any coding agent, from the root of a Laravel app:
 
-- `app/Models/User.php`
-- `app/Providers/AppServiceProvider.php`
-- `database/seeders/DatabaseSeeder.php`
-- `routes/web.php`
-- `public/favicon.ico`
-- `tests/Feature/ExampleTest.php`
-- `tests/TestCase.php`
-
-The example test is replaced because the home page now reads the settings table, so the test has to migrate the database (`RefreshDatabase`) to pass.
-
-## Tests
-
-The install gives the application what a module's tests build on:
-
-- `tests/TestCase.php` seeds the roles and has `createUser()`. Module tests extend it.
-- `phpunit.xml` is replaced with one that adds the `Modules` test suite and a 2048 MB memory limit, which the larger modules need. It forces the test environment and database, so tests run inside a container never touch the application's own database.
-- `playwright.config.ts`, `tests/e2e/` and `tests/Support/` are the browser test setup. Module specs import `@e2e/fixtures`.
-
-Run a module's tests from the application:
-
-```bash
-php artisan test modules/auth/tests
+```text
+Add Saucebase to this Laravel app. Run
+`composer config allow-plugins.saucebase/module-installer true`,
+`composer require saucebase/core`,
+`composer require --dev saucebase/laravel-playwright`,
+`php artisan saucebase:install vue --force`, then
+`npm install`, `npm run build` and `php artisan migrate --seed`.
+Tell me if any step fails.
 ```
-
-Browser tests need one more package and a secret in `.env`:
-
-```bash
-composer require --dev saucebase/laravel-playwright
-echo "PLAYWRIGHT_SECRET=$(openssl rand -hex 16)" >> .env
-npx playwright install chromium
-npx playwright test modules/auth/tests/e2e
-```
-
-They run against the built frontend on `APP_URL`, so the application has to be served there.
-
-Core has no sign-in pages. Until you add them, guests get a 404 on the dashboard and the admin panel:
-
-```bash
-composer require saucebase/auth
-```
-
-To write a module of your own, start from a recipe:
-
-```bash
-php artisan saucebase:recipe Notes basic
-composer update modules/notes
-npm run build
-```
-
-Core ships the `basic` recipe. Add your own as a folder in `stubs/recipes/`, with a `recipe.json` (`{"name": "API only"}`) that names it in the prompt; run the command without a recipe to choose from the list.
-
-After adding a module, run its migrations:
-
-```bash
-php artisan migrate
-```
-
-The install also changes `composer.json`. It adds the `modules/*` path repository, so Composer finds the modules you write yourself, and two lines to `post-autoload-dump`, so they run after every Composer command:
-
-- `filament:upgrade` republishes the admin panel's assets, which a Filament update replaces.
-- `module:generate-types --all` generates the TypeScript types of the installed modules, which ship without them.
-
-## What lives here, and what doesn't
-
-Core owns the plumbing. The application owns everything a user would realistically open and edit — `App\Models\User`, routes, controllers, the Filament panel provider, and the whole frontend under `resources/js`.
-
-The rule: **the app keeps a file only if a user must open it to do a normal thing.**
-
-Core is deliberately not a general-purpose Laravel package. It depends on Inertia, Filament and `internachi/modular`, because nothing uses Saucebase without them.
 
 ## License
 
-MIT
+MIT.
+
+---
+
+The documentation is being updated for v3.

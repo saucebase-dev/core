@@ -91,8 +91,10 @@ class InstallCommandTest extends TestCase
 
         // A container sets these for the running application, and PHPUnit keeps a variable that
         // already exists: unforced, the tests would run against the application's own database.
+        // Laravel reads $_SERVER before $_ENV, so both are forced.
         foreach (['APP_ENV', 'DB_CONNECTION', 'DB_DATABASE', 'QUEUE_CONNECTION', 'SESSION_DRIVER'] as $name) {
             $this->assertMatchesRegularExpression('/<env name="'.$name.'" value="[^"]*" force="true"\/>/', $phpunit, $name);
+            $this->assertMatchesRegularExpression('/<server name="'.$name.'" value="[^"]*" force="true"\/>/', $phpunit, $name);
         }
     }
 
