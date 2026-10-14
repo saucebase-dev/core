@@ -133,6 +133,30 @@ through `@/components`, `@/layouts` and `@/lib/utils`. The app's
 `saucebase-frontend-development` skill lists exactly what is available. Never import a
 `vendor/` path.
 
+## npm Packages
+
+Every module has a `package.json` (the recipe creates it), with only `name` and `private` until
+the module imports an npm package core's stack manifest doesn't list. The app's `package.json`
+declares `"workspaces": ["modules/*"]`, so `npm install` puts a module's packages in the root
+`node_modules`, with no edit to the app's manifest. Each module is a workspace, so adding one
+changes the app's `package-lock.json`: run `npm install` after adding one, or `npm ci` refuses
+the stale lockfile.
+
+```json
+{
+    "name": "@saucebase/reports",
+    "private": true,
+    "dependencies": { "chart.js": "^4.4.0" },
+    "devDependencies": { "@iconify-json/mdi": "^1.2.3" }
+}
+```
+
+- Build and test tools (icon sets for `~icons/…`, `@faker-js/faker` for E2E) are `devDependencies`.
+- Never list `vue`, `react` or a package core already ships: a module carries code for both stacks
+  and only one is installed, so those are `peerDependencies` at most.
+- Installing a module doesn't run npm. Until `npm install` runs, Vite fails on the module's
+  imports.
+
 ## TypeScript Types
 
 PHP enums and classes marked `#[TypeScript]` are exported to `resources/js/types/generated.d.ts`. Never

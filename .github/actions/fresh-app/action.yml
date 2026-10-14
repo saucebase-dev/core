@@ -120,7 +120,8 @@ runs:
           shell: bash
           working-directory: app
           run: |
-              npm ci --ignore-scripts
+              # Each module is an npm workspace the starter lockfile doesn't list yet, so npm ci would refuse it.
+              npm install --ignore-scripts
               npm run build
 
         - name: Run migrations

@@ -42,6 +42,7 @@ class RecipeCommandTest extends TestCase
         $this->assertStringContainsString('use '.ModuleServiceProvider::class.';', $this->read('src/Providers/NotesServiceProvider.php'));
         $this->assertStringContainsString('"type": "laravel-module"', $this->read('composer.json'));
         $this->assertStringContainsString('"name": "modules/notes"', $this->read('composer.json'));
+        $this->assertSame(['name' => '@modules/notes', 'private' => true, 'type' => 'module'], json_decode($this->read('package.json'), true));
 
         // What describes the recipe is not part of the module.
         $this->assertFileDoesNotExist($this->module('recipe.json'));
