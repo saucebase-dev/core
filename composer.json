@@ -1,7 +1,7 @@
 {
   "$schema": "https://getcomposer.org/schema.json",
   "name": "saucebase/core",
-  "description": "The Saucebase core package",
+  "description": "The AI-ready Laravel SaaS kit: billing, workspaces, blog and admin as modules, each with Laravel Boost guidelines and skills for your agent.",
   "keywords": [
     "laravel",
     "saucebase",

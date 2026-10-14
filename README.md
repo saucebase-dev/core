@@ -6,7 +6,9 @@
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=saucebase-dev_core&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=saucebase-dev_core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-What [Saucebase](https://github.com/saucebase-dev/saucebase) adds to a Laravel app: the Vue or React starter UI, modules, navigation, the settings modal, localization and the admin panel.
+**The AI-ready Laravel SaaS kit.** Everything your SaaS needs, ready for your AI to build on.
+
+This is the package behind [Saucebase](https://github.com/saucebase-dev/saucebase): the Vue or React starter UI, the module system, navigation, settings, localization and the admin panel. Every module ships Laravel Boost guidelines and skills, so your AI agent knows how it works from the first prompt.
 
 ## Install
 
@@ -16,7 +18,7 @@ The quickest way is a new app with everything set up:
 curl -fsSL https://install.saucebase.dev | bash
 ```
 
-Into an existing Laravel app:
+Into a new Laravel app:
 
 ```bash
 composer config allow-plugins.saucebase/module-installer true
