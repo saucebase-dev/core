@@ -26,7 +26,7 @@
         <!--
             Forced: a container sets these for the running application, and PHPUnit keeps a
             variable that already exists. Unforced, the tests would run against the
-            application's own database.
+            application's own database. Laravel reads $_SERVER before $_ENV, so both are set.
         -->
         <env name="APP_ENV" value="testing" force="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
@@ -42,5 +42,10 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <server name="APP_ENV" value="testing" force="true"/>
+        <server name="DB_CONNECTION" value="sqlite" force="true"/>
+        <server name="DB_DATABASE" value=":memory:" force="true"/>
+        <server name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <server name="SESSION_DRIVER" value="array" force="true"/>
     </php>
 </phpunit>
