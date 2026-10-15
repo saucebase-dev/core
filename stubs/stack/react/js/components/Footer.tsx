@@ -8,14 +8,15 @@ export default function Footer() {
     const settings = useSettings();
     const name = settings.general.site_name;
 
-    // Sized by letter count so the name stays on one line, and sunk a little below the edge.
+    // Sized by letter count so the name stays on one line. The box ends at the baseline
+    // (text-box), so a name gets room below only for letters that reach under it.
     const nameStyle = {
         fontSize: `min(22vw, 420px, calc((100vw - 20px) * ${2 / (name.length + 0.2)}))`,
-        transform: `translateY(${/[gjpqy]/.test(name) ? -0.05 : 0.2}em)`,
+        paddingBottom: /[gjpqy]/.test(name) ? '0.3em' : '0.03em',
     };
 
     return (
-        <footer className="relative mt-auto w-full overflow-hidden pb-12 sm:pb-48">
+        <footer className="relative mt-auto w-full overflow-hidden">
             <div className="relative z-10 mx-4 py-8 min-[450px]:mx-auto min-[450px]:max-w-7xl min-[450px]:px-6">
                 <div className="text-muted-foreground flex w-full flex-col items-center justify-between gap-4 text-sm md:flex-row">
                     <div className="flex flex-col items-center gap-y-1 md:flex-row md:items-center md:gap-x-6 md:gap-y-0">
@@ -60,9 +61,9 @@ export default function Footer() {
                     </div>
                 </div>
             </div>
-            <div className="absolute inset-x-0 bottom-2.5 z-0 w-full font-mono">
+            <div className="w-full font-mono">
                 <p
-                    className="text-center leading-none font-black -tracking-widest whitespace-nowrap select-none"
+                    className="text-center leading-[1.3] font-black -tracking-widest whitespace-nowrap select-none [text-box:trim-end_text_alphabetic]"
                     style={nameStyle}
                     data-testid="footer-watermark"
                 >

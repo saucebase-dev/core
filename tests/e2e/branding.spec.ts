@@ -90,32 +90,83 @@ test.describe('Branding', () => {
         ).toHaveAttribute('alt', siteName);
     });
 
-    for (const width of [390, 820, 1600]) {
-        test(`keeps the large name on one line inside the footer at ${width}px`, async ({
-            page,
-        }) => {
-            await page.setViewportSize({ width, height: 900 });
-            await page.goto('/');
-            // The size is worked out for the monospace font, so measure once it has loaded.
-            await page.evaluate(() => document.fonts.ready);
+    // The page data is rewritten on its way to the browser, so the names change without a
+    // settings write that would leak into the specs running beside this one.
+    const names = ['Acme Shop', 'Saucebase', 'Gypsy Query'];
 
-            const footer = await page.locator('footer').boundingBox();
-            const name = page.getByTestId('footer-watermark').locator('span');
-            const box = await name.boundingBox();
+    for (const siteNameShown of names) {
+        for (const width of [390, 820, 1600]) {
+            test(`shows "${siteNameShown}" whole inside the footer at ${width}px`, async ({
+                page,
+            }) => {
+                await page.route(
+                    (url) => url.pathname === '/',
+                    async (route) => {
+                        const response = await route.fetch();
+                        // The page data is embedded either escaped or as raw JSON.
+                        const body = (await response.text())
+                            .replace(
+                                /(&quot;site_name&quot;:&quot;)[^&]*(&quot;)/g,
+                                `$1${siteNameShown}$2`,
+                            )
+                            .replace(
+                                /("site_name":")[^"]*(")/g,
+                                `$1${siteNameShown}$2`,
+                            );
+                        await route.fulfill({ response, body });
+                    },
+                );
+                await page.setViewportSize({ width, height: 900 });
+                await page.goto('/');
+                // The size is worked out for the monospace font, so measure once it has loaded.
+                await page.evaluate(() => document.fonts.ready);
 
-            // The footer hides what overflows it, so a name that reaches past a side is cut.
-            // The bottom is not measured: the letters stand 10px above it, but their line box
-            // reaches lower, and a box is all this can read.
-            expect(box!.x).toBeGreaterThanOrEqual(footer!.x);
-            expect(box!.x + box!.width).toBeLessThanOrEqual(
-                footer!.x + footer!.width,
-            );
+                const name = page
+                    .getByTestId('footer-watermark')
+                    .locator('span');
+                await expect(name).toHaveText(siteNameShown);
 
-            // A name that wrapped would stand two lines tall.
-            const fontSize = await name.evaluate((element) =>
-                Number.parseFloat(getComputedStyle(element).fontSize),
-            );
-            expect(box!.height).toBeLessThan(fontSize * 1.5);
-        });
+                const footer = await page.locator('footer').boundingBox();
+                const box = await name.boundingBox();
+
+                // The footer hides what overflows it, so a name past any edge is cut.
+                expect(box!.x).toBeGreaterThanOrEqual(footer!.x);
+                expect(box!.x + box!.width).toBeLessThanOrEqual(
+                    footer!.x + footer!.width,
+                );
+                expect(box!.y).toBeGreaterThanOrEqual(footer!.y);
+
+                // The box runs past the letters, so the bottom is measured from the baseline:
+                // room for letters that reach below it (g, j, p, q, y), and none otherwise.
+                const roomBelowBaseline = await name.evaluate((element) => {
+                    // A zero-size inline box sits on the baseline.
+                    const marker = document.createElement('span');
+                    marker.style.display = 'inline-block';
+                    element.append(marker);
+                    const baseline = marker.getBoundingClientRect().bottom;
+                    marker.remove();
+
+                    return (
+                        (element.closest('footer')!.getBoundingClientRect()
+                            .bottom -
+                            baseline) /
+                        Number.parseFloat(getComputedStyle(element).fontSize)
+                    );
+                });
+
+                if (/[gjpqy]/.test(siteNameShown)) {
+                    expect(roomBelowBaseline).toBeGreaterThanOrEqual(0.25);
+                } else {
+                    expect(roomBelowBaseline).toBeGreaterThanOrEqual(0);
+                    expect(roomBelowBaseline).toBeLessThan(0.1);
+                }
+
+                // A name that wrapped would stand two lines tall.
+                const fontSize = await name.evaluate((element) =>
+                    Number.parseFloat(getComputedStyle(element).fontSize),
+                );
+                expect(box!.height).toBeLessThan(fontSize * 2);
+            });
+        }
     }
 });
