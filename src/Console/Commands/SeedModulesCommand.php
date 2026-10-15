@@ -17,6 +17,12 @@ class SeedModulesCommand extends Command
 
     public function handle(ModuleRegistry $registry): int
     {
+        if ($this->option('demo') && blank(config('saucebase.demo_password'))) {
+            $this->components->error('Set DEMO_PASSWORD in .env to seed demo data. Every demo account uses it.');
+
+            return self::FAILURE;
+        }
+
         $filter = $this->option('module') !== null
             ? strtolower($this->option('module'))
             : null;

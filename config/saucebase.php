@@ -11,4 +11,10 @@ return [
     ],
 
     'ignore_files' => ['module.json'],
+
+    /*
+     * The password of every account the demo seeders create. There is no default:
+     * a known password on a reachable admin account is the risk this avoids.
+     */
+    'demo_password' => env('DEMO_PASSWORD'),
 ];

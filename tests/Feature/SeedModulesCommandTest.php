@@ -20,6 +20,7 @@ class SeedModulesCommandTest extends TestCase
         parent::setUp();
 
         DatabaseSeeder::$ran = [];
+        config(['saucebase.demo_password' => 'secret']);
     }
 
     public function test_it_runs_only_the_required_seeder_by_default(): void
@@ -37,6 +38,17 @@ class SeedModulesCommandTest extends TestCase
             ['DatabaseSeeder', 'DemoModuleTestFixtureDatabaseSeeder'],
             DatabaseSeeder::$ran,
         );
+    }
+
+    public function test_demo_refuses_without_a_demo_password(): void
+    {
+        config(['saucebase.demo_password' => null]);
+
+        $this->artisan('modules:seed', ['--demo' => true])
+            ->expectsOutputToContain('Set DEMO_PASSWORD in .env')
+            ->assertFailed();
+
+        $this->assertSame([], DatabaseSeeder::$ran);
     }
 
     public function test_module_option_matches_case_insensitively(): void
