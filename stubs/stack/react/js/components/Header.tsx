@@ -2,7 +2,6 @@ import { cn } from '@/lib/utils';
 import type { MenuItem } from '@saucebase/core/types';
 import { Link, usePage } from '@inertiajs/react';
 import { useAuth } from '@saucebase/react/hooks/useAuth';
-import { useModules } from '@saucebase/react/hooks/useModules';
 import { useT } from '@saucebase/react/i18n';
 import { handleAction } from '@saucebase/react/lib/navigation';
 import { ArrowRight, ExternalLink, Menu, X } from 'lucide-react';
@@ -14,7 +13,6 @@ import ThemeSelector from './ThemeSelector';
 export default function Header() {
     const t = useT();
     const page = usePage();
-    const { has } = useModules();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isVisible, setIsVisible] = useState(true);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -30,8 +28,9 @@ export default function Header() {
           }
         | undefined;
     const isLoggedIn = auth?.user != null;
-    const isGuest = has('auth') && !isLoggedIn;
-    const canRegister = isGuest && auth?.registration_enabled === true;
+    const isGuest = route().has('login') && !isLoggedIn;
+    const canRegister =
+        isGuest && route().has('register') && auth?.registration_enabled === true;
 
     /** How the sign-in and registration entry points render. */
     const { login, signup } = useAuth();

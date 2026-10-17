@@ -81,6 +81,7 @@ class InstallCommand extends Command
         $this->components->bulletList([
             'npm install && npm run build',
             'php artisan migrate --seed',
+            'php artisan boost:install (pick your agent: it reads the Saucebase guidelines and skills from there)',
             'composer require saucebase/auth (sign-in pages: the dashboard and the admin panel need them)',
         ]);
 
@@ -124,7 +125,8 @@ class InstallCommand extends Command
      * Two things in the application's composer.json.
      *
      * Scripts for what a Composer run can leave stale: a Filament update brings new
-     * admin panel assets, and a newly required module arrives without its generated types.
+     * admin panel assets, and a newly required module arrives without its generated types
+     * or its Boost guidelines and skills.
      *
      * And the `modules/*` repository, so Composer finds a module the application wrote
      * itself. It is not canonical: a module that came from a registry and was copied
@@ -145,6 +147,7 @@ class InstallCommand extends Command
             ...(array) ($composer->scripts->{'post-autoload-dump'} ?? []),
             '@php artisan filament:upgrade',
             '@php artisan module:generate-types --all --no-interaction --ansi',
+            '@php artisan modules:boost --ansi',
         ]));
 
         $repositories = (array) ($composer->repositories ?? []);

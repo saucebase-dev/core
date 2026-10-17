@@ -117,6 +117,7 @@ class InstallCommandTest extends TestCase
             '@php artisan package:discover --ansi',
             '@php artisan filament:upgrade',
             '@php artisan module:generate-types --all --no-interaction --ansi',
+            '@php artisan modules:boost --ansi',
         ], $composer['scripts']['post-autoload-dump']);
         $this->assertSame('acme/app', $composer['name']);
         $this->assertStringContainsString('"dont-discover": []', $this->read('composer.json'));
@@ -269,6 +270,13 @@ class InstallCommandTest extends TestCase
         $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
 
         $this->assertSame(1, substr_count($this->read('.gitignore'), '/bootstrap/ssr'));
+    }
+
+    public function test_it_says_to_set_up_boost_for_the_agent(): void
+    {
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])
+            ->expectsOutputToContain('php artisan boost:install')
+            ->assertSuccessful();
     }
 
     public function test_it_says_to_add_the_auth_module(): void
