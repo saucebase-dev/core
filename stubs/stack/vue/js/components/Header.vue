@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useAuth } from '@saucebase/vue/composables/useAuth';
-import { modules } from '@saucebase/vue/composables/useModules';
 import { handleAction } from '@saucebase/vue/lib/navigation';
 import { cn } from '@/lib/utils';
 import type { MenuItem } from '@saucebase/core/types';
@@ -124,7 +123,7 @@ onBeforeUnmount(() => {
                     </div>
 
                     <a
-                        v-if="modules().has('Auth') && !auth?.user"
+                        v-if="route().has('login') && !auth?.user"
                         :href="route('login')"
                         class="text-foreground/80 hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200"
                         data-testid="header-sign-in"
@@ -135,7 +134,7 @@ onBeforeUnmount(() => {
 
                     <a
                         v-if="
-                            modules().has('Auth') &&
+                            route().has('register') &&
                             !auth?.user &&
                             auth?.registration_enabled
                         "
@@ -226,7 +225,7 @@ onBeforeUnmount(() => {
                         <div class="border-border/60 mt-2 border-t pt-4">
                             <!-- Unauthenticated: side-by-side buttons -->
                             <div
-                                v-if="modules().has('auth') && !auth?.user"
+                                v-if="route().has('login') && !auth?.user"
                                 class="flex gap-3"
                             >
                                 <a
@@ -241,7 +240,7 @@ onBeforeUnmount(() => {
                                     {{ $t('Sign In') }}
                                 </a>
                                 <a
-                                    v-if="auth?.registration_enabled"
+                                    v-if="route().has('register') && auth?.registration_enabled"
                                     :href="route('register')"
                                     class="bg-primary text-primary-foreground hover:bg-primary/90 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200"
                                     data-testid="header-get-started-mobile"
@@ -257,7 +256,7 @@ onBeforeUnmount(() => {
 
                             <!-- Authenticated: one button, home -->
                             <Link
-                                v-if="modules().has('auth') && auth?.user"
+                                v-if="route().has('home') && auth?.user"
                                 :href="route('home')"
                                 class="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200"
                             >
