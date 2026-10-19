@@ -22,7 +22,7 @@ registerNavigationDefaults();
 
 registerAppPages(import.meta.glob<DefineComponent>('./pages/**/*.vue'));
 
-createServer(
+export default createServer(
     (page) => {
         return createInertiaApp({
             page,

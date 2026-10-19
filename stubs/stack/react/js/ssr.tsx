@@ -17,7 +17,7 @@ registerNavigationDefaults();
 
 registerAppPages(import.meta.glob<ResolvedComponent>('./pages/**/*.tsx'));
 
-createServer((page) => {
+export default createServer((page) => {
     return createInertiaApp({
         page,
         render: ReactDOMServer.renderToString,
