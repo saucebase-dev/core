@@ -142,6 +142,73 @@ class RecipeCommandTest extends TestCase
         $this->assertDirectoryDoesNotExist($this->appPath.'/modules/notes');
     }
 
+    public function test_vendor_and_type_options_name_the_package(): void
+    {
+        $this->installedWith('vue');
+
+        $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'basic', '--vendor' => 'acme', '--type' => 'library'])
+            ->assertSuccessful();
+
+        $composer = json_decode($this->read('composer.json'), true);
+        $this->assertSame('acme/notes', $composer['name']);
+        $this->assertSame('library', $composer['type']);
+    }
+
+    public function test_the_configured_vendor_is_used_without_the_option(): void
+    {
+        $this->installedWith('vue');
+        config(['app-modules.modules_vendor' => 'shop']);
+
+        $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'basic'])->assertSuccessful();
+
+        $this->assertSame('shop/notes', json_decode($this->read('composer.json'), true)['name']);
+    }
+
+    public function test_the_module_is_required_by_the_application(): void
+    {
+        $this->installedWith('vue');
+
+        $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'basic'])->assertSuccessful();
+
+        $app = $this->files->get($this->appPath.'/composer.json');
+        $this->assertSame('*', json_decode($app, true)['require']['modules/notes']);
+        $this->assertStringContainsString("\"modules/notes\": \"*\"\n", $app, 'Pretty-printed with unescaped slashes');
+        $this->assertStringEndsWith("}\n", $app);
+    }
+
+    public function test_the_module_is_registered_in_the_taskfile(): void
+    {
+        $this->installedWith('vue');
+        $this->files->put($this->appPath.'/Taskfile.yml', "includes:\n    # ── END MODULES\n");
+
+        $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'basic'])->assertSuccessful();
+
+        $this->assertSame(
+            "includes:\n    notes:\n        taskfile: ./modules/notes/Taskfile.yml\n        optional: true\n    # ── END MODULES\n",
+            $this->files->get($this->appPath.'/Taskfile.yml'),
+        );
+    }
+
+    public function test_an_existing_module_is_left_untouched(): void
+    {
+        $this->installedWith('vue');
+        $this->files->ensureDirectoryExists($this->appPath.'/modules/notes');
+        $this->files->put($this->module('keep.txt'), 'mine');
+
+        $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'basic'])->assertFailed();
+
+        $this->assertSame(['keep.txt'], array_map('basename', $this->files->files($this->appPath.'/modules/notes')));
+    }
+
+    public function test_the_temporary_folder_is_removed(): void
+    {
+        $this->installedWith('vue');
+
+        $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'basic'])->assertSuccessful();
+
+        $this->assertDirectoryDoesNotExist($this->appPath.'/saucebase-temp');
+    }
+
     private function installedWith(string $framework, bool $contributor = false): void
     {
         $this->files->put($this->appPath.'/saucebase.json', json_encode(['framework' => $framework, 'contributor' => $contributor]));
