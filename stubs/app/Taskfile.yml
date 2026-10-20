@@ -5,6 +5,31 @@ vars:
   # Prefix for running commands in a containerized environment (e.g., 'docker compose exec app')
   APP: ''
 
+includes:
+    # ── BEGIN MODULES ────────────────────────────────────────────────
+    auth:
+        taskfile: ./modules/auth/Taskfile.yml
+        optional: true
+    billing:
+        taskfile: ./modules/billing/Taskfile.yml
+        optional: true
+    announcements:
+        taskfile: ./modules/announcements/Taskfile.yml
+        optional: true
+    roadmap:
+        taskfile: ./modules/roadmap/Taskfile.yml
+        optional: true
+    themes:
+        taskfile: ./modules/themes/Taskfile.yml
+        optional: true
+    blog:
+        taskfile: ./modules/blog/Taskfile.yml
+        optional: true
+    tenancy:
+        taskfile: ./modules/tenancy/Taskfile.yml
+        optional: true
+    # ── END MODULES ──────────────────────────────────────────────────
+
 tasks:
     # ── Development ───────────────────────────────────────────────
 
