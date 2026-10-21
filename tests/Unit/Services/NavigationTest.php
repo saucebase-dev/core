@@ -465,6 +465,45 @@ class NavigationTest extends TestCase
         $this->assertEquals('No Order', $grouped['main'][1]['title']);
     }
 
+    public function test_item_without_url_has_no_url_key(): void
+    {
+        $this->navigation->add('No URL', '', function (Section $section) {
+            $section->attributes(['group' => 'main']);
+        });
+
+        $this->assertArrayNotHasKey('url', $this->navigation->treeGrouped()['main'][0]);
+    }
+
+    /** Unordered items sort as 999: they tie with an explicit 999 and keep registration order. */
+    public function test_items_without_order_tie_with_order_999(): void
+    {
+        $this->navigation->add('Explicit', '/explicit', fn (Section $s) => $s->attributes(['group' => 'main', 'order' => 999]));
+        $this->navigation->add('Unordered', '/unordered', fn (Section $s) => $s->attributes(['group' => 'main']));
+        $this->navigation->add('Explicit Late', '/explicit-late', fn (Section $s) => $s->attributes(['group' => 'main', 'order' => 999]));
+
+        $this->assertSame(
+            ['Explicit', 'Unordered', 'Explicit Late'],
+            array_column($this->navigation->treeGrouped()['main'], 'title'),
+        );
+    }
+
+    public function test_items_registered_in_ascending_order_keep_it(): void
+    {
+        $this->navigation->add('First', '/first', fn (Section $s) => $s->attributes(['group' => 'main', 'order' => 5]));
+        $this->navigation->add('Second', '/second', fn (Section $s) => $s->attributes(['group' => 'main', 'order' => 10]));
+
+        $this->assertSame(['First', 'Second'], array_column($this->navigation->treeGrouped()['main'], 'title'));
+    }
+
+    public function test_item_url_with_trailing_slash_is_active(): void
+    {
+        app()->instance('request', Request::create('http://localhost/dashboard'));
+
+        $this->navigation->add('Dashboard', 'http://localhost/dashboard/', fn (Section $s) => $s->attributes(['group' => 'main']));
+
+        $this->assertTrue($this->navigation->treeGrouped()['main'][0]['active']);
+    }
+
     public function test_action_item_with_hash_url(): void
     {
         app()->instance('request', Request::create('http://localhost/dashboard'));
