@@ -2,6 +2,7 @@
 
 namespace Saucebase\Core\Tests\Feature;
 
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -70,6 +71,34 @@ class LocalizationSettingsTest extends TestCase
 
         $this->assertArrayHasKey('es', $available);
         $this->assertArrayNotHasKey('php_es', $available);
+    }
+
+    /**
+     * Modules ship their own lang folders: a locale only a module has is offered, one the app
+     * also has is offered once, and `lang/vendor/` is skipped without ending the scan.
+     */
+    public function test_module_locales_are_merged_sorted_by_name_and_vendor_is_skipped(): void
+    {
+        config(['saucebase.locales' => ['de' => 'Deutsch', 'it' => 'Italiano', 'en' => 'English', 'pt_BR' => 'Português']]);
+        $dirs = [lang_path('vendor/some-package'), lang_path('de'), base_path('modules/alpha/lang/de'), base_path('modules/alpha/lang/it')];
+
+        foreach ($dirs as $dir) {
+            @mkdir($dir, 0777, true);
+        }
+
+        try {
+            $available = app(LocalizationSettings::class)->available();
+        } finally {
+            (new Filesystem)->deleteDirectory(base_path('modules/alpha'));
+            (new Filesystem)->deleteDirectory(lang_path('vendor'));
+            @rmdir(lang_path('de'));
+            @rmdir(base_path('modules'));
+        }
+
+        $this->assertSame(
+            ['de' => 'Deutsch', 'en' => 'English', 'it' => 'Italiano', 'pt_BR' => 'Português'],
+            $available,
+        );
     }
 
     public function test_disabling_a_locale_removes_it_from_the_shared_prop(): void
