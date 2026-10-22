@@ -75,7 +75,7 @@ describe('versionLine', () => {
         install('react', '19.2.8');
 
         expect(versionLine(root, 'react')).toBe(
-            'SAUCEBASE CORE v1.8.2  React v19.2.8',
+            'SAUCEBASE v1.8.2  React v19.2.8',
         );
     });
 
@@ -84,7 +84,7 @@ describe('versionLine', () => {
         install('vue', '3.5.13');
 
         expect(versionLine(root, 'vue')).toBe(
-            'SAUCEBASE CORE dev-main  Vue v3.5.13',
+            'SAUCEBASE dev-main  Vue v3.5.13',
         );
     });
 
@@ -103,13 +103,13 @@ describe('versionLine', () => {
         install('vue', '3.5.13');
 
         expect(versionLine(root, 'vue', true)).toBe(
-            '\x1b[1;38;2;38;185;217mSAUCE\x1b[0m\x1b[1;38;2;122;123;232mBASE CORE\x1b[0m v1.8.2  \x1b[1;38;2;66;184;131mVue\x1b[0m v3.5.13',
+            '\x1b[1;38;2;38;185;217mSAUCE\x1b[0m\x1b[1;38;2;122;123;232mBASE\x1b[0m v1.8.2  \x1b[1;38;2;66;184;131mVue\x1b[0m v3.5.13',
         );
     });
 
     it('leaves out what it cannot find', () => {
         install('vue', '3.5.13');
 
-        expect(versionLine(root, 'vue')).toBe('SAUCEBASE CORE  Vue v3.5.13');
+        expect(versionLine(root, 'vue')).toBe('SAUCEBASE  Vue v3.5.13');
     });
 });

@@ -37,6 +37,7 @@
 
         <!-- Scripts -->
         @routes
+        @if (Vite::isRunningHot()) @vite('resources/css/app.css') @endif
         @viteReactRefresh
         @vite(['resources/js/app.tsx'])
         {{-- Fallback head elements, rendered only when SSR is inactive. The client
