@@ -1,4 +1,5 @@
 import Footer from '@/components/Footer';
+import { GlobalComponents } from '@/components/GlobalComponents';
 import Header from '@/components/Header';
 import { Head } from '@inertiajs/react';
 import { useSettings } from '@saucebase/react/hooks/useSettings';
@@ -61,9 +62,15 @@ export default function SiteLayout({
                 {image && <meta name="twitter:image" content={image} />}
             </Head>
             <div className="bg-background relative isolate flex min-h-screen flex-col">
+                <GlobalComponents position="site::header.before" />
                 <Header />
+                <GlobalComponents position="site::header.after" />
+                <GlobalComponents position="site::content.before" />
                 {children}
+                <GlobalComponents position="site::content.after" />
+                <GlobalComponents position="site::footer.before" />
                 <Footer />
+                <GlobalComponents position="site::footer.after" />
             </div>
         </>
     );

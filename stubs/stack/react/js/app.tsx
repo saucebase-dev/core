@@ -66,7 +66,7 @@ createInertiaApp({
                                             key,
                                         }) => (
                                             <>
-                                                {getGlobalComponents('top').map(
+                                                {getGlobalComponents('app::page.before').map(
                                                     (TopComponent, i) => (
                                                         <TopComponent key={i} />
                                                     ),
@@ -76,7 +76,7 @@ createInertiaApp({
                                                     {...pageProps}
                                                 />
                                                 {getGlobalComponents(
-                                                    'bottom',
+                                                    'app::page.after',
                                                 ).map((BottomComponent, i) => (
                                                     <BottomComponent key={i} />
                                                 ))}

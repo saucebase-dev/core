@@ -7,9 +7,9 @@ import { useSettingsModalSync } from '@saucebase/vue/composables/useSettingsModa
 useSettingsModalSync();
 </script>
 <template>
-    <GlobalComponents position="top" />
+    <GlobalComponents position="app::page.before" />
     <Toaster />
     <slot />
     <DynamicDialog />
-    <GlobalComponents position="bottom" />
+    <GlobalComponents position="app::page.after" />
 </template>

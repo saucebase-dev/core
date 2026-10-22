@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Footer from '@/components/Footer.vue';
+import GlobalComponents from '@/components/GlobalComponents.vue';
 import Header from '@/components/Header.vue';
 import { useSettings } from '@saucebase/vue/composables/useSettings';
 import { Head } from '@inertiajs/vue3';
@@ -60,8 +61,14 @@ const ogType = computed(() => props.type ?? 'website');
         <meta v-if="image" name="twitter:image" :content="image" />
     </Head>
     <div class="bg-background relative isolate flex min-h-screen flex-col">
+        <GlobalComponents position="site::header.before" />
         <Header />
+        <GlobalComponents position="site::header.after" />
+        <GlobalComponents position="site::content.before" />
         <slot />
+        <GlobalComponents position="site::content.after" />
+        <GlobalComponents position="site::footer.before" />
         <Footer />
+        <GlobalComponents position="site::footer.after" />
     </div>
 </template>

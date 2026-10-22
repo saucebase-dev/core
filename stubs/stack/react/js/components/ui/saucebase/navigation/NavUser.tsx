@@ -99,7 +99,7 @@ export default function NavUser({ user, items }: NavUserProps) {
     const firstName = user.name.split(' ')[0];
 
     // A module may show something else under the name, such as the user's plan.
-    const subtitleIsClaimed = hasGlobalComponent('user-subtitle');
+    const subtitleIsClaimed = hasGlobalComponent('dashboard::user-menu.subtitle');
 
     const userInitials = user.name
         .split(' ')
@@ -139,7 +139,7 @@ export default function NavUser({ user, items }: NavUserProps) {
                                 >
                                     {subtitleIsClaimed
                                         ? getGlobalComponents(
-                                              'user-subtitle',
+                                              'dashboard::user-menu.subtitle',
                                           ).map((C, i) => <C key={i} />)
                                         : user.email}
                                 </span>

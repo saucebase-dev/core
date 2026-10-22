@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppSidebar from '@/components/AppSidebar.vue';
+import GlobalComponents from '@/components/GlobalComponents.vue';
 import PageTransition from '@/components/PageTransition.vue';
 
 import {
@@ -46,6 +47,7 @@ const displayBreadcrumbs = computed(() => {
         </Head>
         <AppSidebar />
         <SidebarInset>
+            <GlobalComponents position="dashboard::header.before" />
             <header
                 class="flex h-14 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-14"
             >
@@ -106,6 +108,7 @@ const displayBreadcrumbs = computed(() => {
                     </Breadcrumb>
                 </div>
             </header>
+            <GlobalComponents position="dashboard::header.after" />
 
             <!-- Page Heading -->
             <header
@@ -119,9 +122,11 @@ const displayBreadcrumbs = computed(() => {
 
             <!-- Page Content -->
             <main class="flex-1">
+                <GlobalComponents position="dashboard::content.before" />
                 <PageTransition>
                     <slot />
                 </PageTransition>
+                <GlobalComponents position="dashboard::content.after" />
             </main>
         </SidebarInset>
     </SidebarProvider>

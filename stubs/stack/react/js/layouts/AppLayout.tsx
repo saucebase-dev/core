@@ -7,6 +7,7 @@ import {
     BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
+import { GlobalComponents } from '@/components/GlobalComponents';
 import {
     SidebarInset,
     SidebarProvider,
@@ -43,6 +44,7 @@ export default function AppLayout({
             <Head title={title} />
             <AppSidebar />
             <SidebarInset>
+                <GlobalComponents position="dashboard::header.before" />
                 <header className="flex h-14 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-14">
                     <div className="flex items-center gap-2 px-4">
                         <SidebarTrigger className="-ml-1" />
@@ -102,8 +104,13 @@ export default function AppLayout({
                         )}
                     </div>
                 </header>
+                <GlobalComponents position="dashboard::header.after" />
 
-                <main className="flex-1">{children}</main>
+                <main className="flex-1">
+                    <GlobalComponents position="dashboard::content.before" />
+                    {children}
+                    <GlobalComponents position="dashboard::content.after" />
+                </main>
             </SidebarInset>
         </SidebarProvider>
     );

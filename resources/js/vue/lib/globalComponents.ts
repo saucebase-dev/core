@@ -4,29 +4,26 @@ import type { GlobalComponentSlot } from '../../types';
 export type { GlobalComponentSlot };
 
 /** Modules register from their `app` entry, which `moduleSetup.ts` runs at boot, so an adopter wires nothing by hand. */
-const slots: Record<GlobalComponentSlot, Component[]> = {
-    top: [],
-    bottom: [],
-    'sidebar-brand': [],
-    'user-subtitle': [],
-};
+const slots = new Map<GlobalComponentSlot, { component: Component; order: number }[]>();
 
+/** Lower `order` renders first; equal orders keep registration order. */
 export function registerGlobalComponent(
     slot: GlobalComponentSlot,
     component: Component,
+    { order = 100 }: { order?: number } = {},
 ): void {
-    slots[slot].push(component);
+    const entries = slots.get(slot) ?? [];
+    const at = entries.findIndex((entry) => entry.order > order);
+
+    entries.splice(at === -1 ? entries.length : at, 0, { component, order });
+    slots.set(slot, entries);
 }
 
 export function getGlobalComponents(slot: GlobalComponentSlot): Component[] {
-    return slots[slot];
+    return (slots.get(slot) ?? []).map((entry) => entry.component);
 }
 
-/**
- * Whether anything has claimed a slot.
- *
- * Lets a layout fall back to its own default rather than rendering an empty region.
- */
+/** Whether anything has claimed a slot. Lets a layout fall back to its own default rather than rendering an empty region. */
 export function hasGlobalComponent(slot: GlobalComponentSlot): boolean {
-    return slots[slot].length > 0;
+    return (slots.get(slot)?.length ?? 0) > 0;
 }

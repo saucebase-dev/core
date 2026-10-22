@@ -37,7 +37,7 @@ const user = computed(
 
 // A module may own this block instead. Registration happens at import time, so this is
 // settled before the first render.
-const brandIsClaimed = hasGlobalComponent('sidebar-brand');
+const brandIsClaimed = hasGlobalComponent('dashboard::sidebar.brand');
 </script>
 
 <template>
@@ -47,13 +47,15 @@ const brandIsClaimed = hasGlobalComponent('sidebar-brand');
         data-sidebar="sidebar"
     >
         <SidebarHeader data-testid="sidebar-header">
-            <GlobalComponents v-if="brandIsClaimed" position="sidebar-brand" />
+            <GlobalComponents v-if="brandIsClaimed" position="dashboard::sidebar.brand" />
             <AppBrand v-else />
         </SidebarHeader>
 
         <SidebarContent data-sidebar="content">
+            <GlobalComponents position="dashboard::sidebar.start" />
             <NavGroup :items="items" />
             <NavGroup :items="secondaryItems" class="mt-auto" />
+            <GlobalComponents position="dashboard::sidebar.end" />
         </SidebarContent>
 
         <SidebarFooter>

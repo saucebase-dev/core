@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SiteLayout from '@/layouts/SiteLayout.vue';
+import GlobalComponents from '@/components/GlobalComponents.vue';
 import {
     ModuleCard,
     ModuleModal,
@@ -19,6 +20,7 @@ const selectedMod = ref<Module | null>(null);
 <template>
     <SiteLayout :title="settings.general.site_tagline ?? undefined">
         <main class="mx-auto w-full">
+            <GlobalComponents position="home::content.before" />
             <div
                 class="relative overflow-hidden mask-t-from-95% mask-b-from-95% px-6 md:mask-r-from-95% md:mask-l-from-95% md:px-16 lg:px-8"
             >
@@ -91,6 +93,7 @@ const selectedMod = ref<Module | null>(null);
                     </div>
                 </div>
             </div>
+            <GlobalComponents position="home::content.after" />
         </main>
     </SiteLayout>
 

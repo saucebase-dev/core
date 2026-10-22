@@ -63,16 +63,43 @@ export interface Breadcrumb {
 /**
  * Where a module may hang a component without core knowing the module exists.
  *
- * `top` and `bottom` wrap the page, above and below everything a layout renders.
- * `sidebar-brand` replaces the block above the sidebar navigation, whose default is
- * core's own `AppBrand`. `user-subtitle` replaces the email under the user's first
- * name in the sidebar's user menu.
+ * Names follow `{area}::{region}.{position}`, like Filament's render hooks:
+ * - area: who renders it. `app` (shell), `site` (public layout), `dashboard`
+ *   (signed-in layout), `home` (index page), or a module.
+ * - position: `before`/`after` sit outside the region, `start`/`end` inside it.
+ *   A region with one fixed spot names it instead (`sidebar.brand`).
  *
- * Adding a slot means adding a case here and to `slots` in each framework's
- * `globalComponents.ts`, and rendering it in the layout that owns that region.
+ * `dashboard::sidebar.brand` replaces core's `AppBrand`; `dashboard::user-menu.subtitle`
+ * replaces the email in the sidebar's user menu.
+ *
+ * A module adds its own slots by augmenting this interface, then renders them:
+ *
+ *     declare module '@saucebase/core/types' {
+ *         interface GlobalComponentSlots { 'blog::post.after': true }
+ *     }
  */
-export type GlobalComponentSlot =
-    'top' | 'bottom' | 'sidebar-brand' | 'user-subtitle';
+export interface GlobalComponentSlots {
+    'app::page.before': true;
+    'app::page.after': true;
+    'site::header.before': true;
+    'site::header.after': true;
+    'site::content.before': true;
+    'site::content.after': true;
+    'site::footer.before': true;
+    'site::footer.after': true;
+    'home::content.before': true;
+    'home::content.after': true;
+    'dashboard::header.before': true;
+    'dashboard::header.after': true;
+    'dashboard::content.before': true;
+    'dashboard::content.after': true;
+    'dashboard::sidebar.start': true;
+    'dashboard::sidebar.end': true;
+    'dashboard::sidebar.brand': true;
+    'dashboard::user-menu.subtitle': true;
+}
+
+export type GlobalComponentSlot = keyof GlobalComponentSlots;
 
 /** What a navigation item does when it names an `action` instead of a URL. */
 export type ActionHandler = (event: MouseEvent) => void | Promise<void>;

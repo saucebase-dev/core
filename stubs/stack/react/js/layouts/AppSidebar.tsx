@@ -1,4 +1,5 @@
 import AppBrand from '@/components/AppBrand';
+import { GlobalComponents } from '@/components/GlobalComponents';
 import NavGroup from '@/components/ui/saucebase/navigation/NavGroup';
 import NavUser from '@/components/ui/saucebase/navigation/NavUser';
 import {
@@ -26,13 +27,13 @@ export default function AppSidebar() {
 
     // A module may own this block instead. Registration happens at import time, so this
     // is settled before the first render.
-    const brandIsClaimed = hasGlobalComponent('sidebar-brand');
+    const brandIsClaimed = hasGlobalComponent('dashboard::sidebar.brand');
 
     return (
         <Sidebar variant="inset" collapsible="icon" className="bg-transparent">
             <SidebarHeader data-testid="sidebar-header">
                 {brandIsClaimed ? (
-                    getGlobalComponents('sidebar-brand').map((C, i) => (
+                    getGlobalComponents('dashboard::sidebar.brand').map((C, i) => (
                         <C key={i} />
                     ))
                 ) : (
@@ -40,8 +41,10 @@ export default function AppSidebar() {
                 )}
             </SidebarHeader>
             <SidebarContent>
+                <GlobalComponents position="dashboard::sidebar.start" />
                 <NavGroup items={items} />
                 <NavGroup items={secondaryItems} className="mt-auto" />
+                <GlobalComponents position="dashboard::sidebar.end" />
             </SidebarContent>
             <SidebarFooter>
                 {user && <NavUser user={user} items={userItems} />}
