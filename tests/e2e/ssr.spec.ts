@@ -19,7 +19,7 @@ test.describe('Server rendering', () => {
     let renderer: ChildProcess;
 
     test.beforeAll(async () => {
-        renderer = spawn('node', ['bootstrap/ssr/ssr.js'], { stdio: 'ignore' });
+        renderer = spawn('node', ['bootstrap/ssr/app.js'], { stdio: 'ignore' });
 
         await expect
             .poll(() =>

@@ -4,8 +4,8 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
     collectModuleLangPaths,
-    collectModulePlaywrightConfigs,
     loadEnabledModuleNames,
+    saucebaseProjects,
 } from '../modules.ts';
 
 let root: string;
@@ -22,7 +22,7 @@ beforeEach(() => {
     write('modules/auth/lang/en.json', '{}');
     write(
         'modules/auth/playwright.config.ts',
-        "export default { name: 'auth.setup', testMatch: /x/ };",
+        "export const playwright = { setups: [{ name: 'auth.setup', testMatch: /x/ }] };",
     );
     write('modules/blog/composer.json', '{}');
     write('modules/notes/README.md');
@@ -50,24 +50,88 @@ describe('modules', () => {
         ]);
     });
 
-    it('builds a Playwright project per module with its setups', async () => {
-        const { projects, setups } = await collectModulePlaywrightConfigs(root);
+    it('builds the whole project list: setups first, every project per device', async () => {
+        const projects = await saucebaseProjects({
+            root,
+            devices: { Chrome: { browserName: 'chromium' } },
+            projects: [{ name: '@Core', testDir: './tests/e2e' }],
+        });
 
-        expect(projects).toContainEqual({
-            name: '@auth',
+        expect(projects.map((project) => project.name)).toEqual([
+            'database.setup',
+            'auth.setup',
+            '@Core [Chrome]',
+            '@auth [Chrome]',
+            '@blog [Chrome]',
+        ]);
+        expect(projects[1]).toEqual(
+            expect.objectContaining({ testDir: 'modules/auth/tests/e2e' }),
+        );
+        expect(projects[3]).toEqual({
+            name: '@auth [Chrome]',
             testDir: 'modules/auth/tests/e2e',
             dependencies: ['database.setup', 'auth.setup'],
+            use: { browserName: 'chromium' },
         });
+    });
+
+    it("applies a module's own project options, keeping core's name, folder and setups", async () => {
+        write(
+            'modules/blog/playwright.config.ts',
+            "export const playwright = { project: { retries: 2, dependencies: ['x'], use: { locale: 'pt' } } };",
+        );
+
+        const projects = await saucebaseProjects({
+            root,
+            devices: { Chrome: { browserName: 'chromium' } },
+        });
+
         expect(projects).toContainEqual({
-            name: '@blog',
+            name: '@blog [Chrome]',
             testDir: 'modules/blog/tests/e2e',
             dependencies: ['database.setup'],
+            retries: 2,
+            use: { browserName: 'chromium', locale: 'pt' },
         });
-        expect(setups).toEqual([
-            expect.objectContaining({
-                name: 'auth.setup',
-                testDir: 'modules/auth/tests/e2e',
-            }),
+    });
+
+    it('runs run-alone projects after all others, one at a time', async () => {
+        for (const name of ['blog', 'soon']) {
+            write(`modules/${name}/composer.json`, '{}');
+            write(
+                `modules/${name}/playwright.config.ts`,
+                'export const playwright = { runAlone: true };',
+            );
+        }
+
+        const projects = await saucebaseProjects({
+            root,
+            devices: { Chrome: {}, Firefox: {} },
+        });
+        const dependencies = (name: string) =>
+            projects.find((project) => project.name === name)?.dependencies;
+        const normal = ['@auth [Chrome]', '@auth [Firefox]'];
+
+        expect(projects.map((project) => project.name).slice(-4)).toEqual([
+            '@blog [Chrome]',
+            '@blog [Firefox]',
+            '@soon [Chrome]',
+            '@soon [Firefox]',
         ]);
+        expect(dependencies('@blog [Chrome]')).toEqual([
+            'database.setup',
+            ...normal,
+        ]);
+        expect(dependencies('@blog [Firefox]')).toEqual([
+            'database.setup',
+            ...normal,
+            '@blog [Chrome]',
+        ]);
+        expect(dependencies('@soon [Firefox]')).toEqual([
+            'database.setup',
+            ...normal,
+            '@soon [Chrome]',
+        ]);
+        expect(projects.some((project) => 'runAlone' in project)).toBe(false);
     });
 });

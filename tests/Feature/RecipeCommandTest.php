@@ -80,7 +80,8 @@ class RecipeCommandTest extends TestCase
 
         $this->assertFileExists($this->module('resources/js/vue/app.ts'));
         $this->assertFileExists($this->module('resources/js/react/app.tsx'));
-        $this->assertSame("export * from './vue/app';\n", $this->read('resources/js/app.ts'));
+        // Core finds the setup in vue/ or react/ itself: no shim to rewrite per stack.
+        $this->assertFileDoesNotExist($this->module('resources/js/app.ts'));
     }
 
     public function test_it_finds_the_recipes_the_application_adds(): void

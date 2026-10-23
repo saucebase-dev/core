@@ -4,22 +4,30 @@ import type { GlobalComponentSlot } from '../../types';
 export type { GlobalComponentSlot };
 
 /** Modules register from their `app` entry, which `moduleSetup.ts` runs at boot, so an adopter wires nothing by hand. */
-const slots = new Map<GlobalComponentSlot, { component: ComponentType; order: number }[]>();
+const slots = new Map<
+    GlobalComponentSlot,
+    { component: ComponentType; order: number }[]
+>();
 
-/** Lower `order` renders first; equal orders keep registration order. */
+/** Lower `order` renders first; equal orders keep registration order. A component registers once per slot. */
 export function registerGlobalComponent(
     slot: GlobalComponentSlot,
     component: ComponentType,
     { order = 100 }: { order?: number } = {},
 ): void {
-    const entries = slots.get(slot) ?? [];
+    // Registering again replaces: the dev server re-runs module setups on the server.
+    const entries = (slots.get(slot) ?? []).filter(
+        (entry) => entry.component !== component,
+    );
     const at = entries.findIndex((entry) => entry.order > order);
 
     entries.splice(at === -1 ? entries.length : at, 0, { component, order });
     slots.set(slot, entries);
 }
 
-export function getGlobalComponents(slot: GlobalComponentSlot): ComponentType[] {
+export function getGlobalComponents(
+    slot: GlobalComponentSlot,
+): ComponentType[] {
     return (slots.get(slot) ?? []).map((entry) => entry.component);
 }
 

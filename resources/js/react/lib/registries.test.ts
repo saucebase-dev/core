@@ -33,7 +33,9 @@ describe('global components', () => {
 
         registerGlobalComponent('home::content.after', Last, { order: 200 });
         registerGlobalComponent('home::content.after', Default);
-        registerGlobalComponent('home::content.after', SameAsDefault, { order: 100 });
+        registerGlobalComponent('home::content.after', SameAsDefault, {
+            order: 100,
+        });
         registerGlobalComponent('home::content.after', First, { order: 10 });
 
         expect(getGlobalComponents('home::content.after')).toEqual([
@@ -41,6 +43,21 @@ describe('global components', () => {
             Default,
             SameAsDefault,
             Last,
+        ]);
+    });
+
+    it('keeps one entry when a component registers again', () => {
+        // The dev server re-runs module setups on the server after an edit.
+        const Banner = () => null;
+        const Other = () => null;
+
+        registerGlobalComponent('site::header.before', Banner, { order: 10 });
+        registerGlobalComponent('site::header.before', Other, { order: 20 });
+        registerGlobalComponent('site::header.before', Banner, { order: 30 });
+
+        expect(getGlobalComponents('site::header.before')).toEqual([
+            Other,
+            Banner,
         ]);
     });
 

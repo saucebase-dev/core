@@ -37,8 +37,7 @@
 
         <!-- Scripts -->
         @routes
-        @if (Vite::isRunningHot()) @vite('resources/css/app.css') @endif
-        @vite(['resources/js/app.ts'])
+        @vite(['resources/css/app.css', 'resources/js/app.ts'])
         {{-- Fallback head elements, rendered only when SSR is inactive. The client
              <Head> component adopts them via the matching data-inertia keys. --}}
         <x-inertia::head>

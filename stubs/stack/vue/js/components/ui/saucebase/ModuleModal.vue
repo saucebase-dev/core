@@ -2,9 +2,12 @@
 import { trans } from 'laravel-vue-i18n';
 import { BookOpen, Check, Copy, Terminal, X } from '@lucide/vue';
 import { onUnmounted, ref } from 'vue';
+import { useMounted } from '@vueuse/core';
 import { toast } from 'vue-sonner';
 import type { Module } from './index';
 import { useModules } from '@saucebase/vue/composables/useModules';
+
+const mounted = useMounted();
 
 const props = defineProps<{ selectedMod: Module | null }>();
 const emit = defineEmits<{ close: [] }>();
@@ -45,7 +48,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Teleport to="body">
+    <!-- Mounted first: the server can't render into <body>, so a teleport there
+         would not match on hydration. -->
+    <Teleport v-if="mounted" to="body">
         <Transition
             enter-active-class="transition-opacity duration-200"
             leave-active-class="transition-opacity duration-150"
@@ -156,10 +161,9 @@ onUnmounted(() => {
                                 />
                                 <code
                                     class="flex-1 text-sm whitespace-pre text-green-400"
-                                    >
-                                    {{ installCommand(selectedMod) }}
-                                    </code
                                 >
+                                    {{ installCommand(selectedMod) }}
+                                </code>
                                 <button
                                     class="cursor-pointer self-start text-gray-300 transition-colors hover:text-gray-300"
                                     @click="copyCommand"

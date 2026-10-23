@@ -31,11 +31,6 @@ class TestableRecipeToModuleCommand extends RecipeToModuleCommand
     {
         return parent::placeholders($name);
     }
-
-    public function writeModuleEntryPoint(string $framework): void
-    {
-        parent::writeModuleEntryPoint($framework);
-    }
 }
 
 class RecipeToModuleCommandTest extends TestCase
@@ -224,31 +219,5 @@ class RecipeToModuleCommandTest extends TestCase
             ->expectsPromptsError('No frontend framework selected. Run `php artisan saucebase:install` first.');
 
         $this->assertDirectoryDoesNotExist($this->tmpDir.'/modules/test-exit');
-    }
-
-    // ── writeModuleEntryPoint: contributor checkout ───────────────────────────────────────
-
-    public function test_dev_mode_react_writes_proxy(): void
-    {
-        $this->files->makeDirectory($this->jsRoot().'/react', 0755, true);
-
-        $this->makeCommand()->writeModuleEntryPoint('react');
-
-        $this->assertStringContainsString(
-            "export * from './react/app'",
-            (string) file_get_contents($this->jsRoot().'/app.ts')
-        );
-    }
-
-    public function test_dev_mode_vue_writes_proxy(): void
-    {
-        $this->files->makeDirectory($this->jsRoot().'/vue', 0755, true);
-
-        $this->makeCommand()->writeModuleEntryPoint('vue');
-
-        $this->assertStringContainsString(
-            "export * from './vue/app'",
-            (string) file_get_contents($this->jsRoot().'/app.ts')
-        );
     }
 }
