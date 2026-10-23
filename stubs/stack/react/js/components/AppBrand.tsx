@@ -9,7 +9,7 @@ import AppLogo from './AppLogo';
 /**
  * The application's own mark at the top of the sidebar.
  *
- * What fills the `sidebar-brand` slot when no module claims it. A module with something
+ * What fills the `dashboard::sidebar.brand` slot when no module claims it. A module with something
  * better to put there registers over it, so core never needs to know whether any
  * particular module is installed.
  *

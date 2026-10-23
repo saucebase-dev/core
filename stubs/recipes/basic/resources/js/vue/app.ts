@@ -6,7 +6,8 @@
 
 /**
  * {Module} module setup
- * Called during app initialization before mounting
+ * Called before the first render, on the server too: register things here,
+ * and leave anything that needs window or document to afterMount()
  */
 export function setup() {
     console.debug('{Module} module loaded');
@@ -17,7 +18,7 @@ export function setup() {
 
 /**
  * {Module} module after mount logic
- * Called after the app has been mounted
+ * Called in the browser after the app has mounted
  */
 export function afterMount() {
     console.debug('{Module} module after mount logic executed');

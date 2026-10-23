@@ -31,18 +31,23 @@ export function saucebase({
     /** The framework's own minimum npm versions. */
     requires: Requirements;
 }): PluginOption[] {
+    const settings = readSettings(process.cwd());
+    const contributor = settings.contributor === true;
+
+    // The Inertia plugin turns app.ts's createInertiaApp() call into the server
+    // renderer, so there is no ssr.ts. A contributor checkout's app.ts only imports
+    // core's copy, so the server renders from that copy directly.
+    const ssrEntry = contributor
+        ? `${SAUCEBASE_STACK}/${framework}/js/${path.basename(entry)}`
+        : entry;
+
     return [
         {
             name: 'saucebase',
             config: (userConfig, env) => {
                 const root = path.resolve(userConfig.root ?? process.cwd());
-                const frontendFile = path.join(root, 'saucebase.json');
-                const frontend = fs.existsSync(frontendFile)
-                    ? JSON.parse(fs.readFileSync(frontendFile, 'utf-8'))
-                    : {};
-                const contributor = frontend.contributor === true;
 
-                if (env?.isSsrBuild && frontend.ssr === false) {
+                if (env?.isSsrBuild && settings.ssr === false) {
                     console.log(
                         '[saucebase] Server rendering is off in saucebase.json; skipping the server build.',
                     );
@@ -137,13 +142,26 @@ export function saucebase({
         },
         tailwindcss(),
         laravel({
-            input: [entry, 'resources/css/filament/admin/theme.css'],
+            input: [
+                'resources/css/app.css',
+                entry,
+                'resources/css/filament/admin/theme.css',
+            ],
+            // Without it the server build would bundle every input, CSS included.
+            ssr: ssrEntry,
             refresh: true,
         }),
-        // Named, not left to the plugin's guess: a contributor checkout also holds the
-        // other framework's placeholder `ssr.ts`, which the guess would pick first.
-        inertia({ ssr: entry.replace(/app(\.tsx?)$/, 'ssr$1') }),
+        inertia({ ssr: ssrEntry }),
     ];
+}
+
+/** The app's `saucebase.json`: its framework, contributor mode and server rendering. */
+function readSettings(root: string): { contributor?: boolean; ssr?: boolean } {
+    const file = path.join(root, 'saucebase.json');
+
+    return fs.existsSync(file)
+        ? JSON.parse(fs.readFileSync(file, 'utf-8'))
+        : {};
 }
 
 function moduleOf(file: string | undefined): string | null {

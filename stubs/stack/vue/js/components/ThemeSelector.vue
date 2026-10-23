@@ -15,7 +15,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { setCookie } from '@/lib/utils';
-import { useColorMode } from '@vueuse/core';
+import { useColorMode, useMounted } from '@vueuse/core';
 import { computed, nextTick } from 'vue';
 import IconAuto from '~icons/fluent/dark-theme-20-filled';
 import IconMoon from '~icons/heroicons/moon';
@@ -59,6 +59,11 @@ const colorMode = useColorMode({
     storageKey: 'appearance',
 });
 
+// The preference lives in the browser, so the server renders `auto` and the
+// stored one takes over once the page hydrates (as React's useTheme does).
+const mounted = useMounted();
+const shownMode = computed(() => (mounted.value ? colorMode.value : 'auto'));
+
 const themes = [
     { code: 'light', name: 'Light', icon: IconSun },
     { code: 'dark', name: 'Dark', icon: IconMoon },
@@ -89,7 +94,7 @@ const switchTheme = async (
 };
 
 const currentTheme = computed(
-    () => themes.find((theme) => theme.code === colorMode.value) || themes[0],
+    () => themes.find((theme) => theme.code === shownMode.value) || themes[0],
 );
 </script>
 
@@ -99,11 +104,11 @@ const currentTheme = computed(
         <Button
             v-for="theme in visibleThemes"
             :key="theme.code"
-            :variant="colorMode === theme.code ? 'default' : 'outline'"
+            :variant="shownMode === theme.code ? 'default' : 'outline'"
             size="sm"
             :class="[
                 { 'flex-1': fullWidth },
-                { 'font-semibold': colorMode === theme.code },
+                { 'font-semibold': shownMode === theme.code },
             ]"
             :data-testid="`color-mode-${theme.code}`"
             :aria-label="$t(theme.name)"
@@ -134,7 +139,7 @@ const currentTheme = computed(
                 @click.capture="switchTheme(theme.code, $event)"
                 :class="{
                     'bg-accent text-accent-foreground':
-                        colorMode === theme.code,
+                        shownMode === theme.code,
                 }"
             >
                 <component :is="theme.icon" class="size-4" />
@@ -160,7 +165,7 @@ const currentTheme = computed(
                 :key="theme.code"
                 :data-testid="`color-mode-${theme.code}`"
                 @click.capture="switchTheme(theme.code, $event)"
-                :class="{ 'bg-accent': colorMode === theme.code }"
+                :class="{ 'bg-accent': shownMode === theme.code }"
             >
                 <component :is="theme.icon" class="size-4" />
                 {{ $t(theme.name) }}

@@ -5,6 +5,7 @@ import {
     useModuleList,
 } from '@/components/ui/saucebase';
 import SiteLayout from '@/layouts/SiteLayout';
+import { GlobalComponents } from '@/components/GlobalComponents';
 import { useSettings } from '@saucebase/react/hooks/useSettings';
 import { useT } from '@saucebase/react/i18n';
 import { BookOpen } from 'lucide-react';
@@ -19,6 +20,7 @@ export default function Index() {
     return (
         <SiteLayout title={settings.general.site_tagline ?? undefined}>
             <main className="mx-auto w-full">
+                <GlobalComponents position="home::content.before" />
                 <div className="relative overflow-hidden mask-t-from-95% mask-b-from-95% px-6 md:mask-r-from-95% md:mask-l-from-95% md:px-16 lg:px-8">
                     <div className="mt-6 pt-24 pb-12">
                         <h1 className="text-foreground/80 dark:text-muted-foreground text-center text-4xl font-bold [text-shadow:0_4px_25px_color-mix(in_oklch,var(--color-primary)_15%,var(--color-background))] md:text-5xl">
@@ -91,6 +93,7 @@ export default function Index() {
                         </div>
                     </div>
                 </div>
+                <GlobalComponents position="home::content.after" />
             </main>
 
             <ModuleModal

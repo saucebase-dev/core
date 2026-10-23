@@ -82,9 +82,8 @@ class RecipeToModuleCommand extends Command
         $this->generate();
         $this->fs->remove($this->moduleConfigPath.$this->moduleFolder.'/recipe.json');
 
-        if ($isContributor) {
-            $this->writeModuleEntryPoint($framework);
-        } else {
+        // A contributor checkout keeps both frameworks; core finds the setup in either.
+        if (! $isContributor) {
             $this->keepOnlyFramework($framework);
         }
 
@@ -387,25 +386,8 @@ class RecipeToModuleCommand extends Command
             return;
         }
 
-        // The recipe's `app.ts` only points at a framework folder that is about to go.
-        $this->fs->remove("{$js}/app.ts");
         $this->fs->mirror("{$js}/{$framework}", $js);
         $this->fs->remove(["{$js}/vue", "{$js}/react"]);
-    }
-
-    /** A contributor checkout keeps both frameworks, and `app.ts` points at the selected one. */
-    protected function writeModuleEntryPoint(string $framework): void
-    {
-        $entryPoint = $this->moduleConfigPath.$this->moduleFolder.'/resources/js/app.ts';
-
-        file_put_contents($entryPoint, "export * from './{$framework}/app';\n");
-
-        $rel = "modules/{$this->moduleFolder}/resources/js/app.ts";
-        exec('git -C '.escapeshellarg(base_path())." update-index --skip-worktree {$rel} 2>&1", $output, $exitCode);
-
-        if ($exitCode !== 0) {
-            $this->warn("Could not skip-worktree {$rel} (not in git index).");
-        }
     }
 
     protected function registerInComposer(): void

@@ -1,11 +1,19 @@
 export interface ModuleSetup {
+    /**
+     * Runs before the first render, on the server too: register components,
+     * icons and actions here, and leave browser-only work to `afterMount`.
+     */
     setup?: () => void | Promise<void>;
     afterMount?: () => void | Promise<void>;
 }
 
 export function discoverModuleSetups() {
     return import.meta.glob<ModuleSetup>(
-        ['/modules/*/resources/js/app.ts', '/modules/*/resources/js/app.tsx'],
+        // Installed (flattened) modules, then a contributor checkout's react/ folder.
+        [
+            '/modules/*/resources/js/app.tsx',
+            '/modules/*/resources/js/react/app.tsx',
+        ],
         { eager: true },
     );
 }

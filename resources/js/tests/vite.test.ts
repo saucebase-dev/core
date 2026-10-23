@@ -5,13 +5,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { saucebase } from '../vite.ts';
 
 // The build plugins are the app's dependencies; here only the preset's own config is under test.
-vi.mock('@inertiajs/vite', () => ({ default: () => ({ name: 'inertia' }) }));
+const inertia = vi.hoisted(() => vi.fn(() => ({ name: 'inertia' })));
+vi.mock('@inertiajs/vite', () => ({ default: inertia }));
 vi.mock('@tailwindcss/vite', () => ({
     default: () => ({ name: 'tailwindcss' }),
 }));
-vi.mock('laravel-vite-plugin', () => ({
-    default: () => ({ name: 'laravel' }),
-}));
+const laravel = vi.hoisted(() => vi.fn(() => ({ name: 'laravel' })));
+vi.mock('laravel-vite-plugin', () => ({ default: laravel }));
 
 let root: string;
 
@@ -27,11 +27,56 @@ function config(env: { isSsrBuild?: boolean } = {}): any {
 
 beforeEach(() => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), 'saucebase-'));
+    // saucebase.json is read from where Vite runs, the app root.
+    vi.spyOn(process, 'cwd').mockReturnValue(root);
 });
 
-afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
+afterEach(() => {
+    vi.restoreAllMocks();
+    fs.rmSync(root, { recursive: true, force: true });
+});
 
 describe('saucebase()', () => {
+    function build() {
+        saucebase({
+            framework: 'vue',
+            entry: 'resources/js/app.ts',
+            requires: {},
+        });
+    }
+
+    it('builds the app CSS as its own entry and renders on the server from app.ts', () => {
+        build();
+
+        expect(laravel).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                input: [
+                    'resources/css/app.css',
+                    'resources/js/app.ts',
+                    'resources/css/filament/admin/theme.css',
+                ],
+                ssr: 'resources/js/app.ts',
+            }),
+        );
+        expect(inertia).toHaveBeenLastCalledWith({
+            ssr: 'resources/js/app.ts',
+        });
+    });
+
+    it("renders on the server from core's app.ts in a contributor checkout", () => {
+        fs.writeFileSync(
+            path.join(root, 'saucebase.json'),
+            '{"contributor": true}',
+        );
+        build();
+
+        const stub = 'vendor/saucebase/core/stubs/stack/vue/js/app.ts';
+        expect(laravel).toHaveBeenLastCalledWith(
+            expect.objectContaining({ ssr: stub }),
+        );
+        expect(inertia).toHaveBeenLastCalledWith({ ssr: stub });
+    });
+
     it('points @ at the flat resources/js in an installed app', () => {
         const { resolve, define } = config();
 

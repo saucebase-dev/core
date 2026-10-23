@@ -51,7 +51,7 @@ const hasSettingsSections = computed(
 const firstName = computed(() => props.user.name.split(' ')[0]);
 
 // A module may show something else under the name, such as the user's plan.
-const subtitleIsClaimed = hasGlobalComponent('user-subtitle');
+const subtitleIsClaimed = hasGlobalComponent('dashboard::user-menu.subtitle');
 
 const userInitials = computed(() => {
     return props.user.name
@@ -112,7 +112,7 @@ function handleClick(item: MenuItem, event: MouseEvent) {
                             >
                                 <GlobalComponents
                                     v-if="subtitleIsClaimed"
-                                    position="user-subtitle"
+                                    position="dashboard::user-menu.subtitle"
                                 />
                                 <template v-else>{{ user.email }}</template>
                             </span>

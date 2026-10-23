@@ -39,6 +39,9 @@ export function initializeModals(putConfig: PutConfig): void {
  * Swallowing the event in the capture phase keeps it from reaching either trap.
  */
 function releaseCoveredModalFocus(): void {
+    // The server renders the same app but has no document to listen on.
+    if (typeof document === 'undefined') return;
+
     document.addEventListener(
         'focusin',
         (event) => {

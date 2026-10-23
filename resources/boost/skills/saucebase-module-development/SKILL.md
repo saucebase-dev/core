@@ -57,8 +57,11 @@ base provider already:
   models go there, never in a `Schema::create` inside a test: on MySQL that DDL commits the test's
   transaction.
 
-Override `shareInertiaData()` for props every page needs (`Inertia::share('auth.user', fn () => ...)`),
-and list extra providers in `protected array $providers`. `replaceConfig($path, $key)` overwrites a whole
+Share Inertia props from `shareInertiaData()` (`Inertia::share('auth.user', fn () => ...)`), never directly in
+`boot()`: it is core's hook for shared props, and keeping every share there makes them easy to find. Pass a
+closure so the value resolves per request; scope a page-only prop inside it (`request()->routeIs('index') ? ... : null`).
+
+List extra providers in `protected array $providers`. `replaceConfig($path, $key)` overwrites a whole
 config key where `mergeConfigFrom` would merge numeric arrays wrongly. Call `parent::boot()` when
 overriding `boot()`.
 

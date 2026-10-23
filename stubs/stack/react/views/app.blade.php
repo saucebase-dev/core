@@ -38,7 +38,7 @@
         <!-- Scripts -->
         @routes
         @viteReactRefresh
-        @vite(['resources/js/app.tsx'])
+        @vite(['resources/css/app.css', 'resources/js/app.tsx'])
         {{-- Fallback head elements, rendered only when SSR is inactive. The client
              <Head> component adopts them via the matching data-inertia keys. --}}
         <x-inertia::head>

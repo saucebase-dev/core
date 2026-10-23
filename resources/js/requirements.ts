@@ -49,7 +49,7 @@ export function unmetRequirements(
 }
 
 /**
- * What is installed, as one line for the dev server: `SAUCEBASE CORE v1.8.2  React v19.2.8`.
+ * What is installed, as one line for the dev server: `SAUCEBASE v1.8.2  React v19.2.8`.
  * Read from Composer's and npm's own records, so it is never a hard-coded number.
  *
  * @param colors  Paint the names: Saucebase in its two brand colours, the framework in its own.
@@ -79,7 +79,7 @@ export function versionLine(
     )?.version;
 
     return [
-        [paint('38;185;217', 'SAUCE') + paint('122;123;232', 'BASE CORE'), core]
+        [paint('38;185;217', 'SAUCE') + paint('122;123;232', 'BASE'), core]
             .filter(Boolean)
             .join(' '),
         [
