@@ -3,9 +3,14 @@ import vue from 'eslint-plugin-vue';
 import vueA11y from 'eslint-plugin-vuejs-accessibility';
 
 import {
+    configureVueProject,
     defineConfigWithVueTs,
     vueTsConfigs,
 } from '@vue/eslint-config-typescript';
+
+// The .vue scan only feeds type-aware rules, which aren't enabled. Scanning the
+// whole project follows core's testbench vendor symlink into a loop in a checkout.
+configureVueProject({ rootDir: `${import.meta.dirname}/resources` });
 
 const generated = ['**/components/ui/!(saucebase)/**'];
 
