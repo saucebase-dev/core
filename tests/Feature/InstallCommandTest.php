@@ -49,6 +49,14 @@ class InstallCommandTest extends TestCase
         $this->assertFileExists($this->appPath.'/public/images/icon-on-light.svg');
     }
 
+    public function test_it_publishes_a_taskfile_with_an_empty_app_prefix(): void
+    {
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        // The installer's Docker driver fills the prefix in; every other setup runs commands directly.
+        $this->assertStringContainsString("APP: ''", $this->read('Taskfile.yml'));
+    }
+
     public function test_the_published_example_test_migrates_the_database(): void
     {
         $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
