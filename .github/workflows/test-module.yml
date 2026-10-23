@@ -159,6 +159,8 @@ jobs:
 
             - name: Install Playwright
               working-directory: app
+              # Takes ~25s; a hung apt mirror would otherwise run until the job's limit.
+              timeout-minutes: 2
               run: ./node_modules/.bin/playwright install chromium --with-deps
 
             - name: Prepare E2E variant
