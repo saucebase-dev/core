@@ -116,6 +116,11 @@ class RecipeCommandTest extends TestCase
 
         $this->assertStringContainsString("page.goto('/notes')", $this->read('tests/e2e/index.spec.ts'));
         $this->assertStringContainsString("from '@e2e/fixtures'", $this->read('tests/e2e/index.spec.ts'));
+
+        $feature = $this->read('tests/Feature/IndexTest.php');
+        $this->assertStringContainsString('namespace Modules\Notes\Tests\Feature;', $feature);
+        $this->assertStringContainsString("->get('/notes')", $feature);
+        $this->assertStringContainsString("->component('Notes::Index'", $feature);
     }
 
     public function test_it_offers_the_recipes_by_name(): void
