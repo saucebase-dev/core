@@ -131,14 +131,15 @@ class ModuleSetupCommand extends Command
 
         foreach (explode("\n", (string) file_get_contents($patch)) as $line) {
             if (str_starts_with($line, '+++ b/')) {
-                $file = (string) @file_get_contents(base_path(substr($line, 6)));
+                // Whole lines: `// use Billable;` must not count as `use Billable;`.
+                $file = array_map(trim(...), explode("\n", (string) @file_get_contents(base_path(substr($line, 6)))));
 
                 continue;
             }
 
             $added = trim(substr($line, 1));
 
-            if ($file !== null && str_starts_with($line, '+') && $added !== '' && ! str_contains($file, $added)) {
+            if ($file !== null && str_starts_with($line, '+') && $added !== '' && ! in_array($added, $file, true)) {
                 return false;
             }
         }

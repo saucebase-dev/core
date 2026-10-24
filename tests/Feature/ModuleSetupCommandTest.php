@@ -67,16 +67,26 @@ class ModuleSetupCommandTest extends TestCase
     public function test_a_patch_whose_lines_are_all_in_place_counts_as_applied(): void
     {
         // A formatter reorders what the patch added, so git no longer recognises it.
+        $this->assertSetupWarns("<?php // fixture\n", warns: false);
+    }
+
+    public function test_an_added_line_that_only_appears_inside_another_line_does_not_count(): void
+    {
+        $this->assertSetupWarns("// <?php // fixture\n", warns: true);
+    }
+
+    private function assertSetupWarns(string $user, bool $warns): void
+    {
         Process::fake(['*' => Process::result(exitCode: 1)]);
         $appPath = sys_get_temp_dir().'/saucebase-module-setup-'.uniqid();
         mkdir($appPath.'/app/Models', recursive: true);
-        file_put_contents($appPath.'/app/Models/User.php', "<?php // fixture\n");
+        file_put_contents($appPath.'/app/Models/User.php', $user);
         $this->app->setBasePath($appPath);
 
         try {
-            $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture']])
-                ->doesntExpectOutputToContain('did not apply')
-                ->assertSuccessful();
+            $command = $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture']]);
+            $warns ? $command->expectsOutputToContain('did not apply') : $command->doesntExpectOutputToContain('did not apply');
+            $command->assertSuccessful()->run();
         } finally {
             (new Filesystem)->deleteDirectory($appPath);
         }
