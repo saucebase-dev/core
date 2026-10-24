@@ -102,6 +102,13 @@ jobs:
                   extra-patches: ${{ inputs.extra_patches }}
                   app-url: ${{ env.APP_URL }}
 
+            # The module's own code only: the patches it ships stay unsorted so they combine.
+            - name: Check formatting
+              working-directory: app
+              env:
+                  MODULE: ${{ inputs.module }}
+              run: vendor/bin/pint --test "modules/$MODULE"
+
             - name: Run PHPUnit tests
               working-directory: app
               env:
