@@ -8,6 +8,9 @@
             "providers": [
                 "Modules\\ModuleTestFixture\\Providers\\ModuleTestFixtureServiceProvider"
             ]
+        },
+        "saucebase": {
+            "install": "module-test-fixture:install"
         }
     },
     "autoload": {

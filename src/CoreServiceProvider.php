@@ -15,6 +15,8 @@ use InterNACHI\Modular\Support\ModularizedCommandsServiceProvider;
 use InterNACHI\Modular\Support\ModularServiceProvider;
 use Saucebase\Core\Console\Commands\GenerateModuleTypesCommand;
 use Saucebase\Core\Console\Commands\InstallCommand;
+use Saucebase\Core\Console\Commands\ModuleInstallCommand;
+use Saucebase\Core\Console\Commands\ModuleSetupCommand;
 use Saucebase\Core\Console\Commands\RecipeToModuleCommand;
 use Saucebase\Core\Console\Commands\SeedModulesCommand;
 use Saucebase\Core\Console\Commands\SyncModuleBoostCommand;
@@ -97,6 +99,8 @@ class CoreServiceProvider extends ServiceProvider
         $this->commands([
             GenerateModuleTypesCommand::class,
             InstallCommand::class,
+            ModuleInstallCommand::class,
+            ModuleSetupCommand::class,
             RecipeToModuleCommand::class,
             SeedModulesCommand::class,
             SyncModuleBoostCommand::class,
