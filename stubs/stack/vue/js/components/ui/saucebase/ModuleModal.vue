@@ -20,13 +20,7 @@ let copyTimer: ReturnType<typeof setTimeout> | null = null;
 function installCommand(mod: Module) {
     if (mod.id === 'custom')
         return 'php artisan saucebase:recipe MyAmazingModuleIdea';
-    const composer = isInstalled(mod.id)
-        ? `composer update saucebase/${mod.id}`
-        : `composer require saucebase/${mod.id}`;
-    const base = `${composer}\nphp artisan migrate\nphp artisan modules:seed --module=${mod.id}`;
-    return mod.customCommands?.length
-        ? `${base}\n${mod.customCommands.join('\n')}`
-        : base;
+    return `php artisan saucebase:module-install ${mod.id}\nnpm install && npm run build`;
 }
 
 function copyCommand() {
@@ -160,6 +154,7 @@ onUnmounted(() => {
                                     aria-hidden="true"
                                 />
                                 <code
+                                    data-testid="module-install-command"
                                     class="flex-1 text-sm whitespace-pre text-green-400"
                                 >
                                     {{ installCommand(selectedMod) }}

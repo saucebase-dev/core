@@ -11,16 +11,10 @@ interface ModuleModalProps {
     onClose: () => void;
 }
 
-function installCommand(mod: Module, installed: boolean): string {
+function installCommand(mod: Module): string {
     if (mod.id === 'custom')
         return 'php artisan saucebase:recipe MyAmazingModuleIdea';
-    const composer = installed
-        ? `composer update saucebase/${mod.id}`
-        : `composer require saucebase/${mod.id}`;
-    const base = `${composer}\nphp artisan migrate\nphp artisan modules:seed --module=${mod.id}`;
-    return mod.customCommands?.length
-        ? `${base}\n${mod.customCommands.join('\n')}`
-        : base;
+    return `php artisan saucebase:module-install ${mod.id}\nnpm install && npm run build`;
 }
 
 export function ModuleModal({ selectedMod, onClose }: ModuleModalProps) {
@@ -74,7 +68,7 @@ export function ModuleModal({ selectedMod, onClose }: ModuleModalProps) {
     const copyCommand = useCallback(() => {
         if (!mod) return;
         navigator.clipboard
-            .writeText(installCommand(mod, isInstalled(mod.id)))
+            .writeText(installCommand(mod))
             .then(() => {
                 toast.success(t('Copied to clipboard'));
                 if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
@@ -82,7 +76,7 @@ export function ModuleModal({ selectedMod, onClose }: ModuleModalProps) {
                 copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
             })
             .catch(() => toast.error(t('Failed to copy')));
-    }, [mod, t, isInstalled]);
+    }, [mod, t]);
 
     if (!mod) return null;
 
@@ -189,8 +183,11 @@ export function ModuleModal({ selectedMod, onClose }: ModuleModalProps) {
                                         className="mt-0.5 size-4 shrink-0 self-start text-gray-500"
                                         aria-hidden="true"
                                     />
-                                    <code className="flex-1 whitespace-pre text-sm text-green-400">
-                                        {installCommand(mod, isInstalled(mod.id))}
+                                    <code
+                                        data-testid="module-install-command"
+                                        className="flex-1 whitespace-pre text-sm text-green-400"
+                                    >
+                                        {installCommand(mod)}
                                     </code>
                                     <button
                                         className="cursor-pointer self-start text-gray-300 transition-colors hover:text-gray-300"

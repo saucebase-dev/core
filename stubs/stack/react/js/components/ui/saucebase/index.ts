@@ -53,7 +53,6 @@ export interface Module {
     href: string | null;
     frameworks: readonly ('vue' | 'react')[];
     features: string[];
-    customCommands?: readonly string[];
 }
 
 export const modules: Module[] = [
@@ -79,7 +78,6 @@ export const modules: Module[] = [
     },
     {
         id: 'auth',
-        customCommands: ['git apply modules/auth/patches/user.patch'],
         title: 'Auth',
         description:
             'Complete authentication system with login, registration, magic link (passwordless), password reset, email verification, and OAuth integration (Google, GitHub).',
@@ -100,7 +98,6 @@ export const modules: Module[] = [
     },
     {
         id: 'billing',
-        customCommands: ['git apply modules/billing/patches/user.patch'],
         title: 'Billing',
         description:
             'Subscription management and payment processing via Stripe with checkout sessions, billing portal, invoices, and webhook processing.',
