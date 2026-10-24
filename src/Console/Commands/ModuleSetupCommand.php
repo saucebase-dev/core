@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Process;
 use InterNACHI\Modular\Support\ModuleConfig;
 use InterNACHI\Modular\Support\ModuleRegistry;
+use Symfony\Component\Console\Input\StringInput;
 
 /**
  * Wires installed modules into the application. `saucebase:module-install` runs it in a
@@ -41,17 +42,24 @@ class ModuleSetupCommand extends Command
             $steps[] = ['modules:seed', ['--module' => $module->name, '--demo' => $this->option('demo')]];
         }
 
-        // Each module's own step comes last, once every module is migrated and seeded.
+        // Each module's own commands come last, once every module is migrated and seeded.
         foreach ($modules as $module) {
             $composer = json_decode((string) @file_get_contents($module->path('composer.json')), true);
 
-            if ($command = data_get($composer, 'extra.saucebase.install')) {
-                $steps[] = [$command, []];
+            foreach ((array) data_get($composer, 'extra.saucebase.post-install', []) as $line) {
+                // Artisan only: a module's own code, never a shell command from a dependency.
+                if (! str_starts_with($line, 'php artisan ')) {
+                    $this->components->error("{$module->name}: post-install runs artisan commands only: {$line}");
+
+                    return self::FAILURE;
+                }
+
+                $steps[] = [substr($line, strlen('php artisan ')), null];
             }
         }
 
         foreach ($steps as [$command, $arguments]) {
-            if ($this->call($command, $arguments) !== self::SUCCESS) {
+            if ($this->runStep($command, $arguments) !== self::SUCCESS) {
                 $this->components->error("`{$command}` failed. Fix it, then run this again: php artisan saucebase:module-setup ".implode(' ', $this->argument('modules')).($this->option('demo') ? ' --demo' : ''));
 
                 return self::FAILURE;
@@ -67,6 +75,24 @@ class ModuleSetupCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * A post-install line keeps its own options (`tenancy:install --mode=path`), and
+     * asks its questions when this command can.
+     *
+     * @param  array<string, mixed>|null  $arguments  Null for a post-install line.
+     */
+    private function runStep(string $command, ?array $arguments): int
+    {
+        if ($arguments !== null) {
+            return $this->call($command, $arguments);
+        }
+
+        $input = new StringInput($command);
+        $input->setInteractive($this->input->isInteractive());
+
+        return $this->getApplication()->find((string) $input->getFirstArgument())->run($input, $this->output);
     }
 
     /**

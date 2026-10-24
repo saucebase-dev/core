@@ -24,6 +24,7 @@ class ModuleSetupCommandTest extends TestCase
 
         DatabaseSeeder::$ran = [];
         InstallFixtureCommand::$ran = false;
+        InstallFixtureCommand::$mode = null;
     }
 
     public function test_a_clean_patch_is_applied_then_the_module_is_migrated_and_seeded(): void
@@ -38,7 +39,8 @@ class ModuleSetupCommandTest extends TestCase
             && ! in_array('--reverse', $p->command, true)
             && str_ends_with(end($p->command), 'module-test-fixture/patches/user.patch'));
         $this->assertSame(['DatabaseSeeder'], DatabaseSeeder::$ran);
-        $this->assertTrue(InstallFixtureCommand::$ran, 'The module\'s own install command runs last.');
+        $this->assertTrue(InstallFixtureCommand::$ran, 'The module\'s post-install command runs last.');
+        $this->assertSame('path', InstallFixtureCommand::$mode, 'Its options are passed on.');
     }
 
     public function test_a_patch_already_in_place_is_skipped(): void
@@ -100,6 +102,22 @@ class ModuleSetupCommandTest extends TestCase
             ->assertFailed();
 
         $this->assertFalse(InstallFixtureCommand::$ran);
+    }
+
+    public function test_a_post_install_entry_that_is_not_an_artisan_command_fails(): void
+    {
+        Process::fake();
+        $composer = __DIR__.'/../Fixtures/modules/module-test-fixture/composer.json';
+        $original = file_get_contents($composer);
+        file_put_contents($composer, str_replace('php artisan module-test-fixture:install --mode=path', 'rm -rf storage', $original));
+
+        try {
+            $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture']])
+                ->expectsOutputToContain('post-install runs artisan commands only: rm -rf storage')
+                ->assertFailed();
+        } finally {
+            file_put_contents($composer, $original);
+        }
     }
 
     public function test_an_unknown_module_fails(): void

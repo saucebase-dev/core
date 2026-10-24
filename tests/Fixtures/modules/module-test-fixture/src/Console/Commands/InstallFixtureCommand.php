@@ -4,16 +4,19 @@ namespace Modules\ModuleTestFixture\Console\Commands;
 
 use Illuminate\Console\Command;
 
-/** The module's own install step, named in its composer.json `extra.saucebase.install`. */
+/** The module's own install step, listed in its composer.json `extra.saucebase.post-install`. */
 class InstallFixtureCommand extends Command
 {
     public static bool $ran = false;
 
-    protected $signature = 'module-test-fixture:install';
+    public static ?string $mode = null;
+
+    protected $signature = 'module-test-fixture:install {--mode=}';
 
     public function handle(): int
     {
         static::$ran = true;
+        static::$mode = $this->option('mode');
 
         return self::SUCCESS;
     }

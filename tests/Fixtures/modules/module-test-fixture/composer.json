@@ -10,7 +10,9 @@
             ]
         },
         "saucebase": {
-            "install": "module-test-fixture:install"
+            "post-install": [
+                "php artisan module-test-fixture:install --mode=path"
+            ]
         }
     },
     "autoload": {
