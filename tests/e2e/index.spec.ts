@@ -28,3 +28,15 @@ test.describe('Landing page', () => {
         await context.close();
     });
 });
+
+test.describe('Module modal', () => {
+    test('shows the one command that installs the module', async ({ page }) => {
+        await page.goto('/');
+
+        await page.getByTestId('module-card-blog').click();
+
+        await expect(page.getByTestId('module-install-command')).toHaveText(
+            'php artisan saucebase:module-install blog\nnpm install && npm run build',
+        );
+    });
+});

@@ -8,6 +8,7 @@ const emit = defineEmits<{ select: [module: Module] }>();
 <template>
     <div
         data-card
+        :data-testid="`module-card-${module.id}`"
         class="relative cursor-pointer transition-opacity duration-200 select-none hover:opacity-100!"
         :class="[!module.href ? 'opacity-50' : '', moduleClass]"
         :style="{

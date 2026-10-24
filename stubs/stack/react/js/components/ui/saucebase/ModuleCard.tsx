@@ -21,6 +21,7 @@ export function ModuleCard({
     return (
         <div
             data-card
+            data-testid={`module-card-${module.id}`}
             className={`relative cursor-pointer transition-opacity duration-200 select-none hover:opacity-100! ${!module.href ? 'opacity-50' : ''} ${moduleClass ?? ''}`}
             style={
                 {

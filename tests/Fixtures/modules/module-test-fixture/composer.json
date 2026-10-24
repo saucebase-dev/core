@@ -8,6 +8,11 @@
             "providers": [
                 "Modules\\ModuleTestFixture\\Providers\\ModuleTestFixtureServiceProvider"
             ]
+        },
+        "saucebase": {
+            "post-install": [
+                "php artisan module-test-fixture:install --mode=path"
+            ]
         }
     },
     "autoload": {
