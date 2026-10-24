@@ -11,6 +11,7 @@ use Saucebase\Breadcrumbs\Generator;
 use Saucebase\Core\Http\Middleware\HandleInertiaRequests;
 use Saucebase\Core\Tests\Concerns\InteractsWithFixtureModules;
 use Saucebase\Core\Tests\TestCase;
+use Tighten\Ziggy\Ziggy;
 
 /**
  * Props shared with every Inertia page. Asserted by value: the frontend reads them
@@ -41,6 +42,31 @@ class HandleInertiaRequestsTest extends TestCase
 
         $this->assertSame('http://localhost/some/page', $ziggy['location']);
         $this->assertArrayHasKey('routes', $ziggy);
+    }
+
+    public function test_routes_the_frontend_never_calls_are_not_shared(): void
+    {
+        Ziggy::clearRoutes(); // Ziggy caches the route list per process.
+        foreach (['filament.admin.pages.dashboard', 'livewire.update', 'default-livewire.update', 'filament-impersonate.leave', 'boost.browser-logs', 'storage.local', 'shop.index'] as $name) {
+            Route::get('/'.str_replace('.', '/', $name), fn () => 'ok')->name($name);
+        }
+        Route::getRoutes()->refreshNameLookups();
+
+        $routes = array_keys(($this->share()['ziggy'])()['routes']);
+
+        // Admin and package internals: a smaller page, and no admin URLs in its source.
+        $this->assertSame([], array_values(array_filter($routes, fn (string $name) => preg_match('/^(filament|livewire|default-livewire|filament-impersonate|boost|storage)\./', $name) === 1)));
+        $this->assertContains('shop.index', $routes);
+    }
+
+    public function test_the_app_can_choose_its_own_routes_to_share(): void
+    {
+        Ziggy::clearRoutes();
+        Route::get('/admin', fn () => 'ok')->name('filament.admin.pages.dashboard');
+        Route::getRoutes()->refreshNameLookups();
+        config(['ziggy.except' => []]);
+
+        $this->assertArrayHasKey('filament.admin.pages.dashboard', ($this->share()['ziggy'])()['routes']);
     }
 
     public function test_breadcrumbs_come_from_the_route_definition_with_a_translation_prefix(): void

@@ -40,6 +40,9 @@ class ConfigServiceProvider extends ServiceProvider
             'laravel-translatable-string-exporter',
         );
 
+        // Ziggy ships no config of its own to merge into, so the app's config/ziggy.php wins.
+        $this->mergeConfigFrom(__DIR__.'/../../config/ziggy.php', 'ziggy');
+
         $this->registerTypeScriptTransformer();
     }
 
