@@ -32,6 +32,12 @@ class ModuleInstallCommand extends Command
 
         $modules = $this->argument('modules') ?: ($this->input->isInteractive() ? $this->pick() : []);
 
+        if ($modules === null) {
+            $this->components->info('Every available module is already installed.');
+
+            return self::SUCCESS;
+        }
+
         if ($modules === []) {
             $this->components->error('Name the modules to install: php artisan saucebase:module-install billing');
 
@@ -53,8 +59,8 @@ class ModuleInstallCommand extends Command
             ->successful() ? self::SUCCESS : self::FAILURE;
     }
 
-    /** @return string[] Module names on Packagist the app doesn't require yet. */
-    private function pick(): array
+    /** @return string[]|null Module names on Packagist the app doesn't require yet; null when it has them all. */
+    private function pick(): ?array
     {
         $listed = Http::timeout(10)->get('https://packagist.org/packages/list.json?type=saucebase-module&fields[]=abandoned')->json('packages') ?? [];
         $required = array_keys(json_decode((string) @file_get_contents(base_path('composer.json')), true)['require'] ?? []);
@@ -66,6 +72,10 @@ class ModuleInstallCommand extends Command
             ->mapWithKeys(fn (string $package) => [Str::after($package, '/') => Str::headline(Str::after($package, '/'))])
             ->all();
 
-        return $options === [] ? [] : multiselect('Which modules would you like to install?', $options);
+        if ($options === []) {
+            return $listed === [] ? [] : null;
+        }
+
+        return multiselect('Which modules would you like to install?', $options);
     }
 }

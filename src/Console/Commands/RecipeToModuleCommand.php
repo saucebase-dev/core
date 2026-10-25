@@ -5,6 +5,7 @@ namespace Saucebase\Core\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Saucebase\Core\ModuleTaskfile;
 use Saucebase\Core\ProjectConfig;
 use Symfony\Component\Filesystem\Filesystem as SymfonyFilesystem;
 use Symfony\Component\Finder\Finder;
@@ -87,7 +88,7 @@ class RecipeToModuleCommand extends Command
             $this->keepOnlyFramework($framework);
         }
 
-        $this->registerInTaskfile();
+        ModuleTaskfile::add($this->moduleFolder);
         $this->registerInComposer();
 
         info("Starter {$this->moduleName} module generated successfully.");
@@ -406,36 +407,6 @@ class RecipeToModuleCommand extends Command
             $path,
             json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n"
         );
-    }
-
-    protected function registerInTaskfile(): void
-    {
-        $taskfile = base_path('Taskfile.yml');
-
-        if (! file_exists($taskfile)) {
-            return;
-        }
-
-        $content = file_get_contents($taskfile);
-
-        if ($content === false) {
-            throw new RuntimeException("Unable to read Taskfile at [{$taskfile}].");
-        }
-
-        $entry = "    {$this->moduleFolder}:\n        taskfile: ./modules/{$this->moduleFolder}/Taskfile.yml\n        optional: true\n";
-        $marker = '    # ── END MODULES';
-
-        if (str_contains($content, "taskfile: ./modules/{$this->moduleFolder}/Taskfile.yml")) {
-            return;
-        }
-
-        $markerPosition = strpos($content, $marker);
-
-        if ($markerPosition === false) {
-            return;
-        }
-
-        file_put_contents($taskfile, substr($content, 0, $markerPosition).$entry.substr($content, $markerPosition));
     }
 
     private function deleteDir(string $path): void
