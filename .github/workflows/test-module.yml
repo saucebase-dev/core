@@ -183,6 +183,7 @@ jobs:
             - name: Prepare the E2E environment
               working-directory: app
               run: |
+                  # localhost inside the runner, and artisan serve has no TLS.
                   php artisan playwright:env --url="$APP_URL" --force
                   # Ports below 1024 are privileged by default. Lower the threshold
                   # rather than serving as root, so the app never writes root-owned

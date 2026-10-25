@@ -57,7 +57,7 @@ class InstallCommandTest extends TestCase
         $readme = $this->read('README.md');
         $this->assertStringContainsString('php artisan saucebase:module-install', $readme);
         $this->assertStringContainsString('docker compose exec app php artisan', $readme);
-        $this->assertStringContainsString('resets the database', $readme);
+        $this->assertStringContainsString('php artisan playwright:env', $readme);
     }
 
     public function test_the_published_user_factory_never_repeats_an_email_across_requests(): void
