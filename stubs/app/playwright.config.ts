@@ -1,10 +1,14 @@
 /// <reference types="node" />
 import { defineConfig, devices } from '@playwright/test';
-import type { LaravelOptions } from '@saucebase/laravel-playwright';
-import 'dotenv/config';
+import { laravelServer, type LaravelOptions } from '@saucebase/laravel-playwright';
+import { config } from 'dotenv';
 import { saucebaseProjects } from './vendor/saucebase/core/resources/js/modules.ts';
 
-const BASE_URL = process.env.APP_URL ?? 'http://localhost';
+// The suite runs on its own server and database, never the app's: .env.e2e, written
+// by `php artisan playwright:env`. Loading .env here instead would hand that server
+// your database.
+config({ path: '.env.e2e', quiet: true });
+const BASE_URL = process.env.APP_URL ?? 'http://localhost:8100';
 
 async function createConfig() {
     // database.setup, every module's setups and projects, per device, in order.
@@ -61,6 +65,9 @@ async function createConfig() {
 
         /* Configure projects for major browsers */
         projects,
+
+        /* Migrates .env.e2e's database, then serves it on APP_URL's port. */
+        webServer: laravelServer(),
 
         /**
          * Tests run against built assets, the way CI does.

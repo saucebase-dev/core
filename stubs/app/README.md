@@ -40,7 +40,7 @@ php artisan test    # PHPUnit
 npm run test:e2e    # Playwright
 ```
 
-**`npm run test:e2e` resets the database in `.env`.** Run it on an app whose data you can lose.
+**`npm run test:e2e` runs on its own server and database**, from `.env.e2e`, so your app's data stays untouched. Create the file once with `php artisan playwright:env` (a copy of `.env` with its own SQLite database and port).
 
 ## Learn more
 
