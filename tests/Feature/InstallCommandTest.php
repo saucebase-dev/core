@@ -50,6 +50,16 @@ class InstallCommandTest extends TestCase
         $this->assertFileExists($this->appPath.'/public/images/icon-on-light.svg');
     }
 
+    public function test_it_replaces_laravels_readme_with_one_for_saucebase(): void
+    {
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        $readme = $this->read('README.md');
+        $this->assertStringContainsString('php artisan saucebase:module-install', $readme);
+        $this->assertStringContainsString('docker compose exec app php artisan', $readme);
+        $this->assertStringContainsString('resets the database', $readme);
+    }
+
     public function test_the_published_user_factory_never_repeats_an_email_across_requests(): void
     {
         $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
