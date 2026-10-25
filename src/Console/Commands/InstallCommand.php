@@ -37,6 +37,11 @@ class InstallCommand extends Command
         '/bootstrap/ssr',
         '/playwright-report',
         '/test-results',
+        '/storage/framework/playwright',
+        // Every env file, the E2E suite's `.env.e2e` included, but the examples.
+        '.env.*',
+        '!.env.*.example',
+        '!.env.example',
         '/public/css/filament',
         '/public/js/filament',
         '/public/fonts/filament',

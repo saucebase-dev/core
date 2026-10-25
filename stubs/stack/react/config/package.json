@@ -36,7 +36,7 @@
         "@inertiajs/react": "^3.9.1",
         "@inertiajs/vite": "^3.9.1",
         "@playwright/test": "^1.64.1",
-        "@saucebase/laravel-playwright": "^1.0",
+        "@saucebase/laravel-playwright": "^2.0.1",
         "@svgr/core": "^8.1.0",
         "@svgr/plugin-jsx": "^8.1.0",
         "@tailwindcss/forms": "^0.5.11",

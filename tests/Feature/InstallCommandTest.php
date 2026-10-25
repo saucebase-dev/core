@@ -57,7 +57,7 @@ class InstallCommandTest extends TestCase
         $readme = $this->read('README.md');
         $this->assertStringContainsString('php artisan saucebase:module-install', $readme);
         $this->assertStringContainsString('docker compose exec app php artisan', $readme);
-        $this->assertStringContainsString('resets the database', $readme);
+        $this->assertStringContainsString('php artisan playwright:env', $readme);
     }
 
     public function test_the_published_user_factory_never_repeats_an_email_across_requests(): void
@@ -294,9 +294,25 @@ class InstallCommandTest extends TestCase
         // Laravel's own lines stay.
         $this->assertStringStartsWith("/vendor\n/public/build\n", $ignored);
 
-        foreach (['/bootstrap/ssr', '/playwright-report', '/test-results', '/public/css/filament', '/public/js/filament', '/public/fonts/filament'] as $path) {
+        foreach (['/bootstrap/ssr', '/playwright-report', '/test-results', '/storage/framework/playwright', '/public/css/filament', '/public/js/filament', '/public/fonts/filament'] as $path) {
             $this->assertStringContainsString("\n{$path}\n", $ignored);
         }
+    }
+
+    /** `.env.e2e` (the E2E suite's own env) and any other env file, but never an example. */
+    public function test_it_ignores_every_env_file_but_the_examples(): void
+    {
+        $this->files->put($this->appPath.'/.gitignore', "/vendor\n.env\n.env.backup\n");
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        $ignored = $this->read('.gitignore');
+        $envs = strpos($ignored, "\n.env.*\n");
+
+        $this->assertNotFalse($envs);
+        // Negations only work after the pattern they undo.
+        $this->assertGreaterThan($envs, strpos($ignored, "\n!.env.*.example\n"));
+        $this->assertGreaterThan($envs, strpos($ignored, "\n!.env.example\n"));
     }
 
     public function test_it_does_not_ignore_a_path_twice(): void
