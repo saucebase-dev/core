@@ -2,6 +2,7 @@
 
 namespace Saucebase\Core\Tests\Feature;
 
+use Database\Factories\UserFactory;
 use Illuminate\Filesystem\Filesystem;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Saucebase\Core\Tests\TestCase;
@@ -47,6 +48,23 @@ class InstallCommandTest extends TestCase
         $this->assertFileExists($this->appPath.'/routes/navigation.php');
         $this->assertFileExists($this->appPath.'/public/site.webmanifest');
         $this->assertFileExists($this->appPath.'/public/images/icon-on-light.svg');
+    }
+
+    public function test_the_published_user_factory_never_repeats_an_email_across_requests(): void
+    {
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+        require_once $this->appPath.'/database/factories/UserFactory.php';
+
+        // E2E tests create each user in its own request, and each request starts a new
+        // Faker whose unique() remembers nothing: seeded alike, they draw the same email.
+        $emails = [];
+        foreach ([1, 2] as $request) {
+            fake()->seed(1);
+            fake()->unique(reset: true);
+            $emails[] = (new UserFactory)->definition()['email'];
+        }
+
+        $this->assertCount(2, array_unique($emails));
     }
 
     public function test_it_publishes_a_taskfile_with_an_empty_app_prefix(): void

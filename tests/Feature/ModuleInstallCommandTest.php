@@ -98,6 +98,18 @@ class ModuleInstallCommandTest extends TestCase
         Process::assertRan(fn (PendingProcess $p) => $p->command === ['composer', 'require', 'saucebase/blog', '--no-interaction']);
     }
 
+    public function test_with_every_module_installed_it_says_so(): void
+    {
+        Process::fake();
+        $this->files->put($this->appPath.'/composer.json', '{"require": {"saucebase/auth": "*", "saucebase/billing": "*", "saucebase/blog": "*"}}');
+
+        $this->artisan('saucebase:module-install')
+            ->expectsOutputToContain('Every available module is already installed.')
+            ->assertSuccessful();
+
+        Process::assertNothingRan();
+    }
+
     public function test_with_no_names_and_no_interaction_it_fails(): void
     {
         Process::fake();
