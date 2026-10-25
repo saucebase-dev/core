@@ -7,8 +7,10 @@ import { saucebaseProjects } from './vendor/saucebase/core/resources/js/modules.
 // The suite runs on its own server and database, never the app's: .env.e2e, written
 // by `php artisan playwright:env`. Loading .env here instead would hand that server
 // your database.
-config({ path: '.env.e2e', quiet: true });
-const BASE_URL = process.env.APP_URL ?? 'http://localhost:8100';
+const e2e = config({ path: '.env.e2e', quiet: true }).parsed ?? {};
+// From the file, not process.env: an APP_URL exported for the dev app would win there,
+// and the suite would test it while laravelServer() serves .env.e2e's.
+const BASE_URL = e2e.APP_URL ?? 'http://localhost:8100';
 
 async function createConfig() {
     // database.setup, every module's setups and projects, per device, in order.
@@ -60,7 +62,7 @@ async function createConfig() {
 
             /** Laravel Playwright integration */
             laravelBaseUrl: `${BASE_URL}/playwright`,
-            laravelSecret: process.env.PLAYWRIGHT_SECRET,
+            laravelSecret: e2e.PLAYWRIGHT_SECRET,
         },
 
         /* Configure projects for major browsers */
