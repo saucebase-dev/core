@@ -130,6 +130,61 @@ class ModuleSetupCommandTest extends TestCase
         }
     }
 
+    public function test_a_module_with_a_taskfile_is_included_in_the_app_taskfile_once(): void
+    {
+        $taskfile = $this->taskfile("includes:\n    # ── BEGIN MODULES\n    # ── END MODULES\n");
+
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture']])->assertSuccessful();
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture']])->assertSuccessful();
+
+        $this->assertSame(
+            "includes:\n    # ── BEGIN MODULES\n    module-test-fixture:\n        taskfile: ./modules/module-test-fixture/Taskfile.yml\n        optional: true\n    # ── END MODULES\n",
+            file_get_contents($taskfile),
+        );
+    }
+
+    public function test_a_module_without_a_taskfile_is_not_included(): void
+    {
+        $taskfile = $this->taskfile($content = "includes:\n    # ── BEGIN MODULES\n    # ── END MODULES\n");
+
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-order-fixture']])->assertSuccessful();
+
+        $this->assertSame($content, file_get_contents($taskfile));
+    }
+
+    public function test_a_taskfile_without_the_markers_is_left_alone(): void
+    {
+        $taskfile = $this->taskfile($content = "includes: {}\n");
+
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture']])->assertSuccessful();
+
+        $this->assertSame($content, file_get_contents($taskfile));
+    }
+
+    /** An app holding only a Taskfile; returns its path. */
+    private function taskfile(string $content): string
+    {
+        Process::fake();
+        $appPath = sys_get_temp_dir().'/saucebase-module-taskfile-'.uniqid();
+        mkdir($appPath);
+        file_put_contents($appPath.'/Taskfile.yml', $content);
+        $this->app->setBasePath($appPath);
+        $this->beforeApplicationDestroyed(fn () => (new Filesystem)->deleteDirectory($appPath));
+
+        return $appPath.'/Taskfile.yml';
+    }
+
+    public function test_a_module_without_a_frontend_for_the_app_stack_is_flagged(): void
+    {
+        $this->taskfile('');
+        file_put_contents(base_path('saucebase.json'), '{"framework": "vue"}');
+
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-order-fixture', 'module-test-fixture']])
+            ->expectsOutputToContain("module-order-fixture has no vue frontend: its pages won't load.")
+            ->doesntExpectOutputToContain('module-test-fixture has no')
+            ->assertSuccessful();
+    }
+
     public function test_an_unknown_module_fails(): void
     {
         Process::fake();

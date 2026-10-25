@@ -7,27 +7,7 @@ vars:
 
 includes:
     # ── BEGIN MODULES ────────────────────────────────────────────────
-    auth:
-        taskfile: ./modules/auth/Taskfile.yml
-        optional: true
-    billing:
-        taskfile: ./modules/billing/Taskfile.yml
-        optional: true
-    announcements:
-        taskfile: ./modules/announcements/Taskfile.yml
-        optional: true
-    roadmap:
-        taskfile: ./modules/roadmap/Taskfile.yml
-        optional: true
-    themes:
-        taskfile: ./modules/themes/Taskfile.yml
-        optional: true
-    blog:
-        taskfile: ./modules/blog/Taskfile.yml
-        optional: true
-    tenancy:
-        taskfile: ./modules/tenancy/Taskfile.yml
-        optional: true
+    # saucebase:module-install adds each installed module's tasks here.
     # ── END MODULES ──────────────────────────────────────────────────
 
 tasks:
@@ -107,12 +87,11 @@ tasks:
             - '{{.APP}} php artisan modules:seed'
 
     db:reset:demo:
-        desc: Reset database and load sample content with an admin account
+        desc: Reset database and load sample content (the auth module's demo includes an admin)
         prompt: This will erase ALL data. Are you sure?
         cmds:
             - '{{.APP}} php artisan migrate:fresh --seed'
             - '{{.APP}} php artisan modules:seed --demo'
-            - '{{.APP}} php artisan auth:make-admin chef@saucebase.dev'
 
     db:seed:demo:
         desc: Seed every module with sample content

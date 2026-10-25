@@ -6,6 +6,8 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Process;
 use InterNACHI\Modular\Support\ModuleConfig;
 use InterNACHI\Modular\Support\ModuleRegistry;
+use Saucebase\Core\ModuleTaskfile;
+use Saucebase\Core\ProjectConfig;
 use Symfony\Component\Console\Input\StringInput;
 
 /**
@@ -22,7 +24,7 @@ class ModuleSetupCommand extends Command
 
     protected $hidden = true;
 
-    public function handle(ModuleRegistry $registry): int
+    public function handle(ModuleRegistry $registry, ProjectConfig $config): int
     {
         $modules = [];
 
@@ -40,6 +42,12 @@ class ModuleSetupCommand extends Command
 
         foreach ($modules as $module) {
             $steps[] = ['modules:seed', ['--module' => $module->name, '--demo' => $this->option('demo')]];
+        }
+
+        foreach ($modules as $module) {
+            if (file_exists($module->path('Taskfile.yml'))) {
+                ModuleTaskfile::add($module->name);
+            }
         }
 
         // Each module's own commands come last, once every module is migrated and seeded.
@@ -72,6 +80,17 @@ class ModuleSetupCommand extends Command
         // module needs at runtime, so nothing above depended on them.
         foreach ($conflicts as $patch) {
             $this->components->warn("{$patch} did not apply. Make its change by hand: see the module's README, \"Manual install\".");
+        }
+
+        // Read from the installed module itself, so it works for private modules too.
+        $stack = $config->getFramework();
+
+        foreach ($modules as $module) {
+            $stacks = data_get(json_decode((string) @file_get_contents($module->path('composer.json')), true), 'extra.saucebase.frameworks');
+
+            if ($stack !== null && is_array($stacks) && ! in_array($stack, $stacks, true)) {
+                $this->components->warn("{$module->name} has no {$stack} frontend: its pages won't load.");
+            }
         }
 
         return self::SUCCESS;
