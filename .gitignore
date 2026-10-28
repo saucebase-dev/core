@@ -5,5 +5,6 @@
 .DS_Store
 /.phpstan.cache/
 tests/Fixtures/modules/*/resources/js/
+/node_modules/
 /resources/js/node_modules/
 /stubs/stack/*/config/node_modules/

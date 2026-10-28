@@ -52,3 +52,39 @@ export function formatDateTime(
         minute: '2-digit',
     });
 }
+
+const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+    ['year', 365 * 86_400],
+    ['month', 30 * 86_400],
+    ['week', 7 * 86_400],
+    ['day', 86_400],
+    ['hour', 3_600],
+    ['minute', 60],
+];
+
+/**
+ * How long ago, or how long until, in the app's language: "yesterday", "in 3 weeks",
+ * "2 months ago". Under a minute is "now".
+ *
+ * Only for pages that never render on the server, like `formatDateTime()`: the
+ * server's "now" is not the reader's, so the text would change on hydration.
+ */
+export function formatRelative(
+    value: string | Date | null | undefined,
+    locale: string | undefined,
+    now: Date = new Date(),
+): string {
+    if (!value) {
+        return '';
+    }
+
+    const seconds = (new Date(value).getTime() - now.getTime()) / 1000;
+    const format = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+    const unit = RELATIVE_UNITS.find(([, size]) => Math.abs(seconds) >= size);
+
+    if (!unit) {
+        return format.format(0, 'second');
+    }
+
+    return format.format(Math.round(seconds / unit[1]), unit[0]);
+}
