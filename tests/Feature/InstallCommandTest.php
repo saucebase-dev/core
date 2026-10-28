@@ -315,6 +315,30 @@ class InstallCommandTest extends TestCase
         $this->assertGreaterThan($envs, strpos($ignored, "\n!.env.example\n"));
     }
 
+    public function test_a_new_gitignore_ignores_the_env_file(): void
+    {
+        $this->files->delete($this->appPath.'/.gitignore');
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        $this->assertContains('.env', explode("\n", $this->read('.gitignore')));
+    }
+
+    /** Exceptions already in the file still have to follow the pattern they undo. */
+    public function test_existing_env_exceptions_still_follow_the_pattern(): void
+    {
+        $this->files->put($this->appPath.'/.gitignore', "/vendor\n.env\n!.env.*.example\n!.env.example\n");
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        $ignored = $this->read('.gitignore');
+        $envs = strrpos($ignored, "\n.env.*\n");
+
+        $this->assertNotFalse($envs);
+        $this->assertGreaterThan($envs, strrpos($ignored, "\n!.env.*.example\n"));
+        $this->assertGreaterThan($envs, strrpos($ignored, "\n!.env.example\n"));
+    }
+
     public function test_it_does_not_ignore_a_path_twice(): void
     {
         $this->files->put($this->appPath.'/.gitignore', "/vendor\n/bootstrap/ssr\n");

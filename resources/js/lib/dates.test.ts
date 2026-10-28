@@ -43,6 +43,15 @@ describe('formatRelative', () => {
         expect(formatRelative(at(400 * day), 'en', now)).toBe('next year');
     });
 
+    it('rounds past and future alike', () => {
+        expect(formatRelative(at(-90 * 60), 'en', now)).toBe('2 hours ago');
+        expect(formatRelative(at(90 * 60), 'en', now)).toBe('in 2 hours');
+    });
+
+    it('returns an empty string for a date it cannot read', () => {
+        expect(formatRelative('not-a-date', 'en', now)).toBe('');
+    });
+
     it('speaks the language it is given', () => {
         expect(formatRelative(at(-day), 'pt-BR', now)).toBe('ontem');
     });

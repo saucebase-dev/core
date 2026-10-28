@@ -39,6 +39,7 @@ class InstallCommand extends Command
         '/test-results',
         '/storage/framework/playwright',
         // Every env file, the E2E suite's `.env.e2e` included, but the examples.
+        '.env',
         '.env.*',
         '!.env.*.example',
         '!.env.example',
@@ -98,7 +99,17 @@ class InstallCommand extends Command
     {
         $path = $this->laravel->basePath('.gitignore');
         $current = $files->exists($path) ? $files->get($path) : '';
-        $missing = array_diff(self::GENERATED, array_map(trim(...), explode("\n", $current)));
+        $present = array_map(trim(...), explode("\n", $current));
+        $missing = array_diff(self::GENERATED, $present);
+
+        // A negation only works after the pattern it undoes, so a `.env.*` appended now
+        // brings its exceptions along, even ones the file already has.
+        if (in_array('.env.*', $missing, true)) {
+            $missing = array_filter(
+                self::GENERATED,
+                fn (string $line) => in_array($line, $missing, true) || str_starts_with($line, '!.env'),
+            );
+        }
 
         if ($missing !== []) {
             $files->put($path, ($current === '' ? '' : rtrim($current, "\n")."\n\n")."# Saucebase\n".implode("\n", $missing)."\n");

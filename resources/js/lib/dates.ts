@@ -79,6 +79,10 @@ export function formatRelative(
     }
 
     const seconds = (new Date(value).getTime() - now.getTime()) / 1000;
+
+    if (Number.isNaN(seconds)) {
+        return '';
+    }
     const format = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
     const unit = RELATIVE_UNITS.find(([, size]) => Math.abs(seconds) >= size);
 
@@ -86,5 +90,8 @@ export function formatRelative(
         return format.format(0, 'second');
     }
 
-    return format.format(Math.round(seconds / unit[1]), unit[0]);
+    // Rounded by size, then signed, so 90 minutes is "2 hours" either way.
+    const amount = Math.round(Math.abs(seconds) / unit[1]);
+
+    return format.format(seconds < 0 ? -amount : amount, unit[0]);
 }

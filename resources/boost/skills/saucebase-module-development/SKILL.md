@@ -68,11 +68,18 @@ overriding `boot()`.
 ## Event Listeners
 
 Put listeners in `src/Listeners/` with a `handle()` method typed to the event
-(`handle(PasswordReset $event)`). The module loader discovers them, so never also call `Event::listen()` for
+(`handle(PasswordReset $event)`). The module loader discovers them while event discovery is on, which is
+Laravel's default (`app-modules.should_discover_events` overrides it). Never also call `Event::listen()` for
 them in the provider: the listener would run twice. `php artisan event:list` shows each listener once.
 
 Discovery only covers dispatched events. Eloquent model events on a model the module doesn't own (the
-app's `User`) are hooked in the provider's `boot()`: `$users::deleted(fn (Model $user) => ...)`.
+app's `User`) are hooked in the provider's `boot()`:
+
+```php
+$users = config('auth.providers.users.model');
+
+$users::deleted(fn (Model $user) => ...);
+```
 
 ## Navigation
 
