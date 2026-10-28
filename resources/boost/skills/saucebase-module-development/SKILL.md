@@ -14,10 +14,10 @@ Ask one question at a time, and skip frontend questions for admin-only modules:
 1. Does it have Inertia pages, or is it admin-only (Filament)?
 2. Does it need models and migrations?
 3. Does it need Filament resources? If yes, activate `saucebase-filament-development`.
-4. *(frontend)* Does it have public pages that need SSR?
+4. _(frontend)_ Does it have public pages that need SSR?
 5. Does it need a seeder?
-6. *(frontend, logged-in area)* Does it need navigation entries and breadcrumbs?
-7. *(frontend)* Should it have E2E tests?
+6. _(frontend, logged-in area)_ Does it need navigation entries and breadcrumbs?
+7. _(frontend)_ Should it have E2E tests?
 
 Write each behavior's failing test before its implementation.
 
@@ -64,6 +64,22 @@ closure so the value resolves per request; scope a page-only prop inside it (`re
 List extra providers in `protected array $providers`. `replaceConfig($path, $key)` overwrites a whole
 config key where `mergeConfigFrom` would merge numeric arrays wrongly. Call `parent::boot()` when
 overriding `boot()`.
+
+## Event Listeners
+
+Put listeners in `src/Listeners/` with a `handle()` method typed to the event
+(`handle(PasswordReset $event)`). The module loader discovers them while event discovery is on, which is
+Laravel's default (`app-modules.should_discover_events` overrides it). Never also call `Event::listen()` for
+them in the provider: the listener would run twice. `php artisan event:list` shows each listener once.
+
+Discovery only covers dispatched events. Eloquent model events on a model the module doesn't own (the
+app's `User`) are hooked in the provider's `boot()`:
+
+```php
+$users = config('auth.providers.users.model');
+
+$users::deleted(fn (Model $user) => ...);
+```
 
 ## Navigation
 

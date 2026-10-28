@@ -7,7 +7,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useDialog } from '@saucebase/react/hooks/useDialog';
 import { useT } from '@saucebase/react/i18n';
@@ -74,12 +73,10 @@ export default function DynamicDialog() {
                                 {options.cancelLabel ?? t('Cancel')}
                             </AlertDialogCancel>
                             <AlertDialogAction
-                                className={cn(
-                                    buttonVariants({
-                                        variant: options.variant ?? 'default',
-                                    }),
-                                    'w-full',
-                                )}
+                                // Through the prop: AlertDialogAction renders its own Button, so
+                                // classes passed here would sit beside its default variant's.
+                                variant={options.variant ?? 'default'}
+                                className="w-full"
                                 data-testid="confirm-dialog-confirm"
                                 onClick={() => resolve(true)}
                             >

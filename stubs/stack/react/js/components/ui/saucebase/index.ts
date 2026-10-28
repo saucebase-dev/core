@@ -242,3 +242,4 @@ export const modules: Module[] = [
 export { ModuleCard } from './ModuleCard';
 export { ModuleModal } from './ModuleModal';
 export { default as PageHero } from './PageHero';
+export { CopyField } from './CopyField';
