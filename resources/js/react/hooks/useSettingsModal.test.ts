@@ -50,6 +50,7 @@ describe('useSettingsModal', () => {
     it('is closed on any other fragment', () => {
         for (const hash of ['', '#pricing', '#settings-help']) {
             location.hash = hash;
+            windowListeners.hashchange();
 
             expect(useSettingsModal()).toMatchObject({
                 isOpen: false,
@@ -60,16 +61,30 @@ describe('useSettingsModal', () => {
 
     it('reads the section from the fragment', () => {
         location.hash = '#settings';
+        windowListeners.hashchange();
         expect(useSettingsModal()).toMatchObject({
             isOpen: true,
             section: null,
         });
 
         location.hash = '#settings/billing';
+        windowListeners.hashchange();
         expect(useSettingsModal()).toMatchObject({
             isOpen: true,
             section: 'billing',
         });
+    });
+
+    it('keeps its section when a navigation rewrites the fragment unannounced', () => {
+        location.hash = '#settings/members';
+        windowListeners.hashchange();
+
+        // A redirect back to the page: Inertia writes the URL it first loaded,
+        // fragment included, with `replaceState`, so no `hashchange` fires.
+        location.hash = '#settings/profile';
+        routerListeners.navigate();
+
+        expect(useSettingsModal().section).toBe('members');
     });
 
     it('opens by setting the fragment, so the browser fires hashchange', () => {

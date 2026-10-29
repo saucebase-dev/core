@@ -85,13 +85,15 @@ function parse(hash: string): { open: boolean; section: string | null } {
 }
 
 export function useSettingsModal() {
-    const fragment = useSyncExternalStore(
+    // The tracked fragment, not `location.hash`: a redirect back to the page makes
+    // Inertia rewrite the URL with the fragment it first loaded, unannounced.
+    const current = useSyncExternalStore(
         subscribe,
-        () => window.location.hash,
+        () => fragment,
         () => '',
     );
 
-    const parsed = useMemo(() => parse(fragment), [fragment]);
+    const parsed = useMemo(() => parse(current), [current]);
 
     const open = useCallback((section?: string) => {
         window.location.hash = settingsHref(section);
