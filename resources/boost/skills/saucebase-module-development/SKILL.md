@@ -163,6 +163,17 @@ that has one; `--module=<name>` limits it to one. `--demo` then also runs `Demo<
 every module's required data exists. A module with an admin area creates its `manage {module}` permission
 there (see `saucebase-filament-development`); demo seeders never hold anything an install needs.
 
+## Patches
+
+A module changes application files it doesn't own (the `User` model, `routes/web.php`) with
+`patches/*.patch`, applied by `git apply` on install. Several modules patch the same file, in
+any order, so a patch only **adds** lines and never edits one another module may need:
+
+- Imports and traits: add your own `use` line beside a neighbour.
+- Interfaces: the stub's `User` lists one per line after `implements`. Insert `    YourInterface,`
+  at a spot no other module uses, never at the end (the last entry has no comma).
+- The app's `pint.json` sets `class_definition.single_line: false`, so Pint keeps that layout.
+
 ## Frontend Imports
 
 A module imports Saucebase's frontend code through the `@saucebase/core` and
