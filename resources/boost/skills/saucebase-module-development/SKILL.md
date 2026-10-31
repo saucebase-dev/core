@@ -131,6 +131,25 @@ $this->app->make(SitemapRegistry::class)->add(fn (Sitemap $sitemap) => $sitemap
     ->add(Post::published()->get()));
 ```
 
+## Capabilities
+
+`Saucebase\Core\Capabilities` is one catalog of what can be granted, grouped by who reads it:
+`api` (what an API token may be scoped to, read by API Tokens) and `billing` (keys a product's
+entitlements offer, read by Billing's product form). It only lists; each group's reader checks
+access its own way. Core loads `routes/capabilities.php` from the app and every installed module
+the first time a group is read, like navigation:
+
+```php
+use Saucebase\Core\Facades\Capabilities;
+
+Capabilities::add('api', ['posts' => ['label' => 'Blog posts', 'description' => '…', 'read_only' => true]]);
+Capabilities::add('billing', fn (): array => [...]); // from data: runs only when the group is read
+```
+
+A missing label falls back to the key. In tests, bind a fresh `Capabilities` (with a
+`ModuleRegistry` that has no modules) to control the exact list; in E2E, add entries from a
+`laravel.registerBootFunction()` helper.
+
 ## Toasts
 
 `Saucebase\Core\Toast::success($message, $description)` (also `default`, `error`, `info`,
