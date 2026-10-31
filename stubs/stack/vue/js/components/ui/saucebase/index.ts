@@ -288,3 +288,5 @@ export { default as ModuleCard } from './ModuleCard.vue';
 export { default as ModuleModal } from './ModuleModal.vue';
 export { default as PageHero } from './PageHero.vue';
 export { default as CopyField } from './CopyField.vue';
+export { default as EmptyState } from './EmptyState.vue';
+export { default as DangerZone } from './DangerZone.vue';

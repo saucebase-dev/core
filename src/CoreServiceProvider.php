@@ -75,6 +75,7 @@ class CoreServiceProvider extends ServiceProvider
         }
 
         $this->app->singleton(SitemapRegistry::class);
+        $this->app->singleton(Capabilities::class);
         $this->app->singleton(Home::class);
     }
 
