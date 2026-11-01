@@ -13,6 +13,7 @@ use Illuminate\Support\ServiceProvider;
 use InterNACHI\Modular\Support\Facades\Modules;
 use InterNACHI\Modular\Support\ModularizedCommandsServiceProvider;
 use InterNACHI\Modular\Support\ModularServiceProvider;
+use InterNACHI\Modular\Support\ModuleRegistry;
 use Saucebase\Core\Console\Commands\GenerateModuleTypesCommand;
 use Saucebase\Core\Console\Commands\InstallCommand;
 use Saucebase\Core\Console\Commands\ModuleInstallCommand;
@@ -179,5 +180,11 @@ class CoreServiceProvider extends ServiceProvider
         $this->app->register(ModularizedCommandsServiceProvider::class);
 
         AliasLoader::getInstance()->alias('Modules', Modules::class);
+
+        // Console only: a stray module folder shows up in artisan, Composer scripts and
+        // deploys, never first in a web request, which then pays nothing for the check.
+        if ($this->app->runningInConsole()) {
+            UnloadableModules::refuse($this->app->make(ModuleRegistry::class)->modules());
+        }
     }
 }
