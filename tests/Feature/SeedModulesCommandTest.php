@@ -2,6 +2,9 @@
 
 namespace Saucebase\Core\Tests\Feature;
 
+use InterNACHI\Modular\Support\ModuleConfig;
+use InterNACHI\Modular\Support\ModuleRegistry;
+use Mockery;
 use Modules\ModuleTestFixture\Database\Seeders\DatabaseSeeder;
 use Saucebase\Core\Tests\Concerns\InteractsWithFixtureModules;
 use Saucebase\Core\Tests\TestCase;
@@ -14,6 +17,9 @@ use Saucebase\Core\Tests\TestCase;
 class SeedModulesCommandTest extends TestCase
 {
     use InteractsWithFixtureModules;
+
+    /** @var list<string> What the seed-order fixtures ran, in order. */
+    public static array $ran = [];
 
     protected function setUp(): void
     {
@@ -68,5 +74,22 @@ class SeedModulesCommandTest extends TestCase
             ->assertFailed();
 
         $this->assertSame([], DatabaseSeeder::$ran);
+    }
+
+    public function test_a_seeder_runs_after_the_installed_modules_it_names_in_seed_after(): void
+    {
+        require_once dirname(__DIR__).'/Fixtures/seed-order/seeders.php';
+        self::$ran = [];
+        // The real registry, with two stand-in modules in place of the fixture.
+        $registry = Mockery::mock($this->app->make(ModuleRegistry::class));
+        $this->instance(ModuleRegistry::class, $registry);
+        $registry->shouldReceive('modules')->andReturn(collect([
+            'alpha' => new ModuleConfig('alpha', '/tmp/alpha', collect()),
+            'omega' => new ModuleConfig('omega', '/tmp/omega', collect()),
+        ]));
+
+        $this->artisan('modules:seed', ['--demo' => true])->assertSuccessful();
+
+        $this->assertSame(['omega', 'alpha', 'omega demo', 'alpha demo'], self::$ran);
     }
 }

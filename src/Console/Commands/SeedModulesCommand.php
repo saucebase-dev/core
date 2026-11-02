@@ -6,6 +6,10 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use InterNACHI\Modular\Support\ModuleRegistry;
+use ReflectionAttribute;
+use ReflectionClass;
+use Saucebase\Core\Attributes\SeedAfter;
+use Saucebase\Core\Support\DependencyOrder;
 
 class SeedModulesCommand extends Command
 {
@@ -28,7 +32,7 @@ class SeedModulesCommand extends Command
             : null;
 
         if ($filter !== null) {
-            $module = $registry->modules()->first(fn ($m) => strtolower($m->name) === $filter);
+            $module = $registry->modules()->first(fn($m) => strtolower($m->name) === $filter);
 
             if ($module === null) {
                 $this->components->error("Module \"{$filter}\" not found.");
@@ -41,11 +45,11 @@ class SeedModulesCommand extends Command
             $modules = $registry->modules();
         }
 
-        $this->seed($modules, fn (string $studly) => 'DatabaseSeeder');
+        $this->seed($modules, fn(string $studly) => 'DatabaseSeeder');
 
         if ($this->option('demo')) {
             // Every module's required data exists before any demo content refers to it.
-            $this->seed($modules, fn (string $studly) => "Demo{$studly}DatabaseSeeder");
+            $this->seed($modules, fn(string $studly) => "Demo{$studly}DatabaseSeeder");
         }
 
         return self::SUCCESS;
@@ -57,17 +61,27 @@ class SeedModulesCommand extends Command
      */
     private function seed(Collection $modules, callable $seederName): void
     {
-        foreach ($modules as $module) {
-            $studly = Str::studly($module->name);
-            $seeder = "Modules\\{$studly}\\Database\\Seeders\\".$seederName($studly);
+        $seeders = $modules
+            ->mapWithKeys(function ($module) use ($seederName): array {
+                $studly = Str::studly($module->name);
 
-            if (! class_exists($seeder)) {
-                continue;
-            }
+                return [$module->name => "Modules\\{$studly}\\Database\\Seeders\\" . $seederName($studly)];
+            })
+            ->filter(fn(string $seeder): bool => class_exists($seeder));
+
+        $after = $seeders->map(
+            fn(string $seeder): array => collect((new ReflectionClass($seeder))
+                ->getAttributes(SeedAfter::class))
+                ->flatMap(fn(ReflectionAttribute $attribute): array => $attribute->newInstance()->modules)
+                ->all()
+        );
+
+        foreach (DependencyOrder::sort($seeders->keys()->all(), $after->all()) as $name) {
+            $seeder = $seeders[$name];
 
             $this->components->task(
-                "{$module->name} ".class_basename($seeder),
-                fn () => $this->call('db:seed', ['--class' => $seeder]) === self::SUCCESS,
+                "{$name} " . class_basename($seeder),
+                fn() => $this->call('db:seed', ['--class' => $seeder]) === self::SUCCESS,
             );
         }
     }
