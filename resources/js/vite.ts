@@ -59,6 +59,11 @@ export function saucebase({
                     : 'resources/js';
 
                 return {
+                    // Core is symlinked in a contributor checkout, and its own vendor/
+                    // loops back on itself through testbench: 500,000+ watched files.
+                    ...(contributor && {
+                        server: { watch: { ignored: [unwatched(root)] } },
+                    }),
                     define: {
                         __SAUCEBASE_CONTRIBUTOR__: JSON.stringify(contributor),
                     },
@@ -162,6 +167,20 @@ function readSettings(root: string): { contributor?: boolean; ssr?: boolean } {
     return fs.existsSync(file)
         ? JSON.parse(fs.readFileSync(file, 'utf-8'))
         : {};
+}
+
+/** PHP dependencies and runtime files, except core's frontend, which hot-reloads from vendor/. */
+function unwatched(root: string): (file: string) => boolean {
+    const inside = (file: string, folder: string) =>
+        (file + path.sep).startsWith(path.join(root, folder) + path.sep);
+
+    return (file) =>
+        inside(file, 'storage') ||
+        // A link to storage/app/public, which the watcher would follow.
+        inside(file, 'public/storage') ||
+        (inside(file, 'vendor') &&
+            !inside(file, SAUCEBASE_JS) &&
+            !inside(file, SAUCEBASE_STACK));
 }
 
 function moduleOf(file: string | undefined): string | null {

@@ -37,6 +37,41 @@ afterEach(() => {
 });
 
 describe('saucebase()', () => {
+    it("stops a contributor's watcher at PHP dependencies and runtime files, but not core's frontend", () => {
+        fs.writeFileSync(
+            path.join(root, 'saucebase.json'),
+            '{"contributor": true}',
+        );
+        const [ignored] = config().server.watch.ignored;
+
+        for (const file of [
+            'vendor/symfony/console/Application.php',
+            'vendor/saucebase/core/vendor/orchestra/testbench-core/laravel/vendor',
+            'vendor/saucebase/core/src/Foo.php',
+            'storage/logs/laravel.log',
+            'public/storage/avatars/photo.png',
+        ]) {
+            expect(ignored(path.join(root, file)), file).toBe(true);
+        }
+
+        for (const file of [
+            // The folders themselves: ignoring one drops everything in it.
+            'vendor/saucebase/core/resources/js',
+            'vendor/saucebase/core/stubs/stack',
+            'vendor/saucebase/core/resources/js/vite.ts',
+            'vendor/saucebase/core/stubs/stack/vue/js/app.ts',
+            'resources/js/vendor/foo.ts',
+            'modules/billing/resources/js/vendor/foo.ts',
+            'modules/billing/storage/foo.ts',
+        ]) {
+            expect(ignored(path.join(root, file)), file).toBe(false);
+        }
+    });
+
+    it("leaves an installed app's watcher alone", () => {
+        expect(config().server).toBeUndefined();
+    });
+
     function build() {
         saucebase({
             framework: 'vue',

@@ -6,11 +6,15 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use InterNACHI\Modular\Support\ModuleRegistry;
+use ReflectionAttribute;
+use ReflectionClass;
+use Saucebase\Core\Attributes\SeedAfter;
+use Saucebase\Core\Support\DependencyOrder;
 
 class SeedModulesCommand extends Command
 {
     protected $signature = 'modules:seed
-        {--module= : Seed a specific module (case-insensitive). Omit to seed all.}
+        {--module=* : Seed specific modules (case-insensitive), together. Omit to seed all.}
         {--demo : Also run each module\'s Demo{Module}DatabaseSeeder with sample content.}';
 
     protected $description = 'Seed all installed modules that have a DatabaseSeeder';
@@ -23,22 +27,28 @@ class SeedModulesCommand extends Command
             return self::FAILURE;
         }
 
-        $filter = $this->option('module') !== null
-            ? strtolower($this->option('module'))
-            : null;
+        $modules = $registry->modules();
 
-        if ($filter !== null) {
-            $module = $registry->modules()->first(fn ($m) => strtolower($m->name) === $filter);
+        // A string when another command calls this with one name.
+        $names = (array) $this->option('module');
 
-            if ($module === null) {
-                $this->components->error("Module \"{$filter}\" not found.");
+        if ($names !== []) {
+            $named = collect();
 
-                return self::FAILURE;
+            foreach ($names as $name) {
+                $filter = strtolower($name);
+                $module = $modules->first(fn ($m) => strtolower($m->name) === $filter);
+
+                if ($module === null) {
+                    $this->components->error("Module \"{$filter}\" not found.");
+
+                    return self::FAILURE;
+                }
+
+                $named->push($module);
             }
 
-            $modules = collect([$module]);
-        } else {
-            $modules = $registry->modules();
+            $modules = $named;
         }
 
         $this->seed($modules, fn (string $studly) => 'DatabaseSeeder');
@@ -57,16 +67,26 @@ class SeedModulesCommand extends Command
      */
     private function seed(Collection $modules, callable $seederName): void
     {
-        foreach ($modules as $module) {
-            $studly = Str::studly($module->name);
-            $seeder = "Modules\\{$studly}\\Database\\Seeders\\".$seederName($studly);
+        $seeders = $modules
+            ->mapWithKeys(function ($module) use ($seederName): array {
+                $studly = Str::studly($module->name);
 
-            if (! class_exists($seeder)) {
-                continue;
-            }
+                return [$module->name => "Modules\\{$studly}\\Database\\Seeders\\".$seederName($studly)];
+            })
+            ->filter(fn (string $seeder): bool => class_exists($seeder));
+
+        $after = $seeders->map(
+            fn (string $seeder): array => collect((new ReflectionClass($seeder))
+                ->getAttributes(SeedAfter::class))
+                ->flatMap(fn (ReflectionAttribute $attribute): array => $attribute->newInstance()->modules)
+                ->all()
+        );
+
+        foreach (DependencyOrder::sort($seeders->keys()->all(), $after->all()) as $name) {
+            $seeder = $seeders[$name];
 
             $this->components->task(
-                "{$module->name} ".class_basename($seeder),
+                "{$name} ".class_basename($seeder),
                 fn () => $this->call('db:seed', ['--class' => $seeder]) === self::SUCCESS,
             );
         }

@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
+use Saucebase\Core\Support\DependencyOrder;
 use Symfony\Component\Process\Process as SymfonyProcess;
 
 use function Laravel\Prompts\multiselect;
@@ -58,7 +59,7 @@ class ModuleInstallCommand extends Command
         // A module another one requires (api-tokens needs auth) arrives with it, and each is
         // set up after the modules it requires, so their patches and tables exist first.
         $after = $this->lockedModules();
-        $modules = $this->inSetupOrder([
+        $modules = DependencyOrder::sort([
             ...array_diff(array_keys($after), array_keys($locked)),
             ...$modules,
         ], $after);
@@ -83,37 +84,6 @@ class ModuleInstallCommand extends Command
                 ->values()
                 ->all(),
         ])->all();
-    }
-
-    /**
-     * The modules, each after the ones it requires.
-     *
-     * @param  string[]  $modules
-     * @param  array<string, string[]>  $requires
-     * @return string[]
-     */
-    private function inSetupOrder(array $modules, array $requires): array
-    {
-        $ordered = [];
-        $visiting = [];
-        $visit = function (string $module) use (&$visit, &$ordered, &$visiting, $modules, $requires): void {
-            // Done already, or a require cycle back to a module still being visited.
-            if (in_array($module, $ordered, true) || isset($visiting[$module])) {
-                return;
-            }
-
-            $visiting[$module] = true;
-            foreach (array_intersect($requires[$module] ?? [], $modules) as $dependency) {
-                $visit($dependency);
-            }
-            $ordered[] = $module;
-        };
-
-        foreach (array_unique($modules) as $module) {
-            $visit($module);
-        }
-
-        return $ordered;
     }
 
     /** @return string[]|null Module names on Packagist the app doesn't require yet; null when it has them all. */

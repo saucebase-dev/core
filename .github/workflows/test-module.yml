@@ -15,6 +15,11 @@ on:
                 type: string
                 default: ''
                 description: 'Space-separated released Composer packages, e.g. saucebase/auth'
+            private_dependencies:
+                required: false
+                type: string
+                default: ''
+                description: 'Space-separated private Composer packages, read with the APP_ID and APP_PRIVATE_KEY secrets'
             extra_patches:
                 required: false
                 type: string
@@ -45,6 +50,13 @@ on:
                 type: string
                 default: ''
                 description: 'Shell run in the app before the E2E server starts, with the variant name in $E2E_VARIANT'
+        secrets:
+            APP_ID:
+                required: false
+                description: 'GitHub App that can read private_dependencies'
+            APP_PRIVATE_KEY:
+                required: false
+                description: 'Private key of that GitHub App'
 
 env:
     # The non-empty branch must sit on `true`: '' is falsy in GitHub
@@ -91,6 +103,25 @@ jobs:
                   ref: ${{ inputs.core_ref || 'main' }}
                   path: core
 
+            - name: Name the private repositories
+              id: private
+              if: inputs.private_dependencies != ''
+              env:
+                  DEPENDENCIES: ${{ inputs.private_dependencies }}
+              run: echo "repositories=$(echo "$DEPENDENCIES" | sed 's#saucebase/##g; s/ /,/g')" >> "$GITHUB_OUTPUT"
+
+            # The App can write for releases; this token only reads these repositories.
+            - name: Create a token for them
+              id: private-token
+              if: inputs.private_dependencies != ''
+              uses: actions/create-github-app-token@v3
+              with:
+                  app-id: ${{ secrets.APP_ID }}
+                  private-key: ${{ secrets.APP_PRIVATE_KEY }}
+                  owner: saucebase-dev
+                  repositories: ${{ steps.private.outputs.repositories }}
+                  permission-contents: read
+
             - name: Create the application
               uses: ./core/.github/actions/fresh-app
               with:
@@ -99,6 +130,8 @@ jobs:
                   module: ${{ inputs.module }}
                   module-path: module-src
                   dependencies: ${{ inputs.dependencies }}
+                  private-dependencies: ${{ inputs.private_dependencies }}
+                  private-token: ${{ steps.private-token.outputs.token }}
                   extra-patches: ${{ inputs.extra_patches }}
                   app-url: ${{ env.APP_URL }}
 

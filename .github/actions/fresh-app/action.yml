@@ -21,6 +21,14 @@ inputs:
         description: 'Space-separated released Composer packages the module needs, e.g. saucebase/auth'
         required: false
         default: ''
+    private-dependencies:
+        description: 'Space-separated private packages the module needs, e.g. saucebase/api-tokens. Each installs from its saucebase-dev GitHub repository.'
+        required: false
+        default: ''
+    private-token:
+        description: 'GitHub token that can read the private dependencies'
+        required: false
+        default: ''
     extra-patches:
         description: 'Space-separated optional patches, relative to the module, applied after its own'
         required: false
@@ -82,13 +90,27 @@ runs:
               MODULE: ${{ inputs.module }}
               MODULE_PATH: ${{ inputs.module-path }}
               DEPENDENCIES: ${{ inputs.dependencies }}
+              PRIVATE_DEPENDENCIES: ${{ inputs.private-dependencies }}
+              PRIVATE_TOKEN: ${{ inputs.private-token }}
               EXTRA_PATCHES: ${{ inputs.extra-patches }}
           run: |
+              # In the environment, not auth.json: the application is archived for the browser tests.
+              if [ -n "$PRIVATE_TOKEN" ]; then
+                  export COMPOSER_AUTH="{\"github-oauth\":{\"github.com\":\"$PRIVATE_TOKEN\"}}"
+              fi
+              for dep in $PRIVATE_DEPENDENCIES; do
+                  composer config "repositories.${dep#saucebase/}" vcs "https://github.com/saucebase-dev/${dep#saucebase/}"
+              done
               for dep in $DEPENDENCIES; do
                   composer require "$dep" --no-interaction --no-progress
               done
               composer config "repositories.$MODULE" "{\"type\":\"path\",\"url\":\"$GITHUB_WORKSPACE/$MODULE_PATH\",\"options\":{\"symlink\":false}}"
-              composer require "saucebase/$MODULE:*" --no-interaction --no-progress
+              # Together, so a private dependency resolves to a version the module accepts.
+              private_requires=()
+              for dep in $PRIVATE_DEPENDENCIES; do
+                  private_requires+=("$dep:*")
+              done
+              composer require "saucebase/$MODULE:*" "${private_requires[@]}" --no-interaction --no-progress
 
               apply_patches() {
                   for f in "$1"/*.patch; do
@@ -98,7 +120,7 @@ runs:
                   done
               }
               # Dependencies first, in the order given, then the module itself.
-              for dep in $DEPENDENCIES; do
+              for dep in $DEPENDENCIES $PRIVATE_DEPENDENCIES; do
                   apply_patches "modules/${dep#saucebase/}/patches"
               done
               apply_patches "modules/$MODULE/patches"
