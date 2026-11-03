@@ -32,7 +32,7 @@ class SeedModulesCommand extends Command
             : null;
 
         if ($filter !== null) {
-            $module = $registry->modules()->first(fn($m) => strtolower($m->name) === $filter);
+            $module = $registry->modules()->first(fn ($m) => strtolower($m->name) === $filter);
 
             if ($module === null) {
                 $this->components->error("Module \"{$filter}\" not found.");
@@ -45,11 +45,11 @@ class SeedModulesCommand extends Command
             $modules = $registry->modules();
         }
 
-        $this->seed($modules, fn(string $studly) => 'DatabaseSeeder');
+        $this->seed($modules, fn (string $studly) => 'DatabaseSeeder');
 
         if ($this->option('demo')) {
             // Every module's required data exists before any demo content refers to it.
-            $this->seed($modules, fn(string $studly) => "Demo{$studly}DatabaseSeeder");
+            $this->seed($modules, fn (string $studly) => "Demo{$studly}DatabaseSeeder");
         }
 
         return self::SUCCESS;
@@ -65,14 +65,14 @@ class SeedModulesCommand extends Command
             ->mapWithKeys(function ($module) use ($seederName): array {
                 $studly = Str::studly($module->name);
 
-                return [$module->name => "Modules\\{$studly}\\Database\\Seeders\\" . $seederName($studly)];
+                return [$module->name => "Modules\\{$studly}\\Database\\Seeders\\".$seederName($studly)];
             })
-            ->filter(fn(string $seeder): bool => class_exists($seeder));
+            ->filter(fn (string $seeder): bool => class_exists($seeder));
 
         $after = $seeders->map(
-            fn(string $seeder): array => collect((new ReflectionClass($seeder))
+            fn (string $seeder): array => collect((new ReflectionClass($seeder))
                 ->getAttributes(SeedAfter::class))
-                ->flatMap(fn(ReflectionAttribute $attribute): array => $attribute->newInstance()->modules)
+                ->flatMap(fn (ReflectionAttribute $attribute): array => $attribute->newInstance()->modules)
                 ->all()
         );
 
@@ -80,8 +80,8 @@ class SeedModulesCommand extends Command
             $seeder = $seeders[$name];
 
             $this->components->task(
-                "{$name} " . class_basename($seeder),
-                fn() => $this->call('db:seed', ['--class' => $seeder]) === self::SUCCESS,
+                "{$name} ".class_basename($seeder),
+                fn () => $this->call('db:seed', ['--class' => $seeder]) === self::SUCCESS,
             );
         }
     }
