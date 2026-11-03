@@ -38,11 +38,11 @@ class ModuleSetupCommand extends Command
 
         $conflicts = $this->applyPatches($modules);
 
-        $steps = [['migrate', ['--force' => true]]];
-
-        foreach ($modules as $module) {
-            $steps[] = ['modules:seed', ['--module' => $module->name, '--demo' => $this->option('demo')]];
-        }
+        $steps = [
+            ['migrate', ['--force' => true]],
+            // Together: seeding them one by one would hide each from the others' SeedAfter.
+            ['modules:seed', ['--module' => array_map(fn ($module) => $module->name, $modules), '--demo' => $this->option('demo')]],
+        ];
 
         foreach ($modules as $module) {
             if (file_exists($module->path('Taskfile.yml'))) {

@@ -176,6 +176,8 @@ function unwatched(root: string): (file: string) => boolean {
 
     return (file) =>
         inside(file, 'storage') ||
+        // A link to storage/app/public, which the watcher would follow.
+        inside(file, 'public/storage') ||
         (inside(file, 'vendor') &&
             !inside(file, SAUCEBASE_JS) &&
             !inside(file, SAUCEBASE_STACK));

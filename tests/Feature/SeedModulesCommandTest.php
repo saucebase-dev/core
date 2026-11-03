@@ -92,4 +92,24 @@ class SeedModulesCommandTest extends TestCase
 
         $this->assertSame(['omega', 'alpha', 'omega demo', 'alpha demo'], self::$ran);
     }
+
+    /** Setting up modules together seeds them as one group, or SeedAfter sees only one at a time. */
+    public function test_module_setup_honours_seed_after_between_its_modules(): void
+    {
+        require_once dirname(__DIR__).'/Fixtures/seed-order/seeders.php';
+        self::$ran = [];
+        $modules = collect([
+            'alpha' => new ModuleConfig('alpha', '/tmp/alpha', collect()),
+            'omega' => new ModuleConfig('omega', '/tmp/omega', collect()),
+        ]);
+        $registry = Mockery::mock($this->app->make(ModuleRegistry::class));
+        $this->instance(ModuleRegistry::class, $registry);
+        $registry->shouldReceive('modules')->andReturn($modules);
+        $registry->shouldReceive('module')->andReturnUsing(fn (string $name) => $modules[$name]);
+
+        $this->artisan('saucebase:module-setup', ['modules' => ['alpha', 'omega'], '--demo' => true])
+            ->assertSuccessful();
+
+        $this->assertSame(['omega', 'alpha', 'omega demo', 'alpha demo'], self::$ran);
+    }
 }

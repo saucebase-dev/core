@@ -14,7 +14,7 @@ use Saucebase\Core\Support\DependencyOrder;
 class SeedModulesCommand extends Command
 {
     protected $signature = 'modules:seed
-        {--module= : Seed a specific module (case-insensitive). Omit to seed all.}
+        {--module=* : Seed specific modules (case-insensitive), together. Omit to seed all.}
         {--demo : Also run each module\'s Demo{Module}DatabaseSeeder with sample content.}';
 
     protected $description = 'Seed all installed modules that have a DatabaseSeeder';
@@ -27,22 +27,28 @@ class SeedModulesCommand extends Command
             return self::FAILURE;
         }
 
-        $filter = $this->option('module') !== null
-            ? strtolower($this->option('module'))
-            : null;
+        $modules = $registry->modules();
 
-        if ($filter !== null) {
-            $module = $registry->modules()->first(fn ($m) => strtolower($m->name) === $filter);
+        // A string when another command calls this with one name.
+        $names = (array) $this->option('module');
 
-            if ($module === null) {
-                $this->components->error("Module \"{$filter}\" not found.");
+        if ($names !== []) {
+            $named = collect();
 
-                return self::FAILURE;
+            foreach ($names as $name) {
+                $filter = strtolower($name);
+                $module = $modules->first(fn ($m) => strtolower($m->name) === $filter);
+
+                if ($module === null) {
+                    $this->components->error("Module \"{$filter}\" not found.");
+
+                    return self::FAILURE;
+                }
+
+                $named->push($module);
             }
 
-            $modules = collect([$module]);
-        } else {
-            $modules = $registry->modules();
+            $modules = $named;
         }
 
         $this->seed($modules, fn (string $studly) => 'DatabaseSeeder');

@@ -101,11 +101,16 @@ runs:
               for dep in $PRIVATE_DEPENDENCIES; do
                   composer config "repositories.${dep#saucebase/}" vcs "https://github.com/saucebase-dev/${dep#saucebase/}"
               done
-              for dep in $DEPENDENCIES $PRIVATE_DEPENDENCIES; do
+              for dep in $DEPENDENCIES; do
                   composer require "$dep" --no-interaction --no-progress
               done
               composer config "repositories.$MODULE" "{\"type\":\"path\",\"url\":\"$GITHUB_WORKSPACE/$MODULE_PATH\",\"options\":{\"symlink\":false}}"
-              composer require "saucebase/$MODULE:*" --no-interaction --no-progress
+              # Together, so a private dependency resolves to a version the module accepts.
+              private_requires=()
+              for dep in $PRIVATE_DEPENDENCIES; do
+                  private_requires+=("$dep:*")
+              done
+              composer require "saucebase/$MODULE:*" "${private_requires[@]}" --no-interaction --no-progress
 
               apply_patches() {
                   for f in "$1"/*.patch; do

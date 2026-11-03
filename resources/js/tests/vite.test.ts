@@ -49,6 +49,7 @@ describe('saucebase()', () => {
             'vendor/saucebase/core/vendor/orchestra/testbench-core/laravel/vendor',
             'vendor/saucebase/core/src/Foo.php',
             'storage/logs/laravel.log',
+            'public/storage/avatars/photo.png',
         ]) {
             expect(ignored(path.join(root, file)), file).toBe(true);
         }
