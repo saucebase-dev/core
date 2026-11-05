@@ -4,6 +4,7 @@ namespace Saucebase\Core\Tests\Feature;
 
 use Database\Factories\UserFactory;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Artisan;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Saucebase\Core\Tests\TestCase;
 use Symfony\Component\Yaml\Yaml;
@@ -95,6 +96,25 @@ class InstallCommandTest extends TestCase
         $this->assertStringContainsString('{{.APP}} php artisan queue:listen', $tasks['queue']['cmd']);
         $this->assertStringContainsString('{{.APP}} php artisan schedule:work', $tasks['schedule']['cmd']);
         $this->assertSame(['queue', 'schedule'], $tasks['workers']['deps']);
+    }
+
+    public function test_it_writes_the_e2e_env_when_the_playwright_package_is_installed(): void
+    {
+        $ran = false;
+        Artisan::command('playwright:env', function () use (&$ran) {
+            $ran = ! $this->input->isInteractive();
+        });
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        $this->assertTrue($ran, 'playwright:env should run, unattended, so it can never replace a file.');
+    }
+
+    public function test_it_installs_without_the_playwright_package(): void
+    {
+        $this->assertArrayNotHasKey('playwright:env', Artisan::all());
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
     }
 
     public function test_the_published_example_test_migrates_the_database(): void

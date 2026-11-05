@@ -4,6 +4,7 @@ namespace Saucebase\Core\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\ServiceProvider;
 use Saucebase\Core\Console\Traits\DisplaysBanner;
 use Saucebase\Core\ProjectConfig;
@@ -82,6 +83,11 @@ class InstallCommand extends Command
         $this->ignoreGeneratedFiles($files);
 
         $this->publishStack($files, $stubs.'/stack', $framework);
+
+        // A package's require-dev never reaches the app, so a manual install may not have it.
+        if (array_key_exists('playwright:env', Artisan::all())) {
+            $this->call('playwright:env', ['--no-interaction' => true]);
+        }
 
         $this->components->info("Saucebase is installed with {$framework}.");
         $this->components->bulletList([
