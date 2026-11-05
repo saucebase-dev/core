@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Filesystem\Filesystem;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Saucebase\Core\Tests\TestCase;
+use Symfony\Component\Yaml\Yaml;
 
 class InstallCommandTest extends TestCase
 {
@@ -83,6 +84,17 @@ class InstallCommandTest extends TestCase
 
         // The installer's Docker driver fills the prefix in; every other setup runs commands directly.
         $this->assertStringContainsString("APP: ''", $this->read('Taskfile.yml'));
+    }
+
+    public function test_the_taskfile_runs_the_queue_and_scheduler_without_a_web_server(): void
+    {
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
+
+        $tasks = Yaml::parse($this->read('Taskfile.yml'))['tasks'];
+
+        $this->assertStringContainsString('{{.APP}} php artisan queue:listen', $tasks['queue']['cmd']);
+        $this->assertStringContainsString('{{.APP}} php artisan schedule:work', $tasks['schedule']['cmd']);
+        $this->assertSame(['queue', 'schedule'], $tasks['workers']['deps']);
     }
 
     public function test_the_published_example_test_migrates_the_database(): void

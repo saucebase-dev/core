@@ -21,6 +21,18 @@ tasks:
         desc: Start dev server (app, queue, logs, vite)
         cmd: composer dev
 
+    queue:
+        desc: Run the queue worker (restarts when code changes)
+        cmd: '{{.APP}} php artisan queue:listen --tries=1 --timeout=0'
+
+    schedule:
+        desc: Run the scheduler (runs due tasks every minute)
+        cmd: '{{.APP}} php artisan schedule:work'
+
+    workers:
+        desc: Run the queue worker and scheduler together
+        deps: [queue, schedule]
+
     build:
         desc: Production build (includes SSR)
         cmd: npm run build
