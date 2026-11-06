@@ -17,6 +17,8 @@ export default tseslint.config(
     {
         rules: {
             '@typescript-eslint/no-explicit-any': 'off',
+            // Nested conditionals read as a puzzle: an if/else, a lookup or a computed instead.
+            'no-nested-ternary': 'error',
             // v7 rules designed for the React compiler — disable until the project adopts it
             'react-hooks/refs': 'off',
             'react-hooks/static-components': 'off',
