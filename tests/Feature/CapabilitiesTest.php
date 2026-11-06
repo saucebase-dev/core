@@ -2,6 +2,7 @@
 
 namespace Saucebase\Core\Tests\Feature;
 
+use LogicException;
 use Saucebase\Core\Capabilities;
 use Saucebase\Core\Facades\Capabilities as CapabilitiesFacade;
 use Saucebase\Core\Tests\Concerns\InteractsWithFixtureModules;
@@ -61,5 +62,54 @@ class CapabilitiesTest extends TestCase
 
         $this->assertCount(1, $capabilities->group('api'));
         $this->assertSame($capabilities, $this->app->make(Capabilities::class));
+    }
+
+    /**
+     * Two sources claiming one key with different meanings would let the second silently
+     * win: say which key.
+     */
+    public function test_a_key_declared_twice_in_a_group_throws(): void
+    {
+        CapabilitiesFacade::add('billing', ['webhooks' => []]);
+        CapabilitiesFacade::add('billing', fn (): array => ['webhooks' => ['label' => 'Again']]);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('[webhooks]');
+
+        CapabilitiesFacade::group('billing');
+    }
+
+    /**
+     * Modular also requires a module's `routes/*.php` at boot, so without a route cache its
+     * capabilities file runs twice. One declaration running again replaces itself.
+     */
+    public function test_the_same_declaration_running_again_is_not_a_conflict(): void
+    {
+        $declare = fn () => CapabilitiesFacade::add('billing', ['webhooks' => ['label' => 'Webhooks']]);
+        $declare();
+        $declare();
+
+        $this->assertSame(['webhooks' => ['label' => 'Webhooks', 'description' => '']], CapabilitiesFacade::group('billing'));
+    }
+
+    /** Two sources are a conflict even when they agree: one of them should not be declaring it. */
+    public function test_two_sources_declaring_an_identical_key_throw(): void
+    {
+        CapabilitiesFacade::add('billing', ['webhooks' => ['label' => 'Webhooks']]);
+        CapabilitiesFacade::add('billing', ['webhooks' => ['label' => 'Webhooks']]);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('[webhooks]');
+
+        CapabilitiesFacade::group('billing');
+    }
+
+    /** Groups are read by different readers, so one key may mean something in each. */
+    public function test_the_same_key_may_appear_in_different_groups(): void
+    {
+        CapabilitiesFacade::add('billing', ['posts' => []]);
+
+        $this->assertArrayHasKey('posts', CapabilitiesFacade::group('api'));
+        $this->assertArrayHasKey('posts', CapabilitiesFacade::group('billing'));
     }
 }

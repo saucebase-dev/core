@@ -5,7 +5,6 @@ namespace Saucebase\Core\Tests\Fixtures\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -15,6 +14,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Saucebase\Core\Filament\ModulesPlugin;
+use Saucebase\Core\Filament\Pages\Dashboard;
 use Saucebase\Core\Filament\Pages\GeneralSettings;
 use Saucebase\Core\Filament\Pages\LocalizationSettings;
 

@@ -69,6 +69,17 @@ class FeaturePlugin implements Plugin
 
 The `ModulePlugin` trait discovers Pages, Resources and Widgets under `src/Filament/`, and Livewire components under `src/Livewire/`.
 
+### Dashboard widgets
+
+The panel's dashboard is core's `Filament\Pages\Dashboard`: Filament's, with its `FilterAction` (`HasFiltersAction`) as the period filter. The header button, top right, shows the active period and opens a slide-over: a preset (Today, 7 days, 30 days default, 3 months, 12 months, custom) plus From and To. A preset fills the dates; editing a date makes it custom. Presets include today. Filters are `period`, `start`, `end`, kept in the URL and session. Other dashboards extend it and list their own `getWidgets()` (billing's does).
+
+- **Period:** `use Concerns\ReadsPeriod;` then `$this->period()` gives a `Filament\Period` (`start`, `end`, `previous()`, `labels()`). `$period->series($query, 'sum(amount)')` returns one value per bucket: days up to 31 days, weeks up to 92, then months. The database groups by `date()`, the same in SQLite, MySQL and PostgreSQL.
+- **Stats:** `TrendStat::make($label, $now, $before, $chart, lowerIsBetter:, format:)` shows the value, the change against the previous period (green when good), and a trend line. With no baseline it says so instead of a percentage.
+- **Order bands (`$sort`):** 10–19 stats, 20–29 needs attention, 30+ charts. Taken: 10 users (app), 11 workspaces (tenancy), 12 billing, 13 packages, 14 newsletter, 20 billing attention, 21 roadmap attention. Pick a free slot; `AdminDashboardTest` fails on a tie.
+- **Size:** the dashboard has 2 columns. A widget with one or two stats sets `$columnSpan = 1` and `$columns` to its stat count, so it pairs with its neighbour; three or more stats take `'full'`.
+- **Cost:** each lazy widget is its own request. Cache what's expensive (billing's `BillingMetrics` uses `Cache::flexible`, keyed by the dates), never what a person must act on now (attention counts). `tests/Load/DashboardLoadTest.php` times every widget: `LOAD_TEST=1 php -d memory_limit=4G artisan test tests/Load`.
+- **Empty states:** no misleading zeros. Hide a widget in `canView()` until there's something to show (no packages, newsletter not configured, nothing needing attention), or show one stat linking to setup (billing without plans). Keep the permission check in `canView()` too.
+
 Optional plugin hooks, read by core's `ModulesPlugin`:
 
 - `public static function getNavigationGroupSort(): int` orders plugin registration, and so the module's

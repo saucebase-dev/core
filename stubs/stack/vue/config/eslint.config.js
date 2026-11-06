@@ -61,6 +61,8 @@ export default defineConfigWithVueTs(
         rules: {
             'vue/multi-word-component-names': 'off',
             '@typescript-eslint/no-explicit-any': 'off',
+            // Nested conditionals read as a puzzle: an if/else, a lookup or a computed instead.
+            'no-nested-ternary': 'error',
         },
     },
     prettier,
