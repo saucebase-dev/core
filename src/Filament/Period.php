@@ -49,14 +49,14 @@ final readonly class Period
         if ($preset === 'custom' && ($start = self::date($filters['start'] ?? null)) && ($end = self::date($filters['end'] ?? null))) {
             [$start, $end] = $start <= $end ? [$start, $end] : [$end, $start];
 
-            return new self(max($start, $end->subYears(self::MAX_YEARS)->addDay()), $end->endOfDay());
+            return new self(max($start, $end->subYearsNoOverflow(self::MAX_YEARS)->addDay()), $end->endOfDay());
         }
 
         $start = match ($preset) {
             'today' => $today,
             '7d' => $today->subDays(6),
             '90d' => $today->subDays(89),
-            '12m' => $today->subMonths(11)->startOfMonth(),
+            '12m' => $today->startOfMonth()->subMonths(11), // from the 1st: the 31st minus months can roll forward
             default => $today->subDays(29),
         };
 

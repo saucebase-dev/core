@@ -85,8 +85,11 @@ class InstallCommand extends Command
         $this->publishStack($files, $stubs.'/stack', $framework);
 
         // A package's require-dev never reaches the app, so a manual install may not have it.
-        if (array_key_exists('playwright:env', Artisan::all())) {
-            $this->call('playwright:env', ['--no-interaction' => true]);
+        if (array_key_exists('playwright:env', Artisan::all())
+            && $this->call('playwright:env', ['--no-interaction' => true]) !== self::SUCCESS
+            && ! $files->exists($this->laravel->basePath('.env.e2e'))) {
+            // Everything else is in place, so finish and say how to complete it.
+            $this->components->warn('The E2E environment file (.env.e2e) could not be created. Create it with: php artisan playwright:env');
         }
 
         $this->components->info("Saucebase is installed with {$framework}.");

@@ -96,6 +96,7 @@ class InstallCommandTest extends TestCase
         $this->assertStringContainsString('{{.APP}} php artisan queue:listen', $tasks['queue']['cmd']);
         $this->assertStringContainsString('{{.APP}} php artisan schedule:work', $tasks['schedule']['cmd']);
         $this->assertSame(['queue', 'schedule'], $tasks['workers']['deps']);
+        $this->assertTrue($tasks['workers']['failfast'], 'one worker stopping must stop both');
     }
 
     public function test_it_writes_the_e2e_env_when_the_playwright_package_is_installed(): void
@@ -108,6 +109,27 @@ class InstallCommandTest extends TestCase
         $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])->assertSuccessful();
 
         $this->assertTrue($ran, 'playwright:env should run, unattended, so it can never replace a file.');
+    }
+
+    /** The rest is installed and `saucebase.json` written, so say how to finish instead of failing. */
+    public function test_a_failed_e2e_env_says_how_to_create_it(): void
+    {
+        Artisan::command('playwright:env', fn () => 1);
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])
+            ->expectsOutputToContain('php artisan playwright:env')
+            ->assertSuccessful();
+    }
+
+    /** It also fails when it refuses to replace an existing `.env.e2e`: nothing to say then. */
+    public function test_an_existing_e2e_env_is_not_reported(): void
+    {
+        file_put_contents($this->appPath.'/.env.e2e', "APP_ENV=e2e\n");
+        Artisan::command('playwright:env', fn () => 1);
+
+        $this->artisan('saucebase:install', ['framework' => 'vue', '--force' => true])
+            ->doesntExpectOutputToContain('could not be created')
+            ->assertSuccessful();
     }
 
     public function test_it_installs_without_the_playwright_package(): void

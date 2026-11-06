@@ -84,6 +84,13 @@ class PeriodTest extends TestCase
         $this->assertLessThanOrEqual(61, count($period->labels()));
     }
 
+    public function test_the_cap_does_not_roll_past_a_leap_day(): void
+    {
+        $period = Period::fromFilters(['period' => 'custom', 'start' => '2000-01-01', 'end' => '2028-02-29']);
+
+        $this->assertSame('2023-03-01 00:00:00', $period->start->toDateTimeString());
+    }
+
     /** The previous period is the same length, ending just before this one starts. */
     public function test_the_previous_period_has_the_same_length(): void
     {
@@ -98,6 +105,17 @@ class PeriodTest extends TestCase
         $this->assertSame('day', Period::fromFilters(['period' => '30d'])->unit());
         $this->assertSame('week', Period::fromFilters(['period' => '90d'])->unit());
         $this->assertSame('month', Period::fromFilters(['period' => '12m'])->unit());
+    }
+
+    /** On the 31st, eleven months back can land in a month with no 31st and roll forward. */
+    public function test_12_months_keeps_every_month_at_a_month_end(): void
+    {
+        Carbon::setTestNow('2027-03-31 12:00:00');
+
+        $period = Period::fromFilters(['period' => '12m']);
+
+        $this->assertSame('2026-04-01 00:00:00', $period->start->toDateTimeString());
+        $this->assertCount(12, $period->labels());
     }
 
     public function test_change_is_a_percentage_or_null_without_a_baseline(): void
