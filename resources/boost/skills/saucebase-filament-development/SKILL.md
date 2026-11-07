@@ -200,6 +200,8 @@ class FeatureForm
 
 Use `->components([...])` (not `->schema([...])`). Layout components (`Grid`, `Section`) come from `Filament\Schemas\Components\`.
 
+A `RichEditor` field whose HTML a page renders as markup (`v-html`, `dangerouslySetInnerHTML`) is cast with `Saucebase\Core\Casts\SanitizedHtml` on the model: `'description' => SanitizedHtml::class`. It runs `Str::sanitizeHtml()` on every read and stores what was written, so scripts and event handlers never reach a visitor, whoever wrote the value.
+
 ---
 
 ## Table Schema Pattern
