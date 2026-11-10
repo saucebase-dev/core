@@ -19,14 +19,15 @@ class ModuleInstallCommand extends Command
 {
     protected $signature = 'saucebase:module-install
                             {modules?* : Module names (billing). Omit to pick from a list}
-                            {--demo : Also seed demo content}';
+                            {--state= : Also seed a state (showcase: sample content)}
+                            {--force : Seed in production without asking}';
 
     protected $description = 'Install Saucebase modules into this application';
 
     public function handle(): int
     {
-        if ($this->option('demo') && blank(config('saucebase.demo_password'))) {
-            $this->components->error('Set DEMO_PASSWORD in .env to seed demo data. Every demo account uses it.');
+        if ($this->option('state') && blank(config('saucebase.demo_password'))) {
+            $this->components->error('Set DEMO_PASSWORD in .env to seed a state. Every account it creates uses it.');
 
             return self::FAILURE;
         }
@@ -66,7 +67,7 @@ class ModuleInstallCommand extends Command
 
         // TTY, so a module's own install command can ask its questions.
         return Process::path(base_path())->forever()->tty(SymfonyProcess::isTtySupported() && $this->input->isInteractive())
-            ->run([PHP_BINARY, 'artisan', 'saucebase:module-setup', ...$modules, ...($this->option('demo') ? ['--demo'] : [])], $output)
+            ->run([PHP_BINARY, 'artisan', 'saucebase:module-setup', ...$modules, ...($this->option('state') ? ['--state='.$this->option('state')] : []), ...($this->option('force') ? ['--force'] : [])], $output)
             ->successful() ? self::SUCCESS : self::FAILURE;
     }
 

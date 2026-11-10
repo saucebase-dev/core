@@ -18,7 +18,8 @@ class ModuleSetupCommand extends Command
 {
     protected $signature = 'saucebase:module-setup
                             {modules* : Installed module names}
-                            {--demo : Also seed demo content}';
+                            {--state= : Also seed a state (showcase: sample content)}
+                            {--force : Seed in production without asking}';
 
     protected $description = 'Apply patches, migrate and seed installed modules';
 
@@ -41,7 +42,7 @@ class ModuleSetupCommand extends Command
         $steps = [
             ['migrate', ['--force' => true]],
             // Together: seeding them one by one would hide each from the others' SeedAfter.
-            ['modules:seed', ['--module' => array_map(fn ($module) => $module->name, $modules), '--demo' => $this->option('demo')]],
+            ['modules:seed', ['--module' => array_map(fn ($module) => $module->name, $modules), '--state' => $this->option('state'), '--force' => $this->option('force')]],
         ];
 
         foreach ($modules as $module) {
@@ -68,7 +69,7 @@ class ModuleSetupCommand extends Command
 
         foreach ($steps as [$command, $arguments]) {
             if ($this->runStep($command, $arguments) !== self::SUCCESS) {
-                $this->components->error("`{$command}` failed. Fix it, then run this again: php artisan saucebase:module-setup ".implode(' ', $this->argument('modules')).($this->option('demo') ? ' --demo' : ''));
+                $this->components->error("`{$command}` failed. Fix it, then run this again: php artisan saucebase:module-setup ".implode(' ', $this->argument('modules')).($this->option('state') ? ' --state='.$this->option('state') : '').($this->option('force') ? ' --force' : ''));
 
                 return self::FAILURE;
             }

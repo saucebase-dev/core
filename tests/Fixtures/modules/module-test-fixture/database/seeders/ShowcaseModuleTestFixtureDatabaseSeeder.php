@@ -4,7 +4,7 @@ namespace Modules\ModuleTestFixture\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
-class DemoModuleTestFixtureDatabaseSeeder extends Seeder
+class ShowcaseModuleTestFixtureDatabaseSeeder extends Seeder
 {
     public function run(): void
     {

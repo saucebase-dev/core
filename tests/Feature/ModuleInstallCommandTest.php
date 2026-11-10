@@ -105,21 +105,30 @@ class ModuleInstallCommandTest extends TestCase
         return (string) json_encode(['packages' => [['name' => 'laravel/sanctum', 'type' => 'library'], ...$packages]]);
     }
 
-    public function test_demo_is_passed_on_to_the_setup(): void
+    public function test_a_state_is_passed_on_to_the_setup(): void
     {
         Process::fake();
         config(['saucebase.demo_password' => 'secret']);
-        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--demo' => true])->assertSuccessful();
+        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--state' => 'showcase'])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--demo']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase']);
     }
 
-    public function test_demo_without_a_demo_password_fails_before_anything_runs(): void
+    public function test_force_is_passed_on_to_the_setup(): void
+    {
+        Process::fake();
+        config(['saucebase.demo_password' => 'secret']);
+        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--state' => 'showcase', '--force' => true])->assertSuccessful();
+
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase', '--force']);
+    }
+
+    public function test_a_state_without_a_demo_password_fails_before_anything_runs(): void
     {
         Process::fake();
         config(['saucebase.demo_password' => null]);
 
-        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--demo' => true])
+        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--state' => 'showcase'])
             ->expectsOutputToContain('Set DEMO_PASSWORD in .env')
             ->assertFailed();
 

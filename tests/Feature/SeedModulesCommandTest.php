@@ -10,9 +10,9 @@ use Saucebase\Core\Tests\Concerns\InteractsWithFixtureModules;
 use Saucebase\Core\Tests\TestCase;
 
 /**
- * `modules:seed` runs each module's required data, and with `--demo` its sample
- * content too — required data first, for every module, so demo content can refer to
- * anything another module needs to exist.
+ * `modules:seed` runs each module's required data, and with `--state=<name>` each
+ * module's `{State}{Module}DatabaseSeeder` too — required data first, for every module,
+ * so a state can refer to anything another module needs to exist.
  */
 class SeedModulesCommandTest extends TestCase
 {
@@ -36,41 +36,89 @@ class SeedModulesCommandTest extends TestCase
         $this->assertSame(['DatabaseSeeder'], DatabaseSeeder::$ran);
     }
 
-    public function test_demo_runs_the_demo_seeder_after_the_required_one(): void
+    public function test_a_state_runs_its_seeders_after_the_required_ones(): void
     {
-        $this->artisan('modules:seed', ['--demo' => true])->assertSuccessful();
+        $this->artisan('modules:seed', ['--state' => 'showcase'])->assertSuccessful();
 
         $this->assertSame(
-            ['DatabaseSeeder', 'DemoModuleTestFixtureDatabaseSeeder'],
+            ['DatabaseSeeder', 'ShowcaseModuleTestFixtureDatabaseSeeder'],
             DatabaseSeeder::$ran,
         );
     }
 
-    public function test_demo_refuses_without_a_demo_password(): void
+    public function test_a_state_refuses_without_a_demo_password(): void
     {
         config(['saucebase.demo_password' => null]);
 
-        $this->artisan('modules:seed', ['--demo' => true])
+        $this->artisan('modules:seed', ['--state' => 'showcase'])
             ->expectsOutputToContain('Set DEMO_PASSWORD in .env')
             ->assertFailed();
 
         $this->assertSame([], DatabaseSeeder::$ran);
     }
 
+    public function test_a_state_no_module_provides_fails_without_seeding_anything(): void
+    {
+        $this->artisan('modules:seed', ['--state' => 'missing'])
+            ->expectsOutputToContain('No module has a "missing" state.')
+            ->assertFailed();
+
+        $this->assertSame([], DatabaseSeeder::$ran);
+    }
+
+    public function test_a_state_in_production_asks_first(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->artisan('modules:seed', ['--state' => 'showcase'])
+            ->expectsConfirmation('Are you sure you want to run this command?', 'no')
+            ->assertFailed()
+            ->run();
+        $this->app->detectEnvironment(fn () => 'testing'); // or teardown's rollback asks too
+
+        $this->assertSame([], DatabaseSeeder::$ran);
+    }
+
+    public function test_required_data_in_production_asks_first(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->artisan('modules:seed')
+            ->expectsConfirmation('Are you sure you want to run this command?', 'no')
+            ->assertFailed()
+            ->run();
+        $this->app->detectEnvironment(fn () => 'testing');
+
+        $this->assertSame([], DatabaseSeeder::$ran);
+    }
+
+    public function test_a_state_in_production_runs_with_force(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->artisan('modules:seed', ['--state' => 'showcase', '--force' => true])->assertSuccessful()->run();
+        $this->app->detectEnvironment(fn () => 'testing');
+
+        $this->assertSame(
+            ['DatabaseSeeder', 'ShowcaseModuleTestFixtureDatabaseSeeder'],
+            DatabaseSeeder::$ran,
+        );
+    }
+
     public function test_module_option_matches_case_insensitively(): void
     {
-        $this->artisan('modules:seed', ['--module' => 'Module-Test-Fixture', '--demo' => true])
+        $this->artisan('modules:seed', ['--module' => 'Module-Test-Fixture', '--state' => 'showcase'])
             ->assertSuccessful();
 
         $this->assertSame(
-            ['DatabaseSeeder', 'DemoModuleTestFixtureDatabaseSeeder'],
+            ['DatabaseSeeder', 'ShowcaseModuleTestFixtureDatabaseSeeder'],
             DatabaseSeeder::$ran,
         );
     }
 
     public function test_an_unknown_module_fails_without_seeding_anything(): void
     {
-        $this->artisan('modules:seed', ['--module' => 'missing', '--demo' => true])
+        $this->artisan('modules:seed', ['--module' => 'missing', '--state' => 'showcase'])
             ->assertFailed();
 
         $this->assertSame([], DatabaseSeeder::$ran);
@@ -88,9 +136,23 @@ class SeedModulesCommandTest extends TestCase
             'omega' => new ModuleConfig('omega', '/tmp/omega', collect()),
         ]));
 
-        $this->artisan('modules:seed', ['--demo' => true])->assertSuccessful();
+        $this->artisan('modules:seed', ['--state' => 'showcase'])->assertSuccessful();
 
-        $this->assertSame(['omega', 'alpha', 'omega demo', 'alpha demo'], self::$ran);
+        $this->assertSame(['omega', 'alpha', 'omega showcase', 'alpha showcase'], self::$ran);
+    }
+
+    public function test_a_failing_seeder_fails_the_command(): void
+    {
+        require_once dirname(__DIR__).'/Fixtures/seed-order/seeders.php';
+        $registry = Mockery::mock($this->app->make(ModuleRegistry::class));
+        $this->instance(ModuleRegistry::class, $registry);
+        $registry->shouldReceive('modules')->andReturn(collect([
+            'omega' => new ModuleConfig('omega', '/tmp/omega', collect()),
+        ]));
+
+        $this->expectExceptionMessage('broken seeder');
+
+        $this->artisan('modules:seed', ['--state' => 'broken'])->run();
     }
 
     /** Setting up modules together seeds them as one group, or SeedAfter sees only one at a time. */
@@ -107,9 +169,9 @@ class SeedModulesCommandTest extends TestCase
         $registry->shouldReceive('modules')->andReturn($modules);
         $registry->shouldReceive('module')->andReturnUsing(fn (string $name) => $modules[$name]);
 
-        $this->artisan('saucebase:module-setup', ['modules' => ['alpha', 'omega'], '--demo' => true])
+        $this->artisan('saucebase:module-setup', ['modules' => ['alpha', 'omega'], '--state' => 'showcase'])
             ->assertSuccessful();
 
-        $this->assertSame(['omega', 'alpha', 'omega demo', 'alpha demo'], self::$ran);
+        $this->assertSame(['omega', 'alpha', 'omega showcase', 'alpha showcase'], self::$ran);
     }
 }
