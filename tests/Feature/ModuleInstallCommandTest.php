@@ -72,6 +72,27 @@ class ModuleInstallCommandTest extends TestCase
         Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'api-tokens']);
     }
 
+    public function test_a_template_is_set_up_with_and_after_the_modules_it_requires(): void
+    {
+        config(['saucebase.demo_password' => 'secret']);
+        $this->files->put($this->appPath.'/composer.lock', $this->lock([]));
+        Process::fake(function (PendingProcess $process) {
+            if ($process->command[0] === 'composer') {
+                $this->files->put($this->appPath.'/composer.lock', $this->lock([
+                    'saucebase/auth' => [],
+                    'saucebase/billing' => ['saucebase/auth'],
+                    'saucebase/uptime' => ['saucebase/auth', 'saucebase/billing'],
+                ], templates: ['saucebase/uptime']));
+            }
+
+            return Process::result();
+        });
+
+        $this->artisan('saucebase:module-install', ['modules' => ['uptime'], '--state' => 'uptime'])->assertSuccessful();
+
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'billing', 'uptime', '--state=uptime']);
+    }
+
     public function test_modules_are_set_up_after_the_modules_they_require(): void
     {
         // The lock lists packages alphabetically: api-tokens before the auth it requires.
@@ -93,13 +114,16 @@ class ModuleInstallCommandTest extends TestCase
         Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'api-tokens', 'packages']);
     }
 
-    /** @param  array<int|string, string|list<string>>  $modules  Names, or name => the modules it requires. */
-    private function lock(array $modules): string
+    /**
+     * @param  array<int|string, string|list<string>>  $modules  Names, or name => the modules it requires.
+     * @param  list<string>  $templates  Which of them are templates.
+     */
+    private function lock(array $modules, array $templates = []): string
     {
         $packages = [];
         foreach ($modules as $name => $requires) {
             [$name, $requires] = is_int($name) ? [$requires, []] : [$name, $requires];
-            $packages[] = ['name' => $name, 'type' => 'saucebase-module', 'require' => array_fill_keys(['saucebase/core', ...$requires], '*')];
+            $packages[] = ['name' => $name, 'type' => in_array($name, $templates, true) ? 'saucebase-template' : 'saucebase-module', 'require' => array_fill_keys(['saucebase/core', ...$requires], '*')];
         }
 
         return (string) json_encode(['packages' => [['name' => 'laravel/sanctum', 'type' => 'library'], ...$packages]]);

@@ -71,11 +71,11 @@ class ModuleInstallCommand extends Command
             ->successful() ? self::SUCCESS : self::FAILURE;
     }
 
-    /** @return array<string, string[]> Each Saucebase module in composer.lock => the modules it requires. */
+    /** @return array<string, string[]> Each Saucebase module or template in composer.lock => the modules it requires. */
     private function lockedModules(): array
     {
         $packages = collect(json_decode((string) @file_get_contents(base_path('composer.lock')), true)['packages'] ?? [])
-            ->where('type', 'saucebase-module');
+            ->whereIn('type', ['saucebase-module', 'saucebase-template']);
         $names = $packages->pluck('name')->all();
 
         return $packages->mapWithKeys(fn (array $package): array => [
