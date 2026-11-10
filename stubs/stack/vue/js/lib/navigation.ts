@@ -4,7 +4,6 @@ import { useColorMode } from '@vueuse/core';
 import IconHelpCircle from '~icons/lucide/help-circle';
 import IconShieldCheck from '~icons/lucide/shield-check';
 import IconSquareTerminal from '~icons/lucide/square-terminal';
-import IconDiscord from '~icons/simple-icons/discord';
 import IconGithub from '~icons/simple-icons/github';
 
 /**
@@ -23,7 +22,6 @@ export function registerNavigationDefaults(): void {
 
     registerIcon('dashboard', IconSquareTerminal);
     registerIcon('github', IconGithub);
-    registerIcon('discord', IconDiscord);
     registerIcon('admin', IconShieldCheck);
     registerIcon('documentation', IconHelpCircle);
 }

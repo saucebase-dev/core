@@ -7,6 +7,7 @@ use Filament\Forms\Components\Select;
 use Filament\Pages\Dashboard\Actions\FilterAction;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Pages\Dashboard\Concerns\HasFiltersAction;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Utilities\Set;
 use Saucebase\Core\Filament\Period;
 
@@ -18,6 +19,16 @@ use Saucebase\Core\Filament\Period;
 class Dashboard extends BaseDashboard
 {
     use HasFiltersAction;
+
+    /**
+     * Widgets come from whichever modules are installed, so a half-width one can end up
+     * alone on its row. Dense flow lets a later widget that fits fill the gap, at the cost
+     * of the occasional widget moving up past its sort order.
+     */
+    public function getWidgetsContentComponent(): Component
+    {
+        return parent::getWidgetsContentComponent()->extraAttributes(['style' => 'grid-auto-flow: row dense'], merge: true);
+    }
 
     protected function getHeaderActions(): array
     {

@@ -6,7 +6,6 @@ import {
     ShieldCheck,
     SquareTerminal,
 } from 'lucide-react';
-import IconDiscord from '~icons/simple-icons/discord';
 import IconGithub from '~icons/simple-icons/github';
 
 /**
@@ -23,7 +22,6 @@ export function registerNavigationDefaults(): void {
 
     registerIcon('dashboard', SquareTerminal);
     registerIcon('github', IconGithub);
-    registerIcon('discord', IconDiscord);
     registerIcon('admin', ShieldCheck);
     registerIcon('documentation', CircleHelp);
     registerIcon('docs', BookOpen);
