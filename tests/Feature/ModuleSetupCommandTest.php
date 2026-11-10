@@ -92,23 +92,53 @@ class ModuleSetupCommandTest extends TestCase
         }
     }
 
-    public function test_demo_also_seeds_demo_content(): void
+    public function test_a_state_also_seeds_its_content(): void
     {
         Process::fake();
         config(['saucebase.demo_password' => 'secret']);
 
-        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--demo' => true])->assertSuccessful();
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--state' => 'showcase'])->assertSuccessful();
 
-        $this->assertSame(['DatabaseSeeder', 'DemoModuleTestFixtureDatabaseSeeder'], DatabaseSeeder::$ran);
+        $this->assertSame(['DatabaseSeeder', 'ShowcaseModuleTestFixtureDatabaseSeeder'], DatabaseSeeder::$ran);
+    }
+
+    public function test_in_production_seeding_asks_first(): void
+    {
+        Process::fake();
+        config(['saucebase.demo_password' => 'secret']);
+        $this->app->detectEnvironment(fn () => 'production');
+
+        // migrate is forced; seeding a state is the operator's call.
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--state' => 'showcase'])
+            ->expectsConfirmation('Are you sure you want to run this command?', 'no')
+            ->assertFailed()
+            ->run();
+        $this->app->detectEnvironment(fn () => 'testing');
+
+        $this->assertSame([], DatabaseSeeder::$ran);
+    }
+
+    public function test_in_production_force_seeds_without_asking(): void
+    {
+        Process::fake();
+        config(['saucebase.demo_password' => 'secret']);
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--state' => 'showcase', '--force' => true])
+            ->assertSuccessful()
+            ->run();
+        $this->app->detectEnvironment(fn () => 'testing');
+
+        $this->assertSame(['DatabaseSeeder', 'ShowcaseModuleTestFixtureDatabaseSeeder'], DatabaseSeeder::$ran);
     }
 
     public function test_a_failed_step_fails_the_setup_and_stops_there(): void
     {
         Process::fake();
-        config(['saucebase.demo_password' => null]); // modules:seed --demo refuses without it
+        config(['saucebase.demo_password' => null]); // modules:seed --state refuses without it
 
-        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--demo' => true])
-            ->expectsOutputToContain('run this again: php artisan saucebase:module-setup module-test-fixture --demo')
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--state' => 'showcase'])
+            ->expectsOutputToContain('run this again: php artisan saucebase:module-setup module-test-fixture --state=showcase')
             ->assertFailed();
 
         $this->assertFalse(InstallFixtureCommand::$ran);

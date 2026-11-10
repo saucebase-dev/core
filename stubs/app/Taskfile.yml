@@ -99,16 +99,16 @@ tasks:
             - '{{.APP}} php artisan migrate:fresh --seed'
             - '{{.APP}} php artisan modules:seed'
 
-    db:reset:demo:
-        desc: Reset database and load sample content (the auth module's demo includes an admin)
+    db:reset:showcase:
+        desc: Reset database and load sample content (the auth module's showcase includes an admin)
         prompt: This will erase ALL data. Are you sure?
         cmds:
             - '{{.APP}} php artisan migrate:fresh --seed'
-            - '{{.APP}} php artisan modules:seed --demo'
+            - '{{.APP}} php artisan modules:seed --state=showcase'
 
-    db:seed:demo:
+    db:seed:showcase:
         desc: Seed every module with sample content
-        cmd: '{{.APP}} php artisan modules:seed --demo'
+        cmd: '{{.APP}} php artisan modules:seed --state=showcase'
 
     # ── Translation ───────────────────────────────────────────────
 

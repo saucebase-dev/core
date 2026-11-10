@@ -15,10 +15,10 @@ Built with [Saucebase](https://github.com/saucebase-dev/saucebase), on Laravel a
 
 ## Sign in
 
-With demo data, sign in as `chef@saucebase.dev`, a full admin. Every demo account uses the
+With the showcase state, sign in as `chef@saucebase.dev`, a full admin. Every showcase account uses the
 password saved in `.env` as `DEMO_PASSWORD`. The admin panel is at `/admin`.
 
-Reload the demo data with `task db:reset:demo`.
+Reload the showcase data with `task db:reset:showcase`.
 
 ## Modules
 

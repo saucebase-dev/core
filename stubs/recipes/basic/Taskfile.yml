@@ -14,9 +14,9 @@ tasks:
 
     # ── Database ──────────────────────────────────────────────────
 
-    db:seed:demo:
+    db:seed:showcase:
         desc: Seed the {Module} module with sample content
-        cmd: '{{.APP}} php artisan modules:seed --module={module} --demo'
+        cmd: '{{.APP}} php artisan modules:seed --module={module} --state=showcase'
 
     # ── Code Generation ────────────────────────────────────────────
 

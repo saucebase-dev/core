@@ -18,11 +18,11 @@ class DatabaseSeeder extends Seeder
 }
 
 #[SeedAfter('omega')]
-class DemoAlphaDatabaseSeeder extends Seeder
+class ShowcaseAlphaDatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        SeedModulesCommandTest::$ran[] = 'alpha demo';
+        SeedModulesCommandTest::$ran[] = 'alpha showcase';
     }
 }
 
@@ -39,10 +39,19 @@ class DatabaseSeeder extends Seeder
     }
 }
 
-class DemoOmegaDatabaseSeeder extends Seeder
+class ShowcaseOmegaDatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        SeedModulesCommandTest::$ran[] = 'omega demo';
+        SeedModulesCommandTest::$ran[] = 'omega showcase';
+    }
+}
+
+/** The `broken` state: fails, so the command must too. */
+class BrokenOmegaDatabaseSeeder extends Seeder
+{
+    public function run(): void
+    {
+        throw new \RuntimeException('broken seeder');
     }
 }
