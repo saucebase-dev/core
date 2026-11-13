@@ -141,13 +141,23 @@ html {
 }
 
 /* An overlay opened from inside a modal has to clear the modal's own stacking
-   level above, which its shipped `z-50` does not. Targeting data-slot survives
-   shadcn CLI updates; keying off the modal keeps the ordering unchanged
-   everywhere else. */
+   level above, which its shipped `z-50` does not. Keyed off the modal, so the
+   ordering is unchanged everywhere else. */
+
+/* Every reka-ui popup (select, menus, popover, tooltip, combobox, hover card) is
+   positioned inside this wrapper, so one rule covers the ones core ships and any
+   added later. `!important`: reka writes the wrapper's z-index inline. */
+body:has(.im-dialog) [data-reka-popper-content-wrapper] {
+    z-index: 71 !important;
+}
+
+/* Full-screen overlays have no shared wrapper; matched by data-slot, which
+   survives shadcn CLI updates. */
 body:has(.im-dialog) :is(
         [data-slot='dialog-overlay'],
         [data-slot='alert-dialog-overlay'],
-        [data-slot='sheet-overlay']
+        [data-slot='sheet-overlay'],
+        [data-slot='drawer-overlay']
     ) {
     z-index: 70;
 }
@@ -156,10 +166,7 @@ body:has(.im-dialog) :is(
         [data-slot='dialog-content'],
         [data-slot='alert-dialog-content'],
         [data-slot='sheet-content'],
-        [data-slot='dropdown-menu-content'],
-        [data-slot='dropdown-menu-sub-content'],
-        [data-slot='popover-content'],
-        [data-slot='tooltip-content']
+        [data-slot='drawer-content']
     ) {
     z-index: 71;
 }
