@@ -42,6 +42,7 @@ export function saucebase({
         : entry;
 
     return [
+        contributor && overrides(framework),
         {
             name: 'saucebase',
             config: (userConfig, env) => {
@@ -158,6 +159,52 @@ export function saucebase({
         }),
         inertia({ ssr: ssrEntry }),
     ];
+}
+
+/**
+ * A contributor checkout reads core's UI from vendor/; a template workspace overrides
+ * parts of it from the app, one folder per framework, the way a template's stubs/
+ * are laid out: resources/js/vue/pages/Index.vue replaces core's pages/Index.vue.
+ * Only files core has are replaced; a template's new pages belong in its module.
+ */
+function overrides(framework: 'vue' | 'react'): PluginOption {
+    const root = process.cwd();
+    const stack = path.join(root, SAUCEBASE_STACK, framework, 'js') + path.sep;
+    const appFiles = path.join(root, 'resources/js', framework);
+    const override = (id: string) =>
+        id.startsWith(stack) && !id.includes('?')
+            ? path.join(appFiles, id.slice(stack.length))
+            : null;
+
+    return {
+        name: 'saucebase:overrides',
+        enforce: 'pre',
+        load(id) {
+            const file = override(id);
+
+            if (file === null || !fs.existsSync(file)) {
+                return null;
+            }
+            this.addWatchFile(file);
+
+            return fs.readFileSync(file, 'utf-8');
+        },
+        // The page is known to Vite by core's path, so an edit to the override reloads it.
+        handleHotUpdate({ file, server }) {
+            if (!file.startsWith(appFiles + path.sep)) {
+                return;
+            }
+            const replaced = path.join(stack, path.relative(appFiles, file));
+            for (const module of server.moduleGraph.getModulesByFile(
+                replaced,
+            ) ?? []) {
+                server.moduleGraph.invalidateModule(module);
+            }
+            server.ws.send({ type: 'full-reload' });
+
+            return [];
+        },
+    };
 }
 
 /** The app's `saucebase.json`: its framework, contributor mode and server rendering. */

@@ -37,6 +37,15 @@ class ModuleSetupCommand extends Command
             }
         }
 
+        // Checked before anything is written, so a bad entry changes nothing.
+        $answers = $this->moduleOptions($modules);
+
+        if (is_string($answers)) {
+            $this->components->error($answers);
+
+            return self::FAILURE;
+        }
+
         $conflicts = $this->applyPatches($modules);
 
         $steps = [
@@ -63,7 +72,7 @@ class ModuleSetupCommand extends Command
                     return self::FAILURE;
                 }
 
-                $steps[] = [substr($line, strlen('php artisan ')), null];
+                $steps[] = [substr($line, strlen('php artisan ')).$this->appendOptions($line, $answers[$module->name] ?? []), null];
             }
         }
 
@@ -95,6 +104,58 @@ class ModuleSetupCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Answers a module (usually a template) gives another module's install command, from
+     * its composer.json: `extra.saucebase.module-options.<module>.<option> = value`.
+     * Option names and plain values only, so an entry can never become another command.
+     *
+     * @param  ModuleConfig[]  $modules
+     * @return array<string, array<string, string|int|float|bool|null>>|string Options by module, or why an entry is refused.
+     */
+    private function moduleOptions(array $modules): array|string
+    {
+        $answers = [];
+
+        foreach ($modules as $module) {
+            $declared = data_get(json_decode((string) @file_get_contents($module->path('composer.json')), true), 'extra.saucebase.module-options', []);
+
+            foreach ((array) $declared as $target => $options) {
+                foreach ((array) $options as $option => $value) {
+                    if (! is_string($option) || ! preg_match('/^[a-z][a-z0-9-]*$/', $option)
+                        || ! (is_scalar($value) || $value === null)
+                        || (is_string($value) && ! preg_match('#^[A-Za-z0-9._:/@+-]*$#', $value))) {
+                        return "{$module->name}: module-options for {$target} take option names and plain values (mode: subdomain): ".json_encode([$option => $value]);
+                    }
+
+                    $answers[$target][$option] = $value;
+                }
+            }
+        }
+
+        return $answers;
+    }
+
+    /**
+     * `--option=value` for each answer the line doesn't already give, a bare `--option` for
+     * true; false and null are left out. The line's own options win.
+     *
+     * @param  array<string, string|int|float|bool|null>  $options
+     */
+    private function appendOptions(string $line, array $options): string
+    {
+        $appended = '';
+
+        foreach ($options as $option => $value) {
+            if ($value === false || $value === null || preg_match('/(^|\s)--'.preg_quote($option, '/').'(=|\s|$)/', $line)) {
+                continue;
+            }
+
+            $appended .= $value === true ? " --{$option}" : " --{$option}={$value}";
+        }
+
+        return $appended;
     }
 
     /**

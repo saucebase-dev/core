@@ -22,6 +22,8 @@ use Saucebase\Core\Console\Commands\RecipeToModuleCommand;
 use Saucebase\Core\Console\Commands\SeedModulesCommand;
 use Saucebase\Core\Console\Commands\SyncModuleBoostCommand;
 use Saucebase\Core\Console\Commands\SyncModuleTaskfileCommand;
+use Saucebase\Core\Console\Commands\TemplateCaptureCommand;
+use Saucebase\Core\Console\Commands\TemplateInstallCommand;
 use Saucebase\Core\Http\Middleware\HandleAppearance;
 use Saucebase\Core\Http\Middleware\HandleInertiaRequests;
 use Saucebase\Core\Http\Middleware\HandleLocalization;
@@ -103,6 +105,8 @@ class CoreServiceProvider extends ServiceProvider
             GenerateModuleTypesCommand::class,
             InstallCommand::class,
             ModuleInstallCommand::class,
+            TemplateInstallCommand::class,
+            TemplateCaptureCommand::class,
             ModuleSetupCommand::class,
             RecipeToModuleCommand::class,
             SeedModulesCommand::class,

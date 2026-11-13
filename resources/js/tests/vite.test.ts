@@ -175,3 +175,68 @@ describe('saucebase()', () => {
         ).toBe('assets/auth/[name]-[hash][extname]');
     });
 });
+
+/** The override layer of a template workspace: app files replace core's UI, per framework. */
+describe('saucebase() overrides', () => {
+    function overrides(): any {
+        return saucebase({
+            framework: 'vue',
+            entry: 'resources/js/app.ts',
+            requires: {},
+        }).find((p: any) => p?.name === 'saucebase:overrides') as any;
+    }
+
+    function write(file: string, contents: string): string {
+        const full = path.join(root, file);
+        fs.mkdirSync(path.dirname(full), { recursive: true });
+        fs.writeFileSync(full, contents);
+
+        return full;
+    }
+
+    const core = 'vendor/saucebase/core/stubs/stack/vue/js/pages/Index.vue';
+
+    it("serves the app's file in place of core's", () => {
+        write('saucebase.json', '{"contributor": true}');
+        const corePage = write(core, 'core');
+        write('resources/js/vue/pages/Index.vue', 'template');
+
+        expect(overrides().load.call({ addWatchFile() {} }, corePage)).toBe(
+            'template',
+        );
+        // Vite asks for the same file with a query for Vue's style and script parts.
+        expect(
+            overrides().load.call(
+                { addWatchFile() {} },
+                `${corePage}?vue&type=style&index=0`,
+            ),
+        ).toBeNull();
+    });
+
+    it("keeps core's file when the app has none", () => {
+        write('saucebase.json', '{"contributor": true}');
+        const corePage = write(core, 'core');
+
+        expect(
+            overrides().load.call({ addWatchFile() {} }, corePage),
+        ).toBeNull();
+    });
+
+    it("ignores the other framework's overrides", () => {
+        write('saucebase.json', '{"contributor": true}');
+        const corePage = write(core, 'core');
+        write('resources/js/react/pages/Index.vue', 'react');
+
+        expect(
+            overrides().load.call({ addWatchFile() {} }, corePage),
+        ).toBeNull();
+    });
+
+    it('is off in an installed app, which owns its copy of the UI', () => {
+        write('saucebase.json', '{}');
+        const corePage = write(core, 'core');
+        write('resources/js/vue/pages/Index.vue', 'template');
+
+        expect(overrides()).toBeUndefined();
+    });
+});
