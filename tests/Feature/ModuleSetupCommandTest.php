@@ -147,8 +147,8 @@ class ModuleSetupCommandTest extends TestCase
     }
 
     /**
-     * A template answers another module's install questions: `module-options` in its
-     * composer.json, keyed by module, become that module's install options.
+     * A template answers another module's install questions: keys under `configure` in
+     * its composer.json that aren't install settings become that module's install options.
      *
      * @param  array<string, mixed>  $options
      */
@@ -157,7 +157,7 @@ class ModuleSetupCommandTest extends TestCase
         $composer = __DIR__.'/../Fixtures/modules/module-order-fixture/composer.json';
         $original = file_get_contents($composer);
         $json = json_decode($original, true);
-        $json['extra']['saucebase']['module-options'] = ['module-test-fixture' => $options];
+        $json['extra']['saucebase']['configure'] = ['module-test-fixture' => $options];
         file_put_contents($composer, json_encode($json));
 
         try {
@@ -167,7 +167,7 @@ class ModuleSetupCommandTest extends TestCase
         }
     }
 
-    public function test_module_options_answer_another_modules_install_command(): void
+    public function test_configure_answers_another_modules_install_command(): void
     {
         Process::fake(['*--reverse*' => Process::result(exitCode: 1), '*' => Process::result()]);
 
@@ -193,7 +193,7 @@ class ModuleSetupCommandTest extends TestCase
     }
 
     /** @return array<string, array{0: array<string, mixed>}> */
-    public static function invalidModuleOptions(): array
+    public static function invalidInstallAnswers(): array
     {
         return [
             'a key that is not an option name' => [['--mode' => 'x']],
@@ -205,14 +205,14 @@ class ModuleSetupCommandTest extends TestCase
     }
 
     /** @param  array<string, mixed>  $options */
-    #[DataProvider('invalidModuleOptions')]
-    public function test_invalid_module_options_fail_before_anything_runs(array $options): void
+    #[DataProvider('invalidInstallAnswers')]
+    public function test_invalid_install_answers_fail_before_anything_runs(array $options): void
     {
         Process::fake();
 
         $this->withModuleOptions($options, function (): void {
             $this->artisan('saucebase:module-setup', ['modules' => ['module-order-fixture', 'module-test-fixture']])
-                ->expectsOutputToContain('module-options')
+                ->expectsOutputToContain('configure')
                 ->assertFailed();
         });
 

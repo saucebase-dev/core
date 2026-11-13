@@ -150,9 +150,9 @@ class ModuleInstallCommandTest extends TestCase
     public function test_install_settings_are_passed_on_to_the_setup(): void
     {
         Process::fake();
-        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--setting' => ['blog.comments=false']])->assertSuccessful();
+        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--set' => ['blog.comments=false']])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--configure', '--setting=blog.comments=false']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--configure', '--set=blog.comments=false']);
     }
 
     public function test_a_state_without_a_demo_password_fails_before_anything_runs(): void

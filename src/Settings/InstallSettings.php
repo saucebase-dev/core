@@ -21,12 +21,16 @@ use function Laravel\Prompts\text;
  */
 final class InstallSettings
 {
-    /** @param  array<string, array{class: class-string<Settings>, property: ReflectionProperty, setting: InstallSetting}>  $marked */
-    private function __construct(public readonly string $module, private readonly array $marked) {}
+    /**
+     * @param  array<string, array{class: class-string<Settings>, property: ReflectionProperty, setting: InstallSetting}>  $marked
+     * @param  list<string>  $unmarked  The module's other settings: never set at install.
+     */
+    private function __construct(public readonly string $module, private readonly array $marked, private readonly array $unmarked) {}
 
     public static function of(ModuleConfig $module): self
     {
         $marked = [];
+        $unmarked = [];
 
         foreach (glob($module->path('src/Settings').'/*.php') ?: [] as $file) {
             $class = $module->pathToFullyQualifiedClassName($file);
@@ -40,11 +44,24 @@ final class InstallSettings
 
                 if ($attribute !== null) {
                     $marked[$property->getName()] = ['class' => $class, 'property' => $property, 'setting' => $attribute->newInstance()];
+                } elseif ($property->getDeclaringClass()->getName() === $class) {
+                    $unmarked[] = $property->getName();
                 }
             }
         }
 
-        return new self($module->name, $marked);
+        return new self($module->name, $marked, $unmarked);
+    }
+
+    public function marks(string $name): bool
+    {
+        return isset($this->marked[$name]);
+    }
+
+    /** A setting of this module's that is not marked: refused, so a template can't reach it. */
+    public function declares(string $name): bool
+    {
+        return in_array($name, $this->unmarked, true);
     }
 
     public function isEmpty(): bool
@@ -60,7 +77,7 @@ final class InstallSettings
     public function cast(string $name, mixed $value): mixed
     {
         if (! isset($this->marked[$name])) {
-            throw new InvalidArgumentException("{$this->module}.{$name} can't be set at install: it is unknown or not marked #[InstallSetting].");
+            throw new InvalidArgumentException("{$this->module}.{$name} can't be set at install: it is not marked #[InstallSetting].");
         }
 
         ['property' => $property, 'setting' => $setting] = $this->marked[$name];
