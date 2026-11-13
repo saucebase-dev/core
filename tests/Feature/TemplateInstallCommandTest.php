@@ -68,7 +68,7 @@ class TemplateInstallCommandTest extends TestCase
 
         $this->artisan('saucebase:template-install', ['template' => 'uptime'])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'uptime']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'uptime', '--configure']);
         Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'modules:seed', '--module=auth', '--module=uptime', '--state=default']);
     }
 
@@ -93,8 +93,17 @@ class TemplateInstallCommandTest extends TestCase
 
         $this->artisan('saucebase:template-install', ['template' => 'uptime', '--state' => 'agency', '--force' => true])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'uptime', '--force']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'uptime', '--force', '--configure']);
         Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'modules:seed', '--module=auth', '--module=uptime', '--state=agency', '--force']);
+    }
+
+    public function test_install_settings_are_passed_on_to_the_setup(): void
+    {
+        $this->template([]);
+
+        $this->artisan('saucebase:template-install', ['template' => 'uptime', '--setting' => ['auth.registration_enabled=false']])->assertSuccessful();
+
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'uptime', '--configure', '--setting=auth.registration_enabled=false']);
     }
 
     public function test_a_template_without_a_default_state_is_set_up_without_one(): void
@@ -103,7 +112,7 @@ class TemplateInstallCommandTest extends TestCase
 
         $this->artisan('saucebase:template-install', ['template' => 'uptime'])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'uptime']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'uptime', '--configure']);
         Process::assertDidntRun(fn (PendingProcess $p) => in_array('modules:seed', $p->command, true));
     }
 
@@ -280,7 +289,7 @@ class TemplateInstallCommandTest extends TestCase
         });
         $this->artisan('saucebase:template-install', ['template' => 'uptime'])->assertSuccessful();
 
-        $this->assertSame([[PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'uptime']], $setups);
+        $this->assertSame([[PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'uptime', '--configure']], $setups);
     }
 
     /**

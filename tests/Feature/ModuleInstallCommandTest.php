@@ -52,7 +52,7 @@ class ModuleInstallCommandTest extends TestCase
 
         Process::assertRanTimes(fn (PendingProcess $p) => $p->command[0] === 'composer', 1);
         Process::assertRan(fn (PendingProcess $p) => $p->command === ['composer', 'require', 'saucebase/billing', 'saucebase/blog', '--no-interaction']);
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'billing', 'blog']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'billing', 'blog', '--configure']);
     }
 
     public function test_a_module_composer_adds_as_a_dependency_is_set_up_first(): void
@@ -69,7 +69,7 @@ class ModuleInstallCommandTest extends TestCase
 
         $this->artisan('saucebase:module-install', ['modules' => ['api-tokens']])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'api-tokens']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'api-tokens', '--configure']);
     }
 
     public function test_a_template_is_set_up_with_and_after_the_modules_it_requires(): void
@@ -90,7 +90,7 @@ class ModuleInstallCommandTest extends TestCase
 
         $this->artisan('saucebase:module-install', ['modules' => ['uptime'], '--state' => 'uptime'])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'billing', 'uptime', '--state=uptime']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'billing', 'uptime', '--state=uptime', '--configure']);
     }
 
     public function test_modules_are_set_up_after_the_modules_they_require(): void
@@ -111,7 +111,7 @@ class ModuleInstallCommandTest extends TestCase
 
         $this->artisan('saucebase:module-install', ['modules' => ['packages']])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'api-tokens', 'packages']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'api-tokens', 'packages', '--configure']);
     }
 
     /**
@@ -135,7 +135,7 @@ class ModuleInstallCommandTest extends TestCase
         config(['saucebase.demo_password' => 'secret']);
         $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--state' => 'showcase'])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase', '--configure']);
     }
 
     public function test_force_is_passed_on_to_the_setup(): void
@@ -144,7 +144,15 @@ class ModuleInstallCommandTest extends TestCase
         config(['saucebase.demo_password' => 'secret']);
         $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--state' => 'showcase', '--force' => true])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase', '--force']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase', '--force', '--configure']);
+    }
+
+    public function test_install_settings_are_passed_on_to_the_setup(): void
+    {
+        Process::fake();
+        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--setting' => ['blog.comments=false']])->assertSuccessful();
+
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--configure', '--setting=blog.comments=false']);
     }
 
     public function test_a_state_without_a_demo_password_fails_before_anything_runs(): void
