@@ -24,7 +24,7 @@ class TemplateInstallCommand extends Command
                             {template : Template name (uptime)}
                             {--state= : Seed this state instead of the template\'s default}
                             {--force : Seed in production without asking}
-                            {--setting=* : An install setting, module.property=value (tenancy.invitations_enabled=false)}';
+                            {--set=* : Configure a module, module.key=value (tenancy.mode=subdomain, auth.registration_enabled=false)}';
 
     protected $description = 'Install a Saucebase template into a fresh application';
 
@@ -263,7 +263,7 @@ class TemplateInstallCommand extends Command
     {
         $command = 'php artisan saucebase:template-install '.$this->argument('template')
             .($this->option('state') ? ' --state='.$this->option('state') : '')
-            .collect((array) $this->option('setting'))->map(fn (string $setting) => ' --setting='.escapeshellarg($setting))->implode('');
+            .collect((array) $this->option('set'))->map(fn (string $set) => ' --set='.escapeshellarg($set))->implode('');
 
         $this->components->error($error);
         $this->line("  Fix it, then run again: {$command}");

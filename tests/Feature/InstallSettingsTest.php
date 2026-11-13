@@ -4,6 +4,7 @@ namespace Saucebase\Core\Tests\Feature;
 
 use Illuminate\Support\Facades\Process;
 use Illuminate\Testing\PendingCommand;
+use Modules\ModuleTestFixture\Console\Commands\InstallFixtureCommand;
 use Modules\ModuleTestFixture\Database\Seeders\DatabaseSeeder;
 use Modules\ModuleTestFixture\Enums\FixtureStatus;
 use Modules\ModuleTestFixture\Settings\FixtureSettings;
@@ -13,7 +14,7 @@ use Saucebase\Core\Tests\TestCase;
 
 /**
  * Settings marked #[InstallSetting] are set while modules are installed (`--configure`):
- * from a template's `module-settings`, a `--setting` flag, or a prompt. Flag beats answer
+ * from a template's `configure`, a `--set` flag, or a prompt. Flag beats answer
  * beats template beats the setting's own default. Anything else is refused up front.
  */
 class InstallSettingsTest extends TestCase
@@ -44,7 +45,7 @@ class InstallSettingsTest extends TestCase
     private function template(array $settings): void
     {
         $json = json_decode($this->original, true);
-        $json['extra']['saucebase']['module-settings'] = ['module-test-fixture' => $settings];
+        $json['extra']['saucebase']['configure'] = ['module-test-fixture' => $settings];
         file_put_contents(self::COMPOSER, json_encode($json));
     }
 
@@ -74,7 +75,7 @@ class InstallSettingsTest extends TestCase
     {
         $this->template(['days' => 7]);
 
-        $this->install(['--no-interaction' => true, '--setting' => ['module-test-fixture.days=9', 'module-test-fixture.signups=yes']])->assertSuccessful();
+        $this->install(['--no-interaction' => true, '--set' => ['module-test-fixture.days=9', 'module-test-fixture.signups=yes']])->assertSuccessful();
 
         $this->assertSame(9, $this->settings()->days);
         $this->assertTrue($this->settings()->signups);
@@ -95,7 +96,6 @@ class InstallSettingsTest extends TestCase
     {
         return [
             'an unmarked setting' => [['secret' => 'leaked'], []],
-            'an unknown setting' => [['nope' => true], []],
             'a value outside its rules' => [['days' => 500], []],
             'not a whole number' => [['days' => 'many'], []],
             'not a yes or no' => [['signups' => 'maybe'], []],
@@ -114,8 +114,8 @@ class InstallSettingsTest extends TestCase
     {
         $this->template($template);
 
-        $this->install(['--no-interaction' => true, '--setting' => $flags])
-            ->expectsOutputToContain('module-settings')
+        $this->install(['--no-interaction' => true, '--set' => $flags])
+            ->expectsOutputToContain('configure')
             ->assertFailed();
 
         $this->assertSame([], DatabaseSeeder::$ran);
@@ -149,12 +149,55 @@ class InstallSettingsTest extends TestCase
 
     public function test_a_flagged_setting_is_not_asked(): void
     {
-        $this->install(['--setting' => ['module-test-fixture.days=9']])
+        $this->install(['--set' => ['module-test-fixture.days=9']])
             ->expectsConfirmation('Configure module-test-fixture?', 'yes')
             ->expectsConfirmation('Let people sign up?', 'no')
             ->expectsChoice('Status', 'draft', ['draft' => 'Draft', 'published' => 'Published'])
             ->assertSuccessful();
 
         $this->assertSame(9, $this->settings()->days);
+    }
+
+    /** A key that is no install setting is an answer for the module's install command. */
+    public function test_other_keys_answer_the_install_command(): void
+    {
+        InstallFixtureCommand::$options = [];
+
+        $this->install(['--no-interaction' => true, '--set' => ['module-test-fixture.onboarding=create']])->assertSuccessful();
+
+        $this->assertSame('create', InstallFixtureCommand::$options['onboarding']);
+    }
+
+    /** A key no install setting and no install command option takes fails before anything runs. */
+    public function test_an_unknown_key_fails_before_anything_runs(): void
+    {
+        $this->template(['nope' => true]);
+
+        $this->install(['--no-interaction' => true])
+            ->expectsOutputToContain('configure: module-test-fixture.nope')
+            ->assertFailed();
+
+        $this->assertSame([], DatabaseSeeder::$ran);
+    }
+
+    /** A module with no install command takes no answers, so an unmatched key is refused. */
+    public function test_a_module_without_an_install_command_refuses_other_keys(): void
+    {
+        $this->install(['--no-interaction' => true, '--set' => ['module-order-fixture.nope=true']])
+            ->expectsOutputToContain('configure: module-order-fixture.nope')
+            ->assertFailed();
+    }
+
+    /** An option that takes no value is a flag: true passes it, false leaves it out. */
+    public function test_a_flag_option_takes_true_and_false(): void
+    {
+        InstallFixtureCommand::$options = [];
+        $this->install(['--no-interaction' => true, '--set' => ['module-test-fixture.single=true']])->assertSuccessful();
+        $this->assertTrue(InstallFixtureCommand::$options['single']);
+
+        InstallFixtureCommand::$options = [];
+        $this->template(['single' => true]);
+        $this->install(['--no-interaction' => true, '--set' => ['module-test-fixture.single=false']])->assertSuccessful();
+        $this->assertFalse(InstallFixtureCommand::$options['single']);
     }
 }

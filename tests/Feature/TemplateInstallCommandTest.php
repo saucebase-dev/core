@@ -101,9 +101,9 @@ class TemplateInstallCommandTest extends TestCase
     {
         $this->template([]);
 
-        $this->artisan('saucebase:template-install', ['template' => 'uptime', '--setting' => ['auth.registration_enabled=false']])->assertSuccessful();
+        $this->artisan('saucebase:template-install', ['template' => 'uptime', '--set' => ['auth.registration_enabled=false']])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'uptime', '--configure', '--setting=auth.registration_enabled=false']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'uptime', '--configure', '--set=auth.registration_enabled=false']);
     }
 
     public function test_a_template_without_a_default_state_is_set_up_without_one(): void

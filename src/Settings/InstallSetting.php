@@ -6,7 +6,7 @@ use Attribute;
 
 /**
  * Marks a settings property as one an install may set: from a template's
- * `extra.saucebase.module-settings`, a `--setting=module.property=value` flag, or a
+ * `extra.saucebase.configure`, a `--set=module.property=value` flag, or a
  * prompt. The property's type picks the prompt: bool a confirm, int and string a text
  * field, a backed enum a select. Unmarked properties are never set at install.
  */
