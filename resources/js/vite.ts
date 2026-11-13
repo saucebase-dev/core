@@ -42,7 +42,7 @@ export function saucebase({
         : entry;
 
     return [
-        contributor && overrides(framework),
+        contributor && overrides(framework, settings.template),
         {
             name: 'saucebase',
             config: (userConfig, env) => {
@@ -165,12 +165,20 @@ export function saucebase({
  * A contributor checkout reads core's UI from vendor/; a template workspace overrides
  * parts of it from the app, one folder per framework, the way a template's stubs/
  * are laid out: resources/js/vue/pages/Index.vue replaces core's pages/Index.vue.
- * Only files core has are replaced; a template's new pages belong in its module.
+ *
+ * In a template workspace `@/` also finds files only the app has, the way it does once
+ * a template is installed: the app's UI first, then core's, else Vite's usual error.
+ * Only the template's own module may use those files; any other module would break in
+ * apps without this template.
  */
-function overrides(framework: 'vue' | 'react'): PluginOption {
+function overrides(
+    framework: 'vue' | 'react',
+    template: string | undefined,
+): PluginOption {
     const root = process.cwd();
     const stack = path.join(root, SAUCEBASE_STACK, framework, 'js') + path.sep;
     const appFiles = path.join(root, 'resources/js', framework);
+    const modules = path.join(root, 'modules') + path.sep;
     const override = (id: string) =>
         id.startsWith(stack) && !id.includes('?')
             ? path.join(appFiles, id.slice(stack.length))
@@ -179,6 +187,63 @@ function overrides(framework: 'vue' | 'react'): PluginOption {
     return {
         name: 'saucebase:overrides',
         enforce: 'pre',
+        // Shown at start, so the app's files never take over core's without a trace.
+        configResolved(config) {
+            if (!template || !fs.existsSync(appFiles)) {
+                return;
+            }
+            const files = (
+                fs.readdirSync(appFiles, { recursive: true }) as string[]
+            )
+                .filter((file) =>
+                    fs.statSync(path.join(appFiles, file)).isFile(),
+                )
+                .map((file) => file.split(path.sep).join('/'))
+                .sort();
+            const replaced = files.filter((file) =>
+                fs.existsSync(stack + file),
+            );
+            const added = files.filter((file) => !replaced.includes(file));
+
+            for (const [label, list] of [
+                ['replaces core', replaced],
+                ['adds', added],
+            ] as const) {
+                if (list.length > 0) {
+                    config.logger.info(
+                        `[saucebase] ${template} ${label}: ${list.join(', ')}`,
+                    );
+                }
+            }
+        },
+        // Vite's alias has already turned `@/x` into core's path.
+        async resolveId(id, importer, options) {
+            const file = template ? override(id) : null;
+
+            if (file === null) {
+                return null;
+            }
+            const resolve = (target: string) =>
+                this.resolve(target, importer, { ...options, skipSelf: true });
+
+            // Core has it: keep core's path, and load() serves the app's copy if there is one.
+            if (await resolve(id)) {
+                return null;
+            }
+            const appOnly = await resolve(file);
+            const module = importer?.startsWith(modules)
+                ? importer.slice(modules.length).split(path.sep)[0]
+                : null;
+
+            if (appOnly && module !== null && module !== template) {
+                this.error(
+                    `modules/${module} imports @/${id.slice(stack.length)}, which only this app has. ` +
+                        "Apps without the template won't have it: add it to core.",
+                );
+            }
+
+            return appOnly;
+        },
         load(id) {
             const file = override(id);
 
@@ -208,7 +273,11 @@ function overrides(framework: 'vue' | 'react'): PluginOption {
 }
 
 /** The app's `saucebase.json`: its framework, contributor mode and server rendering. */
-function readSettings(root: string): { contributor?: boolean; ssr?: boolean } {
+function readSettings(root: string): {
+    contributor?: boolean;
+    ssr?: boolean;
+    template?: string;
+} {
     const file = path.join(root, 'saucebase.json');
 
     return fs.existsSync(file)
