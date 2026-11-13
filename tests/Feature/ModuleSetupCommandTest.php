@@ -7,6 +7,7 @@ use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Process;
 use Modules\ModuleTestFixture\Console\Commands\InstallFixtureCommand;
 use Modules\ModuleTestFixture\Database\Seeders\DatabaseSeeder;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Saucebase\Core\Tests\Concerns\InteractsWithFixtureModules;
 use Saucebase\Core\Tests\TestCase;
 
@@ -25,6 +26,7 @@ class ModuleSetupCommandTest extends TestCase
         DatabaseSeeder::$ran = [];
         InstallFixtureCommand::$ran = false;
         InstallFixtureCommand::$mode = null;
+        InstallFixtureCommand::$options = [];
     }
 
     public function test_a_clean_patch_is_applied_then_the_module_is_migrated_and_seeded(): void
@@ -141,6 +143,80 @@ class ModuleSetupCommandTest extends TestCase
             ->expectsOutputToContain('run this again: php artisan saucebase:module-setup module-test-fixture --state=showcase')
             ->assertFailed();
 
+        $this->assertFalse(InstallFixtureCommand::$ran);
+    }
+
+    /**
+     * A template answers another module's install questions: `module-options` in its
+     * composer.json, keyed by module, become that module's install options.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    private function withModuleOptions(array $options, \Closure $run): void
+    {
+        $composer = __DIR__.'/../Fixtures/modules/module-order-fixture/composer.json';
+        $original = file_get_contents($composer);
+        $json = json_decode($original, true);
+        $json['extra']['saucebase']['module-options'] = ['module-test-fixture' => $options];
+        file_put_contents($composer, json_encode($json));
+
+        try {
+            $run();
+        } finally {
+            file_put_contents($composer, $original);
+        }
+    }
+
+    public function test_module_options_answer_another_modules_install_command(): void
+    {
+        Process::fake(['*--reverse*' => Process::result(exitCode: 1), '*' => Process::result()]);
+
+        $this->withModuleOptions(['onboarding' => 'create', 'single' => true, 'mode' => 'subdomain'], function (): void {
+            $this->artisan('saucebase:module-setup', ['modules' => ['module-order-fixture', 'module-test-fixture']])->assertSuccessful();
+        });
+
+        $this->assertSame('create', InstallFixtureCommand::$options['onboarding']);
+        $this->assertTrue(InstallFixtureCommand::$options['single']);
+        $this->assertSame('path', InstallFixtureCommand::$mode, 'The module\'s own line wins.');
+    }
+
+    public function test_false_and_null_options_are_left_out(): void
+    {
+        Process::fake(['*--reverse*' => Process::result(exitCode: 1), '*' => Process::result()]);
+
+        $this->withModuleOptions(['single' => false, 'onboarding' => null], function (): void {
+            $this->artisan('saucebase:module-setup', ['modules' => ['module-order-fixture', 'module-test-fixture']])->assertSuccessful();
+        });
+
+        $this->assertFalse(InstallFixtureCommand::$options['single']);
+        $this->assertNull(InstallFixtureCommand::$options['onboarding']);
+    }
+
+    /** @return array<string, array{0: array<string, mixed>}> */
+    public static function invalidModuleOptions(): array
+    {
+        return [
+            'a key that is not an option name' => [['--mode' => 'x']],
+            'a key with a space' => [['mode x' => 'y']],
+            'an array value' => [['mode' => ['a', 'b']]],
+            'a value with a space' => [['onboarding' => 'create --single']],
+            'a value with a quote' => [['onboarding' => "create'"]],
+        ];
+    }
+
+    /** @param  array<string, mixed>  $options */
+    #[DataProvider('invalidModuleOptions')]
+    public function test_invalid_module_options_fail_before_anything_runs(array $options): void
+    {
+        Process::fake();
+
+        $this->withModuleOptions($options, function (): void {
+            $this->artisan('saucebase:module-setup', ['modules' => ['module-order-fixture', 'module-test-fixture']])
+                ->expectsOutputToContain('module-options')
+                ->assertFailed();
+        });
+
+        $this->assertSame([], DatabaseSeeder::$ran);
         $this->assertFalse(InstallFixtureCommand::$ran);
     }
 

@@ -18,6 +18,12 @@ class ProjectConfig
         return ($this->load()['contributor'] ?? false) === true;
     }
 
+    /** The template a template workspace develops (its folder under modules/). */
+    public function template(): ?string
+    {
+        return $this->load()['template'] ?? null;
+    }
+
     /** Whether pages may render on the server. On unless the project turned it off. */
     public function ssr(): bool
     {
