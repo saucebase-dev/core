@@ -8,7 +8,10 @@ use InterNACHI\Modular\Support\ModuleConfig;
 use InterNACHI\Modular\Support\ModuleRegistry;
 use Saucebase\Core\ModuleTaskfile;
 use Saucebase\Core\ProjectConfig;
+use Saucebase\Core\Settings\InstallSettings;
 use Symfony\Component\Console\Input\StringInput;
+
+use function Laravel\Prompts\confirm;
 
 /**
  * Wires installed modules into the application. `saucebase:module-install` runs it in a
@@ -19,7 +22,9 @@ class ModuleSetupCommand extends Command
     protected $signature = 'saucebase:module-setup
                             {modules* : Installed module names}
                             {--state= : Also seed a state (showcase: sample content)}
-                            {--force : Seed in production without asking}';
+                            {--force : Seed in production without asking}
+                            {--configure : Set these modules\' install settings: a template\'s, --setting flags, then prompts}
+                            {--setting=* : An install setting, module.property=value (tenancy.invitations_enabled=false)}';
 
     protected $description = 'Apply patches, migrate and seed installed modules';
 
@@ -42,6 +47,14 @@ class ModuleSetupCommand extends Command
 
         if (is_string($answers)) {
             $this->components->error($answers);
+
+            return self::FAILURE;
+        }
+
+        $settings = $this->option('configure') ? $this->installSettings($modules) : [];
+
+        if (is_string($settings)) {
+            $this->components->error($settings);
 
             return self::FAILURE;
         }
@@ -76,8 +89,15 @@ class ModuleSetupCommand extends Command
             }
         }
 
-        foreach ($steps as [$command, $arguments]) {
-            if ($this->runStep($command, $arguments) !== self::SUCCESS) {
+        foreach ($steps as $index => [$command, $arguments]) {
+            $failed = $this->runStep($command, $arguments) !== self::SUCCESS;
+
+            // Once migrated (the settings exist), before seeders read them.
+            if (! $failed && $index === 0) {
+                $this->applySettings($settings);
+            }
+
+            if ($failed) {
                 $this->components->error("`{$command}` failed. Fix it, then run this again: php artisan saucebase:module-setup ".implode(' ', $this->argument('modules')).($this->option('state') ? ' --state='.$this->option('state') : '').($this->option('force') ? ' --force' : ''));
 
                 return self::FAILURE;
@@ -104,6 +124,73 @@ class ModuleSetupCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Every install setting this run sets, cast and checked before anything is written:
+     * a template's `extra.saucebase.module-settings.<module>.<property>`, then `--setting`.
+     *
+     * @param  ModuleConfig[]  $modules
+     * @return array<string, array{settings: InstallSettings, template: array<string, mixed>, flags: array<string, mixed>}>|string
+     */
+    private function installSettings(array $modules): array|string
+    {
+        $plan = [];
+
+        foreach ($modules as $module) {
+            $plan[$module->name] = ['settings' => InstallSettings::of($module), 'template' => [], 'flags' => []];
+        }
+
+        try {
+            foreach ($modules as $module) {
+                $declared = data_get(json_decode((string) @file_get_contents($module->path('composer.json')), true), 'extra.saucebase.module-settings', []);
+
+                foreach ((array) $declared as $target => $values) {
+                    foreach ((array) $values as $name => $value) {
+                        $plan[$target]['template'][$name] = $this->settingsOf($plan, (string) $target)->cast((string) $name, $value);
+                    }
+                }
+            }
+
+            foreach ((array) $this->option('setting') as $flag) {
+                if (! preg_match('/^([a-z0-9-]+)\.([A-Za-z_][A-Za-z0-9_]*)=(.*)$/', (string) $flag, $match)) {
+                    throw new \InvalidArgumentException("--setting takes module.property=value: {$flag}");
+                }
+
+                $plan[$match[1]]['flags'][$match[2]] = $this->settingsOf($plan, $match[1])->cast($match[2], $match[3]);
+            }
+        } catch (\InvalidArgumentException $e) {
+            return 'module-settings: '.$e->getMessage();
+        }
+
+        return $plan;
+    }
+
+    /** @param  array<string, array{settings: InstallSettings}>  $plan */
+    private function settingsOf(array $plan, string $module): InstallSettings
+    {
+        return $plan[$module]['settings'] ?? throw new \InvalidArgumentException("{$module} is not being installed here.");
+    }
+
+    /**
+     * Saves each module's settings: a flag beats the person's answer, which beats the
+     * template's value. Asked only when somebody is there and wants to.
+     *
+     * @param  array<string, array{settings: InstallSettings, template: array<string, mixed>, flags: array<string, mixed>}>  $plan
+     */
+    private function applySettings(array $plan): void
+    {
+        foreach ($plan as $name => ['settings' => $settings, 'template' => $template, 'flags' => $flags]) {
+            if ($settings->isEmpty()) {
+                continue;
+            }
+
+            $answers = $this->input->isInteractive() && confirm(__('Configure :module?', ['module' => $name]), false)
+                ? $settings->ask($template, array_keys($flags))
+                : [];
+
+            $settings->save([...$template, ...$answers, ...$flags]);
+        }
     }
 
     /**

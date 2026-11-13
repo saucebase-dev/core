@@ -23,7 +23,8 @@ class TemplateInstallCommand extends Command
     protected $signature = 'saucebase:template-install
                             {template : Template name (uptime)}
                             {--state= : Seed this state instead of the template\'s default}
-                            {--force : Seed in production without asking}';
+                            {--force : Seed in production without asking}
+                            {--setting=* : An install setting, module.property=value (tenancy.invitations_enabled=false)}';
 
     protected $description = 'Install a Saucebase template into a fresh application';
 
@@ -261,7 +262,8 @@ class TemplateInstallCommand extends Command
     private function retry(string $error): int
     {
         $command = 'php artisan saucebase:template-install '.$this->argument('template')
-            .($this->option('state') ? ' --state='.$this->option('state') : '');
+            .($this->option('state') ? ' --state='.$this->option('state') : '')
+            .collect((array) $this->option('setting'))->map(fn (string $setting) => ' --setting='.escapeshellarg($setting))->implode('');
 
         $this->components->error($error);
         $this->line("  Fix it, then run again: {$command}");

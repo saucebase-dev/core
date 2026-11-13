@@ -24,12 +24,18 @@ trait InstallsSaucebasePackages
      * A new process, the first to load the packages Composer just installed.
      * TTY, so a module's own install command can ask its questions.
      *
+     * `--configure`: these modules are being installed now, so their install settings
+     * are set (a template's, the `--setting` flags, then prompts). A plain re-run of
+     * `saucebase:module-setup` leaves settings an admin may have changed since alone.
+     *
      * @param  string[]  $modules  In the order to set them up.
      */
     protected function runSetup(array $modules, ?string $state, bool $force): bool
     {
+        $settings = array_map(fn (string $setting) => "--setting={$setting}", (array) $this->option('setting'));
+
         return Process::path(base_path())->forever()->tty(SymfonyProcess::isTtySupported() && $this->input->isInteractive())
-            ->run([PHP_BINARY, 'artisan', 'saucebase:module-setup', ...$modules, ...($state ? ["--state={$state}"] : []), ...($force ? ['--force'] : [])], $this->writeOutput(...))
+            ->run([PHP_BINARY, 'artisan', 'saucebase:module-setup', ...$modules, ...($state ? ["--state={$state}"] : []), ...($force ? ['--force'] : []), '--configure', ...$settings], $this->writeOutput(...))
             ->successful();
     }
 

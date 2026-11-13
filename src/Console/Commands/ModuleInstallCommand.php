@@ -21,7 +21,8 @@ class ModuleInstallCommand extends Command
     protected $signature = 'saucebase:module-install
                             {modules?* : Module names (billing). Omit to pick from a list}
                             {--state= : Also seed a state (showcase: sample content)}
-                            {--force : Seed in production without asking}';
+                            {--force : Seed in production without asking}
+                            {--setting=* : An install setting, module.property=value (tenancy.invitations_enabled=false)}';
 
     protected $description = 'Install Saucebase modules into this application';
 
