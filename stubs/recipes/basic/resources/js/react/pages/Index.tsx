@@ -17,7 +17,7 @@ export default function Index() {
 
     return (
         <AppLayout title={t(title)} breadcrumbs={[{ title: t(title) }]}>
-            <div className="flex flex-1 flex-col gap-6 p-6 pt-2">
+            <div className="flex flex-1 flex-col gap-6 p-6">
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div>
