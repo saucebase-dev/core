@@ -23,6 +23,55 @@ export function initializeModals(putConfig: PutConfig): void {
     );
 
     releaseCoveredModalFocus();
+    escapeClosesTheTopLayerFirst();
+}
+
+/**
+ * Escape closes what is on top: a menu, select or dialog opened over a modal, not the
+ * modal under it.
+ *
+ * The modal listens for Escape on `document` and reka-ui's layers on `window`, so the
+ * modal hears it first and closes, taking the open menu and whatever was typed with
+ * it. Caught here on the way down instead: while a reka layer outside the modal is
+ * open, the key goes to `window` alone, where only reka is listening.
+ */
+function escapeClosesTheTopLayerFirst(): void {
+    if (typeof document === 'undefined') return;
+
+    document.addEventListener(
+        'keydown',
+        (event) => {
+            if (
+                event.key !== 'Escape' ||
+                !document.querySelector('.im-modal-wrapper')
+            ) {
+                return;
+            }
+
+            // A closing layer stays in the page until its exit animation ends.
+            const layerAbove = [
+                ...document.querySelectorAll(
+                    '[data-dismissable-layer]:not([data-state="closed"])',
+                ),
+            ].some((layer) => !layer.closest('.im-modal-wrapper'));
+
+            if (layerAbove) {
+                event.stopPropagation();
+                // Cancelable, and its answer carried back: a layer that refuses Escape
+                // (mid-submit, say) stays open, and the browser's default stays off too.
+                const forwarded = new KeyboardEvent('keydown', {
+                    key: 'Escape',
+                    bubbles: true,
+                    cancelable: true,
+                });
+
+                if (!window.dispatchEvent(forwarded)) {
+                    event.preventDefault();
+                }
+            }
+        },
+        true,
+    );
 }
 
 /**
@@ -35,8 +84,10 @@ export function initializeModals(putConfig: PutConfig): void {
  * overflows.
  *
  * An overlay marks everything it covered with `data-aria-hidden` when it opens,
- * so a covered modal has an overlay above it and no business holding focus.
- * Swallowing the event in the capture phase keeps it from reaching either trap.
+ * so a covered modal has an overlay above it and no business holding focus. A
+ * non-modal layer (popover, combobox) marks nothing, so focus landing inside one
+ * counts too. Swallowing the event in the capture phase keeps it from reaching
+ * either trap.
  */
 function releaseCoveredModalFocus(): void {
     // The server renders the same app but has no document to listen on.
@@ -45,15 +96,27 @@ function releaseCoveredModalFocus(): void {
     document.addEventListener(
         'focusin',
         (event) => {
-            const covered = document.querySelector(
-                '[data-aria-hidden] .im-modal-wrapper',
-            );
+            const modal = document.querySelector('.im-modal-wrapper');
+            const target = event.target;
 
             if (
-                covered &&
-                event.target instanceof Node &&
-                !covered.contains(event.target)
+                !modal ||
+                !(target instanceof Element) ||
+                modal.contains(target)
             ) {
+                return;
+            }
+
+            // Covered by a modal layer, or focus moving into a non-modal one (a popover
+            // or combobox opened from the modal): either way the trap must let go, or
+            // it pulls focus back and the layer closes as soon as it opens.
+            const covered = modal.closest('[data-aria-hidden]') !== null;
+            const intoLayer =
+                target.closest(
+                    '[data-reka-popper-content-wrapper], [data-dismissable-layer]',
+                ) !== null;
+
+            if (covered || intoLayer) {
                 event.stopPropagation();
             }
         },
