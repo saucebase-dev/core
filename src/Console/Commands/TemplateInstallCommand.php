@@ -13,7 +13,7 @@ use Symfony\Component\Finder\Finder;
 
 /**
  * Turns a fresh application into a template: requires it (with its modules),
- * copies its stubs over the app, then sets everything up with a state.
+ * copies its stubs over the app, then sets everything up; --state seeds demo content.
  * The copied files belong to the app; updating the template never touches them.
  */
 class TemplateInstallCommand extends Command
@@ -22,7 +22,7 @@ class TemplateInstallCommand extends Command
 
     protected $signature = 'saucebase:template-install
                             {template : Template name (uptime)}
-                            {--state= : Seed this state instead of the template\'s default}
+                            {--state= : Seed one of the template\'s states, such as default (its demo); without it the app starts clean}
                             {--force : Seed in production without asking}
                             {--set=* : Configure a module, module.key=value (tenancy.mode=subdomain, auth.registration_enabled=false)}';
 
@@ -51,7 +51,8 @@ class TemplateInstallCommand extends Command
             return $this->refuse("This app already has the {$other} template. An app takes one template, installed fresh.");
         }
 
-        if (blank(config('saucebase.demo_password'))) {
+        // Only a seeded state creates accounts; a clean install needs no password.
+        if ($this->option('state') && blank(config('saucebase.demo_password'))) {
             return $this->refuse('Set DEMO_PASSWORD in .env. Every account the template seeds uses it.');
         }
 
@@ -89,7 +90,7 @@ class TemplateInstallCommand extends Command
 
         // Last, in a process of its own: the state sees the app as every module's install
         // command left it (tenancy's address mode, for one, decides where a seeded site lives).
-        $state = $this->state($template);
+        $state = $this->state();
 
         if ($state !== null && ! $this->seedState($modules, $state, $force)) {
             return $this->retry('Seeding the template\'s state failed.');
@@ -247,16 +248,13 @@ class TemplateInstallCommand extends Command
         return $taken;
     }
 
-    /** --state, else the template's `default` state when it ships one. */
-    private function state(string $template): ?string
+    /**
+     * Only the state --state names. Demo content is asked for, never assumed (a real app
+     * would have to delete it), so a plain install leaves the app clean.
+     */
+    private function state(): ?string
     {
-        if ($this->option('state')) {
-            return $this->option('state');
-        }
-
-        $seeder = 'Default'.Str::studly($template).'DatabaseSeeder.php';
-
-        return file_exists(base_path("modules/{$template}/database/seeders/{$seeder}")) ? 'default' : null;
+        return $this->option('state') ?: null;
     }
 
     private function retry(string $error): int

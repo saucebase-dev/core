@@ -60,13 +60,13 @@ class TemplateInstallCommandTest extends TestCase
         $this->assertDirectoryDoesNotExist($this->appPath.'/resources/js/vue');
     }
 
-    public function test_setup_runs_after_the_stubs_with_the_default_state(): void
+    public function test_setup_runs_after_the_stubs_with_the_state_asked_for(): void
     {
         $this->template(['routes/web.php' => 'template'], defaultState: true, setup: function () {
             $this->assertSame('template', $this->files->get($this->appPath.'/routes/web.php'));
         });
 
-        $this->artisan('saucebase:template-install', ['template' => 'uptime'])->assertSuccessful();
+        $this->artisan('saucebase:template-install', ['template' => 'uptime', '--state' => 'default'])->assertSuccessful();
 
         Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'uptime', '--configure']);
         Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'modules:seed', '--module=auth', '--module=uptime', '--state=default']);
@@ -82,9 +82,29 @@ class TemplateInstallCommandTest extends TestCase
             Process::assertDidntRun(fn (PendingProcess $p) => in_array('modules:seed', $p->command, true));
         });
 
-        $this->artisan('saucebase:template-install', ['template' => 'uptime'])->assertSuccessful();
+        $this->artisan('saucebase:template-install', ['template' => 'uptime', '--state' => 'default'])->assertSuccessful();
 
         Process::assertRan(fn (PendingProcess $p) => in_array('modules:seed', $p->command, true));
+    }
+
+    /** Demo content is asked for, like `saucebase new --demo`: a real app would have to delete it. */
+    public function test_without_a_state_the_template_installs_clean(): void
+    {
+        $this->template([], defaultState: true);
+
+        $this->artisan('saucebase:template-install', ['template' => 'uptime'])->assertSuccessful();
+
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'uptime', '--configure']);
+        Process::assertDidntRun(fn (PendingProcess $p) => in_array('modules:seed', $p->command, true));
+    }
+
+    /** Only seeded accounts use the password: a clean install needs none. */
+    public function test_a_clean_install_needs_no_demo_password(): void
+    {
+        config(['saucebase.demo_password' => null]);
+        $this->template([], defaultState: true);
+
+        $this->artisan('saucebase:template-install', ['template' => 'uptime'])->assertSuccessful();
     }
 
     public function test_a_state_option_replaces_the_default(): void
@@ -121,7 +141,7 @@ class TemplateInstallCommandTest extends TestCase
         config(['saucebase.demo_password' => null]);
         Process::fake();
 
-        $this->artisan('saucebase:template-install', ['template' => 'uptime'])->assertFailed();
+        $this->artisan('saucebase:template-install', ['template' => 'uptime', '--state' => 'default'])->assertFailed();
 
         Process::assertNothingRan();
     }
