@@ -51,11 +51,6 @@ class TemplateInstallCommand extends Command
             return $this->refuse("This app already has the {$other} template. An app takes one template, installed fresh.");
         }
 
-        // Only a seeded state creates accounts; a clean install needs no password.
-        if ($this->option('state') && blank(config('saucebase.demo_password'))) {
-            return $this->refuse('Set DEMO_PASSWORD in .env. Every account the template seeds uses it.');
-        }
-
         if (! $this->requirePackages(["saucebase/{$template}"])) {
             return $this->refuse('Composer could not install the template. Nothing else was changed.');
         }

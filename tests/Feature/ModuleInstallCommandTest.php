@@ -138,6 +138,16 @@ class ModuleInstallCommandTest extends TestCase
         Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase', '--configure']);
     }
 
+    /** The seeding makes a missing DEMO_PASSWORD (modules:seed), so the install doesn't stop for it. */
+    public function test_a_blank_demo_password_does_not_stop_a_state(): void
+    {
+        Process::fake();
+        config(['saucebase.demo_password' => null]);
+        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--state' => 'showcase'])->assertSuccessful();
+
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase', '--configure']);
+    }
+
     public function test_force_is_passed_on_to_the_setup(): void
     {
         Process::fake();
@@ -153,18 +163,6 @@ class ModuleInstallCommandTest extends TestCase
         $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--set' => ['blog.comments=false']])->assertSuccessful();
 
         Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--configure', '--set=blog.comments=false']);
-    }
-
-    public function test_a_state_without_a_demo_password_fails_before_anything_runs(): void
-    {
-        Process::fake();
-        config(['saucebase.demo_password' => null]);
-
-        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--state' => 'showcase'])
-            ->expectsOutputToContain('Set DEMO_PASSWORD in .env')
-            ->assertFailed();
-
-        Process::assertNothingRan();
     }
 
     public function test_a_failed_require_stops_before_the_setup(): void

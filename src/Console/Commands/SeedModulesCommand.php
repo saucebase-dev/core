@@ -2,6 +2,7 @@
 
 namespace Saucebase\Core\Console\Commands;
 
+use Dotenv\Dotenv;
 use Illuminate\Console\Command;
 use Illuminate\Console\ConfirmableTrait;
 use Illuminate\Support\Collection;
@@ -27,16 +28,14 @@ class SeedModulesCommand extends Command
     {
         $state = $this->option('state') ? Str::studly($this->option('state')) : null;
 
-        if ($state !== null && blank(config('saucebase.demo_password'))) {
-            $this->components->error('Set DEMO_PASSWORD in .env to seed a state. Every account it creates uses it.');
-
-            return self::FAILURE;
-        }
-
         // Asked once here rather than by db:seed for every module. A state creates sample
         // accounts and content: never in production by accident.
         if (! $this->confirmToProceed()) {
             return self::FAILURE;
+        }
+
+        if ($state !== null && blank(config('saucebase.demo_password'))) {
+            $this->makeDemoPassword();
         }
 
         $modules = $registry->modules();
@@ -74,6 +73,45 @@ class SeedModulesCommand extends Command
 
         // Every module's required data exists before any state refers to it.
         return $this->seed($required) && $this->seed($stated) ? self::SUCCESS : self::FAILURE;
+    }
+
+    /**
+     * Every account a state creates signs in with DEMO_PASSWORD. Without one, a random one
+     * (as the installer makes) is saved in .env and shown, never a guessable default.
+     */
+    private function makeDemoPassword(): void
+    {
+        $env = $this->laravel->environmentFilePath();
+        $saved = is_file($env) ? (Dotenv::parse((string) file_get_contents($env))['DEMO_PASSWORD'] ?? '') : '';
+
+        // Set in .env but hidden by a cached config: use it, or every run would replace it.
+        // Laravel reads these spellings as unset (Env::get), so they are not a password.
+        if (! in_array(strtolower(trim($saved)), ['', 'null', '(null)', 'empty', '(empty)'], true)) {
+            config(['saucebase.demo_password' => $saved]);
+
+            return;
+        }
+
+        $password = Str::password(10, symbols: false);
+        config(['saucebase.demo_password' => $password]);
+
+        if (! is_file($env)) {
+            $this->components->warn("No .env file: the demo accounts use the password {$password} for this run, not saved. Set DEMO_PASSWORD to keep one.");
+
+            return;
+        }
+
+        $contents = (string) file_get_contents($env);
+        $line = "DEMO_PASSWORD={$password}";
+        // The whole value: a quoted one may span lines.
+        $assignment = '/^DEMO_PASSWORD=(?:"(?:\\\\.|[^"\\\\])*"|\'[^\']*\'|[^\n]*)/m';
+        $contents = preg_match($assignment, $contents)
+            ? preg_replace($assignment, $line, $contents)
+            : rtrim($contents, "\n").($contents === '' ? '' : "\n")."{$line}\n";
+
+        file_put_contents($env, $contents);
+
+        $this->components->warn("DEMO_PASSWORD was not set. The demo accounts use {$password}, now saved in .env.");
     }
 
     /**
