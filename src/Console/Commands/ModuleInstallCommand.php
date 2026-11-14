@@ -28,12 +28,6 @@ class ModuleInstallCommand extends Command
 
     public function handle(): int
     {
-        if ($this->option('state') && blank(config('saucebase.demo_password'))) {
-            $this->components->error('Set DEMO_PASSWORD in .env to seed a state. Every account it creates uses it.');
-
-            return self::FAILURE;
-        }
-
         $modules = $this->argument('modules') ?: ($this->input->isInteractive() ? $this->pick() : []);
 
         if ($modules === null) {

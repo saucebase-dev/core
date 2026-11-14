@@ -137,10 +137,10 @@ class ModuleSetupCommandTest extends TestCase
     public function test_a_failed_step_fails_the_setup_and_stops_there(): void
     {
         Process::fake();
-        config(['saucebase.demo_password' => null]); // modules:seed --state refuses without it
 
-        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--state' => 'showcase'])
-            ->expectsOutputToContain('run this again: php artisan saucebase:module-setup module-test-fixture --state=showcase')
+        // modules:seed fails on a state no module has.
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--state' => 'missing'])
+            ->expectsOutputToContain('run this again: php artisan saucebase:module-setup module-test-fixture --state=missing')
             ->assertFailed();
 
         $this->assertFalse(InstallFixtureCommand::$ran);

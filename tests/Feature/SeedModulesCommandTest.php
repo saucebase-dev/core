@@ -2,6 +2,7 @@
 
 namespace Saucebase\Core\Tests\Feature;
 
+use Dotenv\Dotenv;
 use InterNACHI\Modular\Support\ModuleConfig;
 use InterNACHI\Modular\Support\ModuleRegistry;
 use Mockery;
@@ -46,15 +47,119 @@ class SeedModulesCommandTest extends TestCase
         );
     }
 
-    public function test_a_state_refuses_without_a_demo_password(): void
+    /** No DEMO_PASSWORD: one is made, saved in .env, and shown, so the demo accounts can be used. */
+    public function test_a_state_without_a_demo_password_makes_one_and_saves_it(): void
     {
         config(['saucebase.demo_password' => null]);
+        $env = $this->envFile("APP_NAME=Acme\n");
 
         $this->artisan('modules:seed', ['--state' => 'showcase'])
-            ->expectsOutputToContain('Set DEMO_PASSWORD in .env')
-            ->assertFailed();
+            ->expectsOutputToContain('DEMO_PASSWORD')
+            ->assertSuccessful();
 
-        $this->assertSame([], DatabaseSeeder::$ran);
+        $password = Dotenv::parse(file_get_contents($env))['DEMO_PASSWORD'] ?? '';
+        $this->assertSame(10, strlen($password));
+        $this->assertSame($password, config('saucebase.demo_password'));
+        $this->assertSame('Acme', Dotenv::parse(file_get_contents($env))['APP_NAME']);
+        $this->assertSame(['DatabaseSeeder', 'ShowcaseModuleTestFixtureDatabaseSeeder'], DatabaseSeeder::$ran);
+    }
+
+    public function test_a_demo_password_already_set_is_kept(): void
+    {
+        $env = $this->envFile("DEMO_PASSWORD=secret\n");
+
+        $this->artisan('modules:seed', ['--state' => 'showcase'])->assertSuccessful();
+
+        $this->assertSame("DEMO_PASSWORD=secret\n", file_get_contents($env));
+        $this->assertSame('secret', config('saucebase.demo_password'));
+    }
+
+    /** A cached config hides .env: the password saved there is used, not replaced. */
+    public function test_a_password_in_env_wins_over_a_blank_cached_config(): void
+    {
+        config(['saucebase.demo_password' => null]);
+        $env = $this->envFile("DEMO_PASSWORD=saved\n");
+
+        $this->artisan('modules:seed', ['--state' => 'showcase'])->assertSuccessful();
+
+        $this->assertSame("DEMO_PASSWORD=saved\n", file_get_contents($env));
+        $this->assertSame('saved', config('saucebase.demo_password'));
+    }
+
+    /** Laravel reads these as unset, so they get a random password, never the literal word. */
+    public function test_an_env_value_laravel_reads_as_empty_gets_a_random_password(): void
+    {
+        foreach (['null', '(null)', 'empty', '(empty)', '"  "'] as $value) {
+            config(['saucebase.demo_password' => null]);
+            $env = $this->envFile("DEMO_PASSWORD={$value}\n");
+
+            $this->artisan('modules:seed', ['--state' => 'showcase'])->assertSuccessful();
+
+            $password = Dotenv::parse(file_get_contents($env))['DEMO_PASSWORD'];
+            $this->assertSame(10, strlen($password), "DEMO_PASSWORD={$value}");
+            $this->assertSame($password, config('saucebase.demo_password'));
+        }
+    }
+
+    /** A blank quoted value over several lines is replaced whole, so .env still parses. */
+    public function test_a_blank_multiline_value_is_replaced_whole(): void
+    {
+        config(['saucebase.demo_password' => null]);
+        $env = $this->envFile("DEMO_PASSWORD=\"\n\"\nAPP_NAME=Acme\n");
+
+        $this->artisan('modules:seed', ['--state' => 'showcase'])->assertSuccessful();
+
+        $parsed = Dotenv::parse(file_get_contents($env));
+        $this->assertSame(10, strlen($parsed['DEMO_PASSWORD']));
+        $this->assertSame('Acme', $parsed['APP_NAME']);
+    }
+
+    public function test_every_blank_assignment_gets_the_saved_password(): void
+    {
+        config(['saucebase.demo_password' => null]);
+        $env = $this->envFile("DEMO_PASSWORD=\nAPP_NAME=Acme\nDEMO_PASSWORD=\n");
+
+        $this->artisan('modules:seed', ['--state' => 'showcase'])->assertSuccessful();
+
+        $this->assertSame(config('saucebase.demo_password'), Dotenv::parse(file_get_contents($env))['DEMO_PASSWORD']);
+    }
+
+    /** Env vars without a file (CI, containers): the password works for this run, and says it wasn't saved. */
+    public function test_without_an_env_file_the_made_password_is_used_and_not_saved(): void
+    {
+        config(['saucebase.demo_password' => null]);
+        $env = $this->envFile(null);
+
+        $this->artisan('modules:seed', ['--state' => 'showcase'])
+            ->expectsOutputToContain('not saved')
+            ->assertSuccessful();
+
+        $this->assertFileDoesNotExist($env);
+        $this->assertSame(10, strlen((string) config('saucebase.demo_password')));
+    }
+
+    public function test_required_data_alone_makes_no_password(): void
+    {
+        config(['saucebase.demo_password' => null]);
+        $env = $this->envFile("APP_NAME=Acme\n");
+
+        $this->artisan('modules:seed')->assertSuccessful();
+
+        $this->assertSame("APP_NAME=Acme\n", file_get_contents($env));
+    }
+
+    /** The app's .env in a directory of its own, or no .env when null. */
+    private function envFile(?string $contents): string
+    {
+        $dir = sys_get_temp_dir().'/seed-env-'.uniqid();
+        mkdir($dir);
+        $this->app->useEnvironmentPath($dir);
+
+        if ($contents !== null) {
+            file_put_contents("{$dir}/.env", $contents);
+        }
+
+        return "{$dir}/.env";
     }
 
     public function test_a_state_no_module_provides_fails_without_seeding_anything(): void

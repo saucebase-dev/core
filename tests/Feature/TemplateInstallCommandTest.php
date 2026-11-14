@@ -136,14 +136,15 @@ class TemplateInstallCommandTest extends TestCase
         Process::assertDidntRun(fn (PendingProcess $p) => in_array('modules:seed', $p->command, true));
     }
 
-    public function test_a_blank_demo_password_fails_before_composer_runs(): void
+    /** The seeding makes a missing DEMO_PASSWORD (modules:seed), so the install doesn't stop for it. */
+    public function test_a_blank_demo_password_does_not_stop_the_install(): void
     {
         config(['saucebase.demo_password' => null]);
         Process::fake();
 
-        $this->artisan('saucebase:template-install', ['template' => 'uptime', '--state' => 'default'])->assertFailed();
+        $this->artisan('saucebase:template-install', ['template' => 'uptime', '--state' => 'default']);
 
-        Process::assertNothingRan();
+        Process::assertRan(fn (PendingProcess $p) => $p->command[0] === 'composer');
     }
 
     public function test_a_contributor_checkout_is_refused(): void
