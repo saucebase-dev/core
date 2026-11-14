@@ -1,0 +1,39 @@
+{
+    "name": "{COMPOSER_VENDOR}/{module-}",
+    "description": "A Saucebase template.",
+    "type": "saucebase-template",
+    "license": "proprietary",
+    "version": "0.1.0",
+    "require": {
+        "saucebase/core": "^2.13"
+    },
+    "authors": [
+        {
+            "name": "Saucebase",
+            "email": "hello@saucebase.dev"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "{MODULE_NAMESPACE}\\{ModuleStudly}\\Providers\\{ModuleStudly}ServiceProvider"
+            ]
+        },
+        "saucebase": {
+            "frameworks": []
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "{MODULE_NAMESPACE}\\{ModuleStudly}\\": "src/",
+            "{MODULE_NAMESPACE}\\{ModuleStudly}\\Database\\Factories\\": "database/factories/",
+            "{MODULE_NAMESPACE}\\{ModuleStudly}\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "{MODULE_NAMESPACE}\\{ModuleStudly}\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable"
+}

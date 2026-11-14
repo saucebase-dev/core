@@ -24,6 +24,14 @@ class ProjectConfig
         return $this->load()['template'] ?? null;
     }
 
+    /** Names the template this app builds, in saucebase.json. */
+    public function setTemplate(string $template): void
+    {
+        $this->data = [...$this->load(), 'template' => $template];
+
+        file_put_contents(base_path('saucebase.json'), json_encode($this->data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)."\n");
+    }
+
     /** Whether pages may render on the server. On unless the project turned it off. */
     public function ssr(): bool
     {

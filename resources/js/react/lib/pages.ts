@@ -3,8 +3,12 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 
 declare const __SAUCEBASE_CONTRIBUTOR__: boolean;
 
-/** A contributor checkout keeps each framework's module files in their own folder; an installed app is flat. */
-const tree = __SAUCEBASE_CONTRIBUTOR__ ? 'react/' : '';
+/**
+ * A contributor checkout keeps each framework's module files in their own folder; an
+ * installed app's modules are flat, except the template the app builds, which keeps its
+ * folder because it is published to other apps.
+ */
+const trees = __SAUCEBASE_CONTRIBUTOR__ ? ['react/'] : ['', 'react/'];
 
 let appPages: Record<string, () => Promise<ResolvedComponent>> = {};
 
@@ -32,8 +36,13 @@ export function resolveModularPageComponent(
             .replace(/([a-z])([A-Z])/g, '$1-$2')
             .toLowerCase();
 
+        const paths = trees.map(
+            (tree) =>
+                `/modules/${moduleFolderName}/resources/js/${tree}pages/${componentPath}.tsx`,
+        );
+
         return resolvePageComponent(
-            `/modules/${moduleFolderName}/resources/js/${tree}pages/${componentPath}.tsx`,
+            paths.length === 1 ? paths[0] : paths,
             import.meta.glob<ResolvedComponent>(
                 '/modules/*/resources/js/**/pages/**/*.tsx',
             ),

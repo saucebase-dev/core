@@ -128,6 +128,40 @@ class TemplateCaptureCommandTest extends TestCase
         $this->artisan('saucebase:template-capture')->assertFailed();
     }
 
+    /** An installed app's frontend is flat; its stubs keep the stack folder install drops. */
+    public function test_an_app_that_builds_a_template_files_frontend_stubs_under_its_stack(): void
+    {
+        $this->write('saucebase.json', '{"framework": "vue", "template": "uptime"}');
+        $this->write('resources/js/pages/Index.vue', 'home');
+        $this->write('resources/views/app.blade.php', 'view');
+        $this->write('routes/web.php', 'routes');
+
+        $this->artisan('saucebase:template-capture', ['files' => ['resources/js/pages/Index.vue', 'resources/views/app.blade.php', 'routes/web.php']])
+            ->assertSuccessful();
+
+        $this->assertSame('home', $this->stub('resources/js/vue/pages/Index.vue'));
+        $this->assertSame('view', $this->stub('resources/views/vue/app.blade.php'));
+        $this->assertSame('routes', $this->stub('routes/web.php'));
+        $this->assertFileDoesNotExist($this->appPath.'/modules/uptime/stubs/resources/js/pages/Index.vue');
+
+        // Refreshed from the same flat files, and checked against them.
+        $this->write('resources/js/pages/Index.vue', 'new home');
+        $this->artisan('saucebase:template-capture', ['--check' => true])->assertFailed();
+        $this->artisan('saucebase:template-capture')->assertSuccessful();
+        $this->assertSame('new home', $this->stub('resources/js/vue/pages/Index.vue'));
+        $this->artisan('saucebase:template-capture', ['--check' => true])->assertSuccessful();
+    }
+
+    /** Another stack's stubs have no file in this app to come from: left as they are. */
+    public function test_an_app_leaves_another_stacks_stubs_alone(): void
+    {
+        $this->write('saucebase.json', '{"framework": "vue", "template": "uptime"}');
+        $this->write('modules/uptime/stubs/resources/js/react/pages/Index.tsx', 'react');
+
+        $this->artisan('saucebase:template-capture', ['--check' => true])->assertSuccessful();
+        $this->assertSame('react', $this->stub('resources/js/react/pages/Index.tsx'));
+    }
+
     private function write(string $path, string $contents): void
     {
         $this->files->ensureDirectoryExists(dirname($this->appPath.'/'.$path));

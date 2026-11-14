@@ -131,7 +131,7 @@ class RecipeCommandTest extends TestCase
         $this->files->put($this->appPath.'/stubs/recipes/api-only/composer.json', json_encode(['name' => '{COMPOSER_VENDOR}/{module-}']));
 
         $this->artisan('saucebase:recipe', ['module' => 'Notes'])
-            ->expectsChoice('Which recipe would you like to use?', 'basic', ['basic' => 'Basic', 'api-only' => 'API only'])
+            ->expectsChoice('Which recipe would you like to use?', 'basic', ['basic' => 'Basic', 'template' => 'Template', 'api-only' => 'API only'])
             ->assertSuccessful();
 
         $this->assertFileExists($this->module('src/Providers/NotesServiceProvider.php'));
@@ -213,6 +213,75 @@ class RecipeCommandTest extends TestCase
         $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'basic'])->assertSuccessful();
 
         $this->assertDirectoryDoesNotExist($this->appPath.'/saucebase-temp');
+    }
+
+    /** An app builds its template in place: the recipe sets everything a template needs. */
+    public function test_the_template_recipe_makes_the_template_the_app_builds(): void
+    {
+        $this->installedWith('vue');
+
+        $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'template', '--vendor' => 'acme'])->assertSuccessful();
+
+        $composer = json_decode($this->read('composer.json'), true);
+        $this->assertSame('acme/notes', $composer['name']);
+        $this->assertSame('saucebase-template', $composer['type']);
+        $this->assertSame(['vue'], $composer['extra']['saucebase']['frameworks']);
+        $this->assertArrayHasKey('saucebase/core', $composer['require']);
+
+        // Published to other apps, so its files keep their stack folder; the other stack goes.
+        $this->assertFileExists($this->module('resources/js/vue/pages/Index.vue'));
+        $this->assertFileExists($this->module('resources/js/vue/app.ts'));
+        $this->assertDirectoryDoesNotExist($this->module('resources/js/react'));
+        $this->assertDirectoryDoesNotExist($this->module('resources/js/pages'));
+
+        // Its demo is the default state.
+        $this->assertFileExists($this->module('database/seeders/DefaultNotesDatabaseSeeder.php'));
+        $this->assertStringContainsString('class DefaultNotesDatabaseSeeder', $this->read('database/seeders/DefaultNotesDatabaseSeeder.php'));
+        $this->assertSame([], glob($this->module('database/seeders/Showcase*')));
+
+        $this->assertStringContainsString('--template=acme/notes', $this->read('README.md'));
+        $this->assertStringContainsString('saucebase-template-development', $this->read('resources/boost/skills/saucebase-notes-development/SKILL.md'));
+
+        $this->assertSame('notes', json_decode($this->files->get($this->appPath.'/saucebase.json'), true)['template']);
+    }
+
+    /** Built on this app's modules, so it requires them: an app it installs into gets them too. */
+    public function test_a_template_requires_the_modules_the_app_has(): void
+    {
+        $this->installedWith('vue');
+        $this->files->put($this->appPath.'/composer.lock', json_encode(['packages' => [
+            ['name' => 'saucebase/auth', 'type' => 'saucebase-module', 'version' => 'v3.2.1'],
+            ['name' => 'saucebase/blog', 'type' => 'saucebase-module', 'version' => 'dev-dev'],
+            ['name' => 'saucebase/core', 'type' => 'library', 'version' => 'v2.13.0'],
+            ['name' => 'laravel/framework', 'type' => 'library', 'version' => 'v13.0.0'],
+        ]]));
+
+        $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'template', '--vendor' => 'acme'])->assertSuccessful();
+
+        $this->assertSame(
+            ['saucebase/core' => '^2.13', 'saucebase/auth' => '^3.2', 'saucebase/blog' => '*'],
+            json_decode($this->read('composer.json'), true)['require'],
+        );
+    }
+
+    public function test_an_app_builds_one_template(): void
+    {
+        $this->files->put($this->appPath.'/saucebase.json', json_encode(['framework' => 'vue', 'template' => 'shop']));
+
+        $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'template'])
+            ->expectsOutputToContain('already builds the shop template')
+            ->assertFailed();
+
+        $this->assertDirectoryDoesNotExist($this->appPath.'/modules/notes');
+    }
+
+    public function test_a_module_recipe_leaves_the_app_template_alone(): void
+    {
+        $this->installedWith('vue');
+
+        $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'basic'])->assertSuccessful();
+
+        $this->assertArrayNotHasKey('template', json_decode($this->files->get($this->appPath.'/saucebase.json'), true));
     }
 
     private function installedWith(string $framework, bool $contributor = false): void
