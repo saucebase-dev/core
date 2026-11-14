@@ -1,0 +1,5 @@
+{
+    "name": "@{COMPOSER_VENDOR}/{module-}",
+    "private": true,
+    "type": "module"
+}

@@ -60,6 +60,25 @@ class TemplateInstallCommandTest extends TestCase
         $this->assertDirectoryDoesNotExist($this->appPath.'/resources/js/vue');
     }
 
+    /** Any vendor's template: the full package name, its folder the name after the slash. */
+    public function test_a_template_is_named_by_its_full_package_name(): void
+    {
+        $this->files->ensureDirectoryExists($this->appPath.'/modules/notes/stubs/routes');
+        $this->files->put($this->appPath.'/modules/notes/stubs/routes/web.php', 'notes');
+        Process::fake(function (PendingProcess $process) {
+            if ($process->command[0] === 'composer') {
+                $this->files->put($this->appPath.'/composer.lock', $this->lock(['acme/notes' => []], templates: ['acme/notes']));
+            }
+
+            return Process::result();
+        });
+
+        $this->artisan('saucebase:template-install', ['template' => 'acme/notes'])->assertSuccessful();
+
+        Process::assertRan(fn (PendingProcess $p) => $p->command === ['composer', 'require', 'acme/notes', '--no-interaction']);
+        $this->assertSame('notes', $this->files->get($this->appPath.'/routes/web.php'));
+    }
+
     public function test_setup_runs_after_the_stubs_with_the_state_asked_for(): void
     {
         $this->template(['routes/web.php' => 'template'], defaultState: true, setup: function () {

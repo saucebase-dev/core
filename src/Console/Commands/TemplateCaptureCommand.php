@@ -8,8 +8,8 @@ use Illuminate\Support\Str;
 use Saucebase\Core\ProjectConfig;
 
 /**
- * In a template workspace (a contributor checkout whose saucebase.json names a
- * template), overrides are edited in the app. This copies them into the template's
+ * In an app that builds a template (saucebase.json names it: an installed app, or a
+ * contributor checkout), overrides are edited in the app. This copies them into the template's
  * stubs/, which saucebase:template-install later copies into customers' apps.
  * stubs/ is the list: only its files are refreshed, so module patches and other
  * app changes stay out. A file joins the list when named.
@@ -29,10 +29,12 @@ class TemplateCaptureCommand extends Command
     {
         $template = $config->template();
 
-        if (! $config->isContributor() || $template === null) {
-            return $this->refuse('Run this in a template workspace: a contributor checkout with "template" in saucebase.json.');
+        if ($template === null) {
+            return $this->refuse('Run this in an app that builds a template: "template" in saucebase.json.');
         }
 
+        // An installed app's frontend is flat; the stubs keep the stack folder install drops.
+        $stack = $config->isContributor() ? null : $config->getFramework();
         $stubs = base_path("modules/{$template}/stubs");
 
         $paths = $files->isDirectory($stubs)
@@ -40,8 +42,8 @@ class TemplateCaptureCommand extends Command
             : collect();
 
         // Named files and the stubs already there pass the same check, so a stub put in by hand can't leak either.
-        foreach ([...$paths, ...$this->argument('files')] as $path) {
-            $path = $this->normalize($path);
+        foreach ([...$paths, ...array_map(fn (string $path) => $this->stubPath($this->normalize($path), $stack), $this->argument('files'))] as $path) {
+            $path = $path === null ? null : $this->normalize($path);
 
             if ($path === null || ($path !== '.env.example' && Str::is(self::OWN, $path))) {
                 return $this->refuse(($path ?? 'A path outside the app').' belongs to the workspace, not the template.');
@@ -50,15 +52,19 @@ class TemplateCaptureCommand extends Command
             $paths->push($path);
         }
 
-        $paths = $paths->unique()->sort()->values();
-        $missing = $paths->reject(fn (string $path) => $files->isFile(base_path($path)));
+        // Stub => the app file it comes from; another stack's stubs have none here.
+        $sources = $paths->unique()->sort()->values()
+            ->mapWithKeys(fn (string $path) => [$path => $this->appPath($path, $stack)])
+            ->filter();
+
+        $missing = $sources->reject(fn (string $app) => $files->isFile(base_path($app)));
 
         if ($missing->isNotEmpty()) {
-            return $this->refuse('These stubs have no app file to copy: '.$missing->implode(', ').'. Restore the file, or delete the stub.');
+            return $this->refuse('These stubs have no app file to copy: '.$missing->values()->implode(', ').'. Restore the file, or delete the stub.');
         }
 
-        $stale = $paths->filter(fn (string $path) => ! $files->isFile("{$stubs}/{$path}")
-            || $files->get("{$stubs}/{$path}") !== $files->get(base_path($path)));
+        $stale = $sources->filter(fn (string $app, string $path) => ! $files->isFile("{$stubs}/{$path}")
+            || $files->get("{$stubs}/{$path}") !== $files->get(base_path($app)))->keys();
 
         if ($this->option('check')) {
             return $stale->isEmpty() ? self::SUCCESS : $this->refuse(
@@ -68,13 +74,33 @@ class TemplateCaptureCommand extends Command
 
         foreach ($stale as $path) {
             $files->ensureDirectoryExists(dirname("{$stubs}/{$path}"));
-            $files->copy(base_path($path), "{$stubs}/{$path}");
+            $files->copy(base_path($sources[$path]), "{$stubs}/{$path}");
         }
 
         $this->components->info($stale->isEmpty() ? 'Stubs are up to date.' : "Updated {$stale->count()} stubs in modules/{$template}/stubs.");
         $this->components->bulletList($stale->all());
 
         return self::SUCCESS;
+    }
+
+    /** resources/js/pages/Index.vue → resources/js/vue/pages/Index.vue, in an installed app. */
+    private function stubPath(?string $path, ?string $stack): ?string
+    {
+        if ($path === null || $stack === null || ! preg_match('#^resources/(js|views)/(?!vue/|react/)(.+)$#', $path, $match)) {
+            return $path;
+        }
+
+        return "resources/{$match[1]}/{$stack}/{$match[2]}";
+    }
+
+    /** The app file a stub comes from; null for another stack's stub in an installed app. */
+    private function appPath(string $stub, ?string $stack): ?string
+    {
+        if ($stack === null || ! preg_match('#^resources/(js|views)/(vue|react)/(.+)$#', $stub, $match)) {
+            return $stub;
+        }
+
+        return $match[2] === $stack ? "resources/{$match[1]}/{$match[3]}" : null;
     }
 
     /** `./.env` and `routes/../.env` are `.env`: dot segments resolved, so no spelling slips past OWN. Null: outside the app. */

@@ -21,7 +21,7 @@ class TemplateInstallCommand extends Command
     use InstallsSaucebasePackages;
 
     protected $signature = 'saucebase:template-install
-                            {template : Template name (uptime)}
+                            {template : The template\'s package (acme/notes), or a Saucebase template\'s name (uptime)}
                             {--state= : Seed one of the template\'s states, such as default (its demo); without it the app starts clean}
                             {--force : Seed in production without asking}
                             {--set=* : Configure a module, module.key=value (tenancy.mode=subdomain, auth.registration_enabled=false)}';
@@ -35,7 +35,9 @@ class TemplateInstallCommand extends Command
 
     public function handle(Filesystem $files, ProjectConfig $config): int
     {
-        $template = $this->argument('template');
+        // A bare name is one of Saucebase's; its folder under modules/ is the name after the slash.
+        $package = Str::contains($this->argument('template'), '/') ? $this->argument('template') : 'saucebase/'.$this->argument('template');
+        $template = Str::afterLast($package, '/');
 
         if ($config->isContributor()) {
             return $this->refuse('Templates install into an application, not a Saucebase checkout. Use a sandbox app.');
@@ -51,12 +53,12 @@ class TemplateInstallCommand extends Command
             return $this->refuse("This app already has the {$other} template. An app takes one template, installed fresh.");
         }
 
-        if (! $this->requirePackages(["saucebase/{$template}"])) {
+        if (! $this->requirePackages([$package])) {
             return $this->refuse('Composer could not install the template. Nothing else was changed.');
         }
 
         if (($this->lockedPackages()[$template]['type'] ?? null) !== 'saucebase-template') {
-            return $this->refuse("saucebase/{$template} is not a template. Install modules with saucebase:module-install.");
+            return $this->refuse("{$package} is not a template. Install modules with saucebase:module-install.");
         }
 
         $copies = $this->stubs($files, base_path("modules/{$template}/stubs"), $config->getFramework());
