@@ -129,6 +129,11 @@ runs:
                   patch -p1 < "modules/$MODULE/$f"
               done
 
+              # A template also replaces app files (home page, dashboard), as in a customer's app.
+              if [ "$(jq -r .type "modules/$MODULE/composer.json")" = "saucebase-template" ]; then
+                  php artisan saucebase:template-install "$(jq -r .name "modules/$MODULE/composer.json")" --no-interaction
+              fi
+
         - name: Configure the environment
           shell: bash
           working-directory: app
