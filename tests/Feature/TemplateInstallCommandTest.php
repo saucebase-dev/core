@@ -196,6 +196,24 @@ class TemplateInstallCommandTest extends TestCase
         $this->assertSame('template', $this->files->get($this->appPath.'/routes/web.php'));
     }
 
+    /** Composer can fail after writing them (a plugin, a script): the app gets its files back. */
+    public function test_a_failed_composer_require_puts_composer_files_back(): void
+    {
+        Process::fake(function (PendingProcess $process) {
+            $this->files->put($this->appPath.'/composer.json', '{"require": {"saucebase/uptime": "*"}}');
+            $this->files->put($this->appPath.'/composer.lock', $this->lock(['saucebase/uptime' => []], templates: ['saucebase/uptime']));
+
+            return Process::result(exitCode: 1);
+        });
+
+        $this->artisan('saucebase:template-install', ['template' => 'uptime'])
+            ->expectsOutputToContain('composer install')
+            ->assertFailed();
+
+        $this->assertSame('{}', $this->files->get($this->appPath.'/composer.json'));
+        $this->assertSame($this->lock([]), $this->files->get($this->appPath.'/composer.lock'));
+    }
+
     public function test_a_package_that_is_not_a_template_is_refused(): void
     {
         $this->template(['routes/web.php' => 'template'], type: 'saucebase-module');

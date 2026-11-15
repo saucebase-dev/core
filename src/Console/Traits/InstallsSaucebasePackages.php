@@ -12,12 +12,27 @@ use Symfony\Component\Process\Process as SymfonyProcess;
  */
 trait InstallsSaucebasePackages
 {
-    /** @param  string[]  $packages  vendor/name */
+    /**
+     * Composer reverts its own failures, but not one in a plugin or script after it wrote
+     * the lock: composer.json and composer.lock are put back here either way.
+     *
+     * @param  string[]  $packages  vendor/name
+     */
     protected function requirePackages(array $packages): bool
     {
-        return Process::path(base_path())->forever()
+        $saved = collect(['composer.json', 'composer.lock'])
+            ->mapWithKeys(fn (string $file) => [base_path($file) => @file_get_contents(base_path($file))]);
+
+        if (Process::path(base_path())->forever()
             ->run(['composer', 'require', ...$packages, '--no-interaction'], $this->writeOutput(...))
-            ->successful();
+            ->successful()) {
+            return true;
+        }
+
+        $saved->filter(fn ($contents) => $contents !== false)
+            ->each(fn (string $contents, string $path) => file_put_contents($path, $contents));
+
+        return false;
     }
 
     /**
