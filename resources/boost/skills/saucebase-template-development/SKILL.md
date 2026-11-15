@@ -26,6 +26,7 @@ The recipe writes it: `type: saucebase-template`, `require` = core and every Sau
 
 - A module added later: `saucebase:module-install <module>`, then add it to `require` by hand.
 - `extra.saucebase.configure` (optional): module settings for the install, e.g. `{"auth": {"registration_enabled": true}}`.
+- `extra.saucebase.demo_account` (optional): the email the demo signs in with; the installer prints it after `--demo`.
 - Keep the template's frontend in `resources/js/{stack}/`. The installer flattens it into apps of that stack and refuses a module without the folder.
 
 ## Stubs: replacing app files
@@ -35,6 +36,7 @@ The recipe writes it: `type: saucebase-template`, `require` = core and every Sau
 - Refused: `composer.json`, `composer.lock`, `.env*`. `stubs/.env.example` is allowed: its missing keys are added to the app's `.env`.
 - Import app code in stubs through `@/…`.
 - Only replace what the template must. A stub is copied once; later template releases never reach existing apps.
+- Most templates replace the starter kit's `routes/navigation.php` (its GitHub and Documentation links, "Welcome" for the dashboard) and `resources/js/{stack}/components/Footer.vue` (its credit), besides the home page and `routes/web.php`.
 
 ## Data
 
@@ -47,6 +49,12 @@ The recipe writes it: `type: saucebase-template`, `require` = core and every Sau
 - Seeders run twice without duplicating (`firstOrCreate`, `updateOrCreate`). Test that: run the state twice.
 - Demo passwords come from `config('saucebase.demo_password')`. Never a literal. `modules:seed` makes a random one when it's unset.
 - A clean install has no demo data, so every empty page needs an empty state and a first action.
+
+## Security
+
+- Per-user records: bind them among the signed-in user's own (`Route::bind('note', fn ($id) => Note::where('user_id', Auth::id())->findOrFail($id))`), and child records through their parent (`scopeBindings()`). Someone else's is then a 404. Never guard ownership with a gate or policy alone: core's `Gate::before` lets admins pass every check.
+- Validate into arrays and set the owner with `associate()`; never `$request->all()`.
+- Escape `LIKE` input with a portable character (`escape '!'`), not a backslash (MySQL).
 
 ## Tests
 
@@ -73,4 +81,5 @@ From a registry the installer knows: `saucebase new my-app --template=<vendor>/<
 
 - `template-install` takes the full package name; a bare name means `saucebase/<name>`.
 - A path repository must copy (`"symlink": false`); the module installer refuses a symlink.
+- Iterating through a path repository: `composer update` changes nothing while `version` stays the same. Run `composer reinstall <vendor>/<name>`, then `template-install` again.
 - An app takes one template, installed into a fresh app. A failed run prints the command to retry.
