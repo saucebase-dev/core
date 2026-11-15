@@ -305,6 +305,42 @@ describe('saucebase() app-first @/', () => {
         expect(await resolve('components/ui/button')).toBeNull();
     });
 
+    it("resolves an override's relative imports beside the override", async () => {
+        const core = write(`${stack}/components/ui/button/index.ts`);
+        write('resources/js/vue/components/ui/button/index.ts');
+        write('resources/js/vue/components/ui/button/Fancy.vue');
+        const plugin = saucebase({
+            framework: 'vue',
+            entry: 'resources/js/app.ts',
+            requires: {},
+        }).find((p: any) => p?.name === 'saucebase:overrides') as any;
+
+        const result = await plugin.resolveId.call(
+            context,
+            './Fancy.vue',
+            core,
+            {},
+        );
+
+        expect(path.relative(root, result.id)).toBe(
+            'resources/js/vue/components/ui/button/Fancy.vue',
+        );
+    });
+
+    it("leaves a relative import core's own file has to Vite", async () => {
+        const core = write(`${stack}/components/ui/button/index.ts`);
+        write(`${stack}/components/ui/button/Button.vue`);
+        const plugin = saucebase({
+            framework: 'vue',
+            entry: 'resources/js/app.ts',
+            requires: {},
+        }).find((p: any) => p?.name === 'saucebase:overrides') as any;
+
+        expect(
+            await plugin.resolveId.call(context, './Button.vue', core, {}),
+        ).toBeNull();
+    });
+
     it('leaves a file neither has unresolved, so Vite reports it', async () => {
         expect(await resolve('components/ui/nope')).toBeNull();
     });

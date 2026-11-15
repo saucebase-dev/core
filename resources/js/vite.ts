@@ -199,7 +199,7 @@ function overrides(
                     fs.statSync(path.join(appFiles, file)).isFile(),
                 )
                 .map((file) => file.split(path.sep).join('/'))
-                .sort();
+                .sort((a, b) => a.localeCompare(b));
             const replaced = files.filter((file) =>
                 fs.existsSync(stack + file),
             );
@@ -218,6 +218,26 @@ function overrides(
         },
         // Vite's alias has already turned `@/x` into core's path.
         async resolveId(id, importer, options) {
+            // load() serves an override under core's path, so its relative imports start
+            // beside core's file. One core has stays there; one only the app has is found
+            // beside the override.
+            const beside =
+                template && importer && id.startsWith('.')
+                    ? override(importer)
+                    : null;
+
+            if (importer && beside !== null && fs.existsSync(beside)) {
+                const resolve = (target: string) =>
+                    this.resolve(target, importer, {
+                        ...options,
+                        skipSelf: true,
+                    });
+
+                return (await resolve(path.resolve(path.dirname(importer), id)))
+                    ? null
+                    : resolve(path.resolve(path.dirname(beside), id));
+            }
+
             const file = template ? override(id) : null;
 
             if (file === null) {
