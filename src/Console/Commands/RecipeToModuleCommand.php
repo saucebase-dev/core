@@ -224,7 +224,7 @@ class RecipeToModuleCommand extends Command
         $this->deleteDir($this->tempFolder);
         $this->copyDir($this->templatePath, $this->tempFolder.'/Module');
 
-        $finder = (new Finder)->files()->in($this->tempFolder);
+        $finder = (new Finder)->files()->ignoreDotFiles(false)->in($this->tempFolder);
 
         $this->renameFiles($finder);
         $this->updateFilesContent($finder);

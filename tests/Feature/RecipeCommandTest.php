@@ -206,6 +206,17 @@ class RecipeCommandTest extends TestCase
         $this->assertSame(['keep.txt'], array_map('basename', $this->files->files($this->appPath.'/modules/notes')));
     }
 
+    /** A module is its own repository: it keeps the recipe's .gitignore and CI workflows. */
+    public function test_the_module_keeps_the_recipes_dotfiles(): void
+    {
+        $this->installedWith('vue');
+
+        $this->artisan('saucebase:recipe', ['module' => 'Notes', 'recipe' => 'basic'])->assertSuccessful();
+
+        $this->assertFileExists($this->module('.gitignore'));
+        $this->assertFileExists($this->module('.github/workflows/test.yml'));
+    }
+
     public function test_the_temporary_folder_is_removed(): void
     {
         $this->installedWith('vue');
