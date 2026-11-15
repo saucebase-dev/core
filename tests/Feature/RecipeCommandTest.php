@@ -217,6 +217,16 @@ class RecipeCommandTest extends TestCase
         $this->assertFileExists($this->module('.github/workflows/test.yml'));
     }
 
+    /** Core's module workflow takes the module's folder name: lowercase, dashed. */
+    public function test_the_ci_workflow_names_the_module_by_its_folder(): void
+    {
+        $this->installedWith('vue');
+
+        $this->artisan('saucebase:recipe', ['module' => 'MyNotes', 'recipe' => 'basic'])->assertSuccessful();
+
+        $this->assertStringContainsString('module: my-notes', $this->files->get($this->appPath.'/modules/my-notes/.github/workflows/test.yml'));
+    }
+
     public function test_the_temporary_folder_is_removed(): void
     {
         $this->installedWith('vue');
