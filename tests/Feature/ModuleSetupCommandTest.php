@@ -180,6 +180,25 @@ class ModuleSetupCommandTest extends TestCase
         $this->assertSame('path', InstallFixtureCommand::$mode, 'The module\'s own line wins.');
     }
 
+    /** Each post-install command gets the answers it takes, not the others'. */
+    public function test_an_answer_reaches_only_the_command_that_takes_it(): void
+    {
+        Process::fake(['*--reverse*' => Process::result(exitCode: 1), '*' => Process::result()]);
+        $composer = __DIR__.'/../Fixtures/modules/module-test-fixture/composer.json';
+        $original = (string) file_get_contents($composer);
+        file_put_contents($composer, str_replace('"php artisan module-test-fixture:install --mode=path"', '"php artisan module-test-fixture:install --mode=path", "php artisan env"', $original));
+
+        try {
+            $this->withModuleOptions(['single' => true], function (): void {
+                $this->artisan('saucebase:module-setup', ['modules' => ['module-order-fixture', 'module-test-fixture']])->assertSuccessful();
+            });
+        } finally {
+            file_put_contents($composer, $original);
+        }
+
+        $this->assertTrue(InstallFixtureCommand::$options['single']);
+    }
+
     public function test_false_and_null_options_are_left_out(): void
     {
         Process::fake(['*--reverse*' => Process::result(exitCode: 1), '*' => Process::result()]);

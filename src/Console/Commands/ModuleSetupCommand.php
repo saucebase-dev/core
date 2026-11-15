@@ -238,8 +238,15 @@ class ModuleSetupCommand extends Command
     private function appendOptions(string $line, array $options): string
     {
         $appended = '';
+        // The answers cover all of a module's post-install commands; each gets only its own.
+        $name = strtok(substr($line, strlen('php artisan ')), ' ');
+        $definition = $name && $this->getApplication()?->has($name) ? $this->getApplication()->find($name)->getNativeDefinition() : null;
 
         foreach ($options as $option => $value) {
+            if ($definition !== null && ! $definition->hasOption($option)) {
+                continue;
+            }
+
             if ($value === false || $value === null || preg_match('/(^|\s)--'.preg_quote($option, '/').'(=|\s|$)/', $line)) {
                 continue;
             }
