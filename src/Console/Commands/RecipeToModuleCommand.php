@@ -78,13 +78,29 @@ class RecipeToModuleCommand extends Command
         $isContributor = $frontendConfig->isContributor();
 
         $this->templatePath = $this->recipes()[$this->getRecipe()]['path'];
+        $isTemplate = $this->makesTemplate();
+        $current = $frontendConfig->template();
+
+        if ($isTemplate && $current !== null && $current !== $this->moduleFolder) {
+            error("This app already builds the {$current} template. An app builds one template.");
+
+            return self::FAILURE;
+        }
         $this->tempFolder = base_path('saucebase-temp');
 
         $this->generate();
         $this->fs->remove($this->moduleConfigPath.$this->moduleFolder.'/recipe.json');
 
-        // A contributor checkout keeps both frameworks; core finds the setup in either.
-        if (! $isContributor) {
+        if ($isTemplate) {
+            // Published to apps of its stack, so it keeps the folder the installer flattens.
+            if (! $isContributor) {
+                $this->fs->remove($this->moduleConfigPath.$this->moduleFolder.'/resources/js/'.($framework === 'vue' ? 'react' : 'vue'));
+            }
+
+            $this->describeTemplate();
+            $frontendConfig->setTemplate($this->moduleFolder);
+        } elseif (! $isContributor) {
+            // A contributor checkout keeps both frameworks; core finds the setup in either.
             $this->keepOnlyFramework($framework);
         }
 
@@ -208,7 +224,7 @@ class RecipeToModuleCommand extends Command
         $this->deleteDir($this->tempFolder);
         $this->copyDir($this->templatePath, $this->tempFolder.'/Module');
 
-        $finder = (new Finder)->files()->in($this->tempFolder);
+        $finder = (new Finder)->files()->ignoreDotFiles(false)->in($this->tempFolder);
 
         $this->renameFiles($finder);
         $this->updateFilesContent($finder);
@@ -389,6 +405,36 @@ class RecipeToModuleCommand extends Command
 
         $this->fs->mirror("{$js}/{$framework}", $js);
         $this->fs->remove(["{$js}/vue", "{$js}/react"]);
+    }
+
+    /** A template, by the package type its recipe (or --type) gives it. */
+    private function makesTemplate(): bool
+    {
+        $type = json_decode((string) file_get_contents($this->templatePath.'/composer.json'), true)['type'] ?? '';
+
+        return ($type === '{COMPOSER_TYPE}' ? $this->composerType : $type) === 'saucebase-template';
+    }
+
+    /**
+     * The stacks it ships (the frontend folders it kept), and what it is built on: core and
+     * the app's Saucebase modules, so an app it installs into gets them too.
+     */
+    private function describeTemplate(): void
+    {
+        $module = $this->moduleConfigPath.$this->moduleFolder;
+        $data = json_decode((string) file_get_contents("{$module}/composer.json"), true);
+        $data['extra']['saucebase']['frameworks'] = array_values(array_filter(['vue', 'react'], fn (string $stack) => is_dir("{$module}/resources/js/{$stack}")));
+
+        $locked = json_decode((string) @file_get_contents(base_path('composer.lock')), true)['packages'] ?? [];
+
+        foreach ($locked as $package) {
+            if (($package['type'] ?? null) === 'saucebase-module' || $package['name'] === 'saucebase/core') {
+                // A released version: its minor and up. A branch (dev-dev): any.
+                $data['require'][$package['name']] = preg_match('/^v?(\d+)\.(\d+)/', $package['version'] ?? '', $match) ? "^{$match[1]}.{$match[2]}" : '*';
+            }
+        }
+
+        file_put_contents("{$module}/composer.json", json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n");
     }
 
     protected function registerInComposer(): void

@@ -52,7 +52,7 @@ class ModuleInstallCommandTest extends TestCase
 
         Process::assertRanTimes(fn (PendingProcess $p) => $p->command[0] === 'composer', 1);
         Process::assertRan(fn (PendingProcess $p) => $p->command === ['composer', 'require', 'saucebase/billing', 'saucebase/blog', '--no-interaction']);
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'billing', 'blog']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'billing', 'blog', '--configure']);
     }
 
     public function test_a_module_composer_adds_as_a_dependency_is_set_up_first(): void
@@ -69,7 +69,28 @@ class ModuleInstallCommandTest extends TestCase
 
         $this->artisan('saucebase:module-install', ['modules' => ['api-tokens']])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'api-tokens']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'api-tokens', '--configure']);
+    }
+
+    public function test_a_template_is_set_up_with_and_after_the_modules_it_requires(): void
+    {
+        config(['saucebase.demo_password' => 'secret']);
+        $this->files->put($this->appPath.'/composer.lock', $this->lock([]));
+        Process::fake(function (PendingProcess $process) {
+            if ($process->command[0] === 'composer') {
+                $this->files->put($this->appPath.'/composer.lock', $this->lock([
+                    'saucebase/auth' => [],
+                    'saucebase/billing' => ['saucebase/auth'],
+                    'saucebase/uptime' => ['saucebase/auth', 'saucebase/billing'],
+                ], templates: ['saucebase/uptime']));
+            }
+
+            return Process::result();
+        });
+
+        $this->artisan('saucebase:module-install', ['modules' => ['uptime'], '--state' => 'uptime'])->assertSuccessful();
+
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'billing', 'uptime', '--state=uptime', '--configure']);
     }
 
     public function test_modules_are_set_up_after_the_modules_they_require(): void
@@ -90,40 +111,58 @@ class ModuleInstallCommandTest extends TestCase
 
         $this->artisan('saucebase:module-install', ['modules' => ['packages']])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'api-tokens', 'packages']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'api-tokens', 'packages', '--configure']);
     }
 
-    /** @param  array<int|string, string|list<string>>  $modules  Names, or name => the modules it requires. */
-    private function lock(array $modules): string
+    /**
+     * @param  array<int|string, string|list<string>>  $modules  Names, or name => the modules it requires.
+     * @param  list<string>  $templates  Which of them are templates.
+     */
+    private function lock(array $modules, array $templates = []): string
     {
         $packages = [];
         foreach ($modules as $name => $requires) {
             [$name, $requires] = is_int($name) ? [$requires, []] : [$name, $requires];
-            $packages[] = ['name' => $name, 'type' => 'saucebase-module', 'require' => array_fill_keys(['saucebase/core', ...$requires], '*')];
+            $packages[] = ['name' => $name, 'type' => in_array($name, $templates, true) ? 'saucebase-template' : 'saucebase-module', 'require' => array_fill_keys(['saucebase/core', ...$requires], '*')];
         }
 
         return (string) json_encode(['packages' => [['name' => 'laravel/sanctum', 'type' => 'library'], ...$packages]]);
     }
 
-    public function test_demo_is_passed_on_to_the_setup(): void
+    public function test_a_state_is_passed_on_to_the_setup(): void
     {
         Process::fake();
         config(['saucebase.demo_password' => 'secret']);
-        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--demo' => true])->assertSuccessful();
+        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--state' => 'showcase'])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--demo']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase', '--configure']);
     }
 
-    public function test_demo_without_a_demo_password_fails_before_anything_runs(): void
+    /** The seeding makes a missing DEMO_PASSWORD (modules:seed), so the install doesn't stop for it. */
+    public function test_a_blank_demo_password_does_not_stop_a_state(): void
     {
         Process::fake();
         config(['saucebase.demo_password' => null]);
+        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--state' => 'showcase'])->assertSuccessful();
 
-        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--demo' => true])
-            ->expectsOutputToContain('Set DEMO_PASSWORD in .env')
-            ->assertFailed();
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase', '--configure']);
+    }
 
-        Process::assertNothingRan();
+    public function test_force_is_passed_on_to_the_setup(): void
+    {
+        Process::fake();
+        config(['saucebase.demo_password' => 'secret']);
+        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--state' => 'showcase', '--force' => true])->assertSuccessful();
+
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase', '--force', '--configure']);
+    }
+
+    public function test_install_settings_are_passed_on_to_the_setup(): void
+    {
+        Process::fake();
+        $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--set' => ['blog.comments=false']])->assertSuccessful();
+
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--configure', '--set=blog.comments=false']);
     }
 
     public function test_a_failed_require_stops_before_the_setup(): void

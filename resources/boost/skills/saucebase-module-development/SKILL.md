@@ -159,11 +159,13 @@ redirects such as OAuth callbacks.
 ## Seeders
 
 `php artisan modules:seed` runs `Modules\<Name>\Database\Seeders\DatabaseSeeder` for every installed module
-that has one; `--module=<name>` limits it to one. `--demo` then also runs `Demo<Name>DatabaseSeeder`, after
-every module's required data exists. Each set runs in registry order, except that a seeder marked
+that has one; `--module=<name>` limits it to one. `--state=<state>` then also runs `<State><Name>DatabaseSeeder`, after
+every module's required data exists; `showcase` is the sample content (`ShowcaseBlogDatabaseSeeder`). A state
+no module provides fails. In production it asks first; `--force` (also on `saucebase:module-setup` and
+`saucebase:module-install`) skips the question. Each set runs in registry order, except that a seeder marked
 `#[SeedAfter('billing')]` (`Saucebase\Core\Attributes\SeedAfter`) runs after the named modules' seeder of the
 same kind; modules that aren't installed are ignored. A module with an admin area creates its `manage {module}` permission
-there (see `saucebase-filament-development`); demo seeders never hold anything an install needs.
+there (see `saucebase-filament-development`); state seeders never hold anything an install needs.
 
 ## Patches
 

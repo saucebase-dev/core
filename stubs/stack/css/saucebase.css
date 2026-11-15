@@ -141,25 +141,39 @@ html {
 }
 
 /* An overlay opened from inside a modal has to clear the modal's own stacking
-   level above, which its shipped `z-50` does not. Targeting data-slot survives
-   shadcn CLI updates; keying off the modal keeps the ordering unchanged
-   everywhere else. */
-body:has(.im-dialog) :is(
+   level above, which its shipped `z-50` does not. Keyed off the modal, so the
+   ordering is unchanged everywhere else. */
+
+/* Every popup (select, menus, popover, tooltip, combobox, hover card) is
+   positioned inside its library's wrapper: reka-ui in Vue, Radix in React. One
+   rule covers the ones core ships and any added later. `!important`: both write
+   the wrapper's z-index inline. */
+body:has(.im-dialog)
+    :is(
+        [data-reka-popper-content-wrapper],
+        [data-radix-popper-content-wrapper]
+    ) {
+    z-index: 71 !important;
+}
+
+/* Full-screen overlays have no shared wrapper; matched by data-slot, which
+   survives shadcn CLI updates. */
+body:has(.im-dialog)
+    :is(
         [data-slot='dialog-overlay'],
         [data-slot='alert-dialog-overlay'],
-        [data-slot='sheet-overlay']
+        [data-slot='sheet-overlay'],
+        [data-slot='drawer-overlay']
     ) {
     z-index: 70;
 }
 
-body:has(.im-dialog) :is(
+body:has(.im-dialog)
+    :is(
         [data-slot='dialog-content'],
         [data-slot='alert-dialog-content'],
         [data-slot='sheet-content'],
-        [data-slot='dropdown-menu-content'],
-        [data-slot='dropdown-menu-sub-content'],
-        [data-slot='popover-content'],
-        [data-slot='tooltip-content']
+        [data-slot='drawer-content']
     ) {
     z-index: 71;
 }
@@ -167,11 +181,10 @@ body:has(.im-dialog) :is(
 /* Inertia Modal (React) mounts the panel a frame before its enter animation
    starts, flashing it fully open. The animation overrides this while it runs. */
 :is(.im-modal-wrapper, .im-slideover-wrapper):has(
-        > [data-inertiaui-modal-entered='false']
-    ) {
+    > [data-inertiaui-modal-entered='false']
+) {
     opacity: 0;
 }
-
 
 /* Inertia Modal's backdrop, softened from its own opaque `bg-black/75`. */
 .im-backdrop {

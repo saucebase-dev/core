@@ -7,6 +7,7 @@ use Illuminate\Process\PendingProcess;
 use Illuminate\Support\Facades\Process;
 use Modules\ModuleTestFixture\Console\Commands\InstallFixtureCommand;
 use Modules\ModuleTestFixture\Database\Seeders\DatabaseSeeder;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Saucebase\Core\Tests\Concerns\InteractsWithFixtureModules;
 use Saucebase\Core\Tests\TestCase;
 
@@ -25,6 +26,7 @@ class ModuleSetupCommandTest extends TestCase
         DatabaseSeeder::$ran = [];
         InstallFixtureCommand::$ran = false;
         InstallFixtureCommand::$mode = null;
+        InstallFixtureCommand::$options = [];
     }
 
     public function test_a_clean_patch_is_applied_then_the_module_is_migrated_and_seeded(): void
@@ -92,25 +94,148 @@ class ModuleSetupCommandTest extends TestCase
         }
     }
 
-    public function test_demo_also_seeds_demo_content(): void
+    public function test_a_state_also_seeds_its_content(): void
     {
         Process::fake();
         config(['saucebase.demo_password' => 'secret']);
 
-        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--demo' => true])->assertSuccessful();
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--state' => 'showcase'])->assertSuccessful();
 
-        $this->assertSame(['DatabaseSeeder', 'DemoModuleTestFixtureDatabaseSeeder'], DatabaseSeeder::$ran);
+        $this->assertSame(['DatabaseSeeder', 'ShowcaseModuleTestFixtureDatabaseSeeder'], DatabaseSeeder::$ran);
+    }
+
+    public function test_in_production_seeding_asks_first(): void
+    {
+        Process::fake();
+        config(['saucebase.demo_password' => 'secret']);
+        $this->app->detectEnvironment(fn () => 'production');
+
+        // migrate is forced; seeding a state is the operator's call.
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--state' => 'showcase'])
+            ->expectsConfirmation('Are you sure you want to run this command?', 'no')
+            ->assertFailed()
+            ->run();
+        $this->app->detectEnvironment(fn () => 'testing');
+
+        $this->assertSame([], DatabaseSeeder::$ran);
+    }
+
+    public function test_in_production_force_seeds_without_asking(): void
+    {
+        Process::fake();
+        config(['saucebase.demo_password' => 'secret']);
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--state' => 'showcase', '--force' => true])
+            ->assertSuccessful()
+            ->run();
+        $this->app->detectEnvironment(fn () => 'testing');
+
+        $this->assertSame(['DatabaseSeeder', 'ShowcaseModuleTestFixtureDatabaseSeeder'], DatabaseSeeder::$ran);
     }
 
     public function test_a_failed_step_fails_the_setup_and_stops_there(): void
     {
         Process::fake();
-        config(['saucebase.demo_password' => null]); // modules:seed --demo refuses without it
 
-        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--demo' => true])
-            ->expectsOutputToContain('run this again: php artisan saucebase:module-setup module-test-fixture --demo')
+        // modules:seed fails on a state no module has.
+        $this->artisan('saucebase:module-setup', ['modules' => ['module-test-fixture'], '--state' => 'missing'])
+            ->expectsOutputToContain('run this again: php artisan saucebase:module-setup module-test-fixture --state=missing')
             ->assertFailed();
 
+        $this->assertFalse(InstallFixtureCommand::$ran);
+    }
+
+    /**
+     * A template answers another module's install questions: keys under `configure` in
+     * its composer.json that aren't install settings become that module's install options.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    private function withModuleOptions(array $options, \Closure $run): void
+    {
+        $composer = __DIR__.'/../Fixtures/modules/module-order-fixture/composer.json';
+        $original = file_get_contents($composer);
+        $json = json_decode($original, true);
+        $json['extra']['saucebase']['configure'] = ['module-test-fixture' => $options];
+        file_put_contents($composer, json_encode($json));
+
+        try {
+            $run();
+        } finally {
+            file_put_contents($composer, $original);
+        }
+    }
+
+    public function test_configure_answers_another_modules_install_command(): void
+    {
+        Process::fake(['*--reverse*' => Process::result(exitCode: 1), '*' => Process::result()]);
+
+        $this->withModuleOptions(['onboarding' => 'create', 'single' => true, 'mode' => 'subdomain'], function (): void {
+            $this->artisan('saucebase:module-setup', ['modules' => ['module-order-fixture', 'module-test-fixture']])->assertSuccessful();
+        });
+
+        $this->assertSame('create', InstallFixtureCommand::$options['onboarding']);
+        $this->assertTrue(InstallFixtureCommand::$options['single']);
+        $this->assertSame('path', InstallFixtureCommand::$mode, 'The module\'s own line wins.');
+    }
+
+    /** Each post-install command gets the answers it takes, not the others'. */
+    public function test_an_answer_reaches_only_the_command_that_takes_it(): void
+    {
+        Process::fake(['*--reverse*' => Process::result(exitCode: 1), '*' => Process::result()]);
+        $composer = __DIR__.'/../Fixtures/modules/module-test-fixture/composer.json';
+        $original = (string) file_get_contents($composer);
+        file_put_contents($composer, str_replace('"php artisan module-test-fixture:install --mode=path"', '"php artisan module-test-fixture:install --mode=path", "php artisan env"', $original));
+
+        try {
+            $this->withModuleOptions(['single' => true], function (): void {
+                $this->artisan('saucebase:module-setup', ['modules' => ['module-order-fixture', 'module-test-fixture']])->assertSuccessful();
+            });
+        } finally {
+            file_put_contents($composer, $original);
+        }
+
+        $this->assertTrue(InstallFixtureCommand::$options['single']);
+    }
+
+    public function test_false_and_null_options_are_left_out(): void
+    {
+        Process::fake(['*--reverse*' => Process::result(exitCode: 1), '*' => Process::result()]);
+
+        $this->withModuleOptions(['single' => false, 'onboarding' => null], function (): void {
+            $this->artisan('saucebase:module-setup', ['modules' => ['module-order-fixture', 'module-test-fixture']])->assertSuccessful();
+        });
+
+        $this->assertFalse(InstallFixtureCommand::$options['single']);
+        $this->assertNull(InstallFixtureCommand::$options['onboarding']);
+    }
+
+    /** @return array<string, array{0: array<string, mixed>}> */
+    public static function invalidInstallAnswers(): array
+    {
+        return [
+            'a key that is not an option name' => [['--mode' => 'x']],
+            'a key with a space' => [['mode x' => 'y']],
+            'an array value' => [['mode' => ['a', 'b']]],
+            'a value with a space' => [['onboarding' => 'create --single']],
+            'a value with a quote' => [['onboarding' => "create'"]],
+        ];
+    }
+
+    /** @param  array<string, mixed>  $options */
+    #[DataProvider('invalidInstallAnswers')]
+    public function test_invalid_install_answers_fail_before_anything_runs(array $options): void
+    {
+        Process::fake();
+
+        $this->withModuleOptions($options, function (): void {
+            $this->artisan('saucebase:module-setup', ['modules' => ['module-order-fixture', 'module-test-fixture']])
+                ->expectsOutputToContain('configure')
+                ->assertFailed();
+        });
+
+        $this->assertSame([], DatabaseSeeder::$ran);
         $this->assertFalse(InstallFixtureCommand::$ran);
     }
 

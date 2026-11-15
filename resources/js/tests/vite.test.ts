@@ -175,3 +175,223 @@ describe('saucebase()', () => {
         ).toBe('assets/auth/[name]-[hash][extname]');
     });
 });
+
+/** The override layer of a template workspace: app files replace core's UI, per framework. */
+describe('saucebase() overrides', () => {
+    function overrides(): any {
+        return saucebase({
+            framework: 'vue',
+            entry: 'resources/js/app.ts',
+            requires: {},
+        }).find((p: any) => p?.name === 'saucebase:overrides') as any;
+    }
+
+    function write(file: string, contents: string): string {
+        const full = path.join(root, file);
+        fs.mkdirSync(path.dirname(full), { recursive: true });
+        fs.writeFileSync(full, contents);
+
+        return full;
+    }
+
+    const core = 'vendor/saucebase/core/stubs/stack/vue/js/pages/Index.vue';
+
+    it("serves the app's file in place of core's", () => {
+        write('saucebase.json', '{"contributor": true}');
+        const corePage = write(core, 'core');
+        write('resources/js/vue/pages/Index.vue', 'template');
+
+        expect(overrides().load.call({ addWatchFile() {} }, corePage)).toBe(
+            'template',
+        );
+        // Vite asks for the same file with a query for Vue's style and script parts.
+        expect(
+            overrides().load.call(
+                { addWatchFile() {} },
+                `${corePage}?vue&type=style&index=0`,
+            ),
+        ).toBeNull();
+    });
+
+    it("keeps core's file when the app has none", () => {
+        write('saucebase.json', '{"contributor": true}');
+        const corePage = write(core, 'core');
+
+        expect(
+            overrides().load.call({ addWatchFile() {} }, corePage),
+        ).toBeNull();
+    });
+
+    it("ignores the other framework's overrides", () => {
+        write('saucebase.json', '{"contributor": true}');
+        const corePage = write(core, 'core');
+        write('resources/js/react/pages/Index.vue', 'react');
+
+        expect(
+            overrides().load.call({ addWatchFile() {} }, corePage),
+        ).toBeNull();
+    });
+
+    it('is off in an installed app, which owns its copy of the UI', () => {
+        write('saucebase.json', '{}');
+        const corePage = write(core, 'core');
+        write('resources/js/vue/pages/Index.vue', 'template');
+
+        expect(overrides()).toBeUndefined();
+    });
+});
+
+/**
+ * `@/` in a template workspace: the app's own UI first, then core's, else an error.
+ * Vite's alias has already turned `@/x` into core's path when this runs.
+ */
+describe('saucebase() app-first @/', () => {
+    const stack = 'vendor/saucebase/core/stubs/stack/vue/js';
+
+    function write(file: string, contents = ''): string {
+        const full = path.join(root, file);
+        fs.mkdirSync(path.dirname(full), { recursive: true });
+        fs.writeFileSync(full, contents);
+
+        return full;
+    }
+
+    /** Vite's own resolution, reduced to what matters here: a file or a folder's index.ts. */
+    const context = {
+        resolve: async (id: string) =>
+            [id, `${id}/index.ts`]
+                .filter(
+                    (file) => fs.existsSync(file) && fs.statSync(file).isFile(),
+                )
+                .map((file) => ({ id: file }))[0] ?? null,
+        error: (message: string) => {
+            throw new Error(message);
+        },
+    };
+
+    async function resolve(file: string, importer = 'resources/js/app.ts') {
+        const plugin = saucebase({
+            framework: 'vue',
+            entry: 'resources/js/app.ts',
+            requires: {},
+        }).find((p: any) => p?.name === 'saucebase:overrides') as any;
+
+        const result = await plugin.resolveId.call(
+            context,
+            path.join(root, stack, file),
+            path.join(root, importer),
+            {},
+        );
+
+        return result?.id ? path.relative(root, result.id) : result;
+    }
+
+    beforeEach(() => {
+        write('saucebase.json', '{"contributor": true, "template": "uptime"}');
+    });
+
+    it('finds a file only the app has', async () => {
+        write('resources/js/vue/components/ui/select/index.ts');
+
+        expect(await resolve('components/ui/select')).toBe(
+            'resources/js/vue/components/ui/select/index.ts',
+        );
+    });
+
+    it("leaves a file core has to core's path, which the override then fills", async () => {
+        write(`${stack}/components/ui/button/index.ts`);
+        write('resources/js/vue/components/ui/button/index.ts');
+
+        expect(await resolve('components/ui/button')).toBeNull();
+    });
+
+    it("resolves an override's relative imports beside the override", async () => {
+        const core = write(`${stack}/components/ui/button/index.ts`);
+        write('resources/js/vue/components/ui/button/index.ts');
+        write('resources/js/vue/components/ui/button/Fancy.vue');
+        const plugin = saucebase({
+            framework: 'vue',
+            entry: 'resources/js/app.ts',
+            requires: {},
+        }).find((p: any) => p?.name === 'saucebase:overrides') as any;
+
+        const result = await plugin.resolveId.call(
+            context,
+            './Fancy.vue',
+            core,
+            {},
+        );
+
+        expect(path.relative(root, result.id)).toBe(
+            'resources/js/vue/components/ui/button/Fancy.vue',
+        );
+    });
+
+    it("leaves a relative import core's own file has to Vite", async () => {
+        const core = write(`${stack}/components/ui/button/index.ts`);
+        write(`${stack}/components/ui/button/Button.vue`);
+        const plugin = saucebase({
+            framework: 'vue',
+            entry: 'resources/js/app.ts',
+            requires: {},
+        }).find((p: any) => p?.name === 'saucebase:overrides') as any;
+
+        expect(
+            await plugin.resolveId.call(context, './Button.vue', core, {}),
+        ).toBeNull();
+    });
+
+    it('leaves a file neither has unresolved, so Vite reports it', async () => {
+        expect(await resolve('components/ui/nope')).toBeNull();
+    });
+
+    it("lets the template's own module use the app's files", async () => {
+        write('resources/js/vue/components/ui/select/index.ts');
+
+        expect(
+            await resolve(
+                'components/ui/select',
+                'modules/uptime/resources/js/vue/pages/Monitors.vue',
+            ),
+        ).toBe('resources/js/vue/components/ui/select/index.ts');
+    });
+
+    it("stops another module from using a file only this app has: customers' apps won't have it", async () => {
+        write('resources/js/vue/components/ui/select/index.ts');
+
+        await expect(
+            resolve(
+                'components/ui/select',
+                'modules/billing/resources/js/vue/pages/Settings.vue',
+            ),
+        ).rejects.toThrow(/billing.*components\/ui\/select/);
+    });
+
+    it('is off outside a template workspace: saucebase-dev builds core itself', async () => {
+        write('saucebase.json', '{"contributor": true}');
+        write('resources/js/vue/components/ui/select/index.ts');
+
+        expect(await resolve('components/ui/select')).toBeNull();
+    });
+
+    it('lists what the app replaces and adds, so nothing changes silently', () => {
+        write(`${stack}/pages/Index.vue`);
+        write('resources/js/vue/pages/Index.vue');
+        write('resources/js/vue/components/ui/select/index.ts');
+        const info = vi.fn();
+
+        const plugin = saucebase({
+            framework: 'vue',
+            entry: 'resources/js/app.ts',
+            requires: {},
+        }).find((p: any) => p?.name === 'saucebase:overrides') as any;
+        plugin.configResolved({ logger: { info } });
+
+        expect(info).toHaveBeenCalledWith(
+            expect.stringMatching(/replaces core: pages\/Index\.vue/),
+        );
+        expect(info).toHaveBeenCalledWith(
+            expect.stringMatching(/adds: components\/ui\/select\/index\.ts/),
+        );
+    });
+});

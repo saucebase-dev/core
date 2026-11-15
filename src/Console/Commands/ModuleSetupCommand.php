@@ -8,7 +8,12 @@ use InterNACHI\Modular\Support\ModuleConfig;
 use InterNACHI\Modular\Support\ModuleRegistry;
 use Saucebase\Core\ModuleTaskfile;
 use Saucebase\Core\ProjectConfig;
+use Saucebase\Core\Settings\InstallSettings;
+use Symfony\Component\Console\Exception\ExceptionInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\StringInput;
+
+use function Laravel\Prompts\confirm;
 
 /**
  * Wires installed modules into the application. `saucebase:module-install` runs it in a
@@ -18,7 +23,10 @@ class ModuleSetupCommand extends Command
 {
     protected $signature = 'saucebase:module-setup
                             {modules* : Installed module names}
-                            {--demo : Also seed demo content}';
+                            {--state= : Also seed a state (showcase: sample content)}
+                            {--force : Seed in production without asking}
+                            {--configure : These modules are being installed: set their install settings (a template\'s configure, --set, then prompts)}
+                            {--set=* : Configure a module, module.key=value: an install setting or an answer for its install command (tenancy.mode=subdomain)}';
 
     protected $description = 'Apply patches, migrate and seed installed modules';
 
@@ -36,12 +44,21 @@ class ModuleSetupCommand extends Command
             }
         }
 
+        // Checked before anything is written, so a bad entry changes nothing.
+        $plan = $this->configuration($modules);
+
+        if (is_string($plan)) {
+            $this->components->error($plan);
+
+            return self::FAILURE;
+        }
+
         $conflicts = $this->applyPatches($modules);
 
         $steps = [
             ['migrate', ['--force' => true]],
             // Together: seeding them one by one would hide each from the others' SeedAfter.
-            ['modules:seed', ['--module' => array_map(fn ($module) => $module->name, $modules), '--demo' => $this->option('demo')]],
+            ['modules:seed', ['--module' => array_map(fn ($module) => $module->name, $modules), '--state' => $this->option('state'), '--force' => $this->option('force')]],
         ];
 
         foreach ($modules as $module) {
@@ -62,13 +79,20 @@ class ModuleSetupCommand extends Command
                     return self::FAILURE;
                 }
 
-                $steps[] = [substr($line, strlen('php artisan ')), null];
+                $steps[] = [substr($line, strlen('php artisan ')).$this->appendOptions($line, $plan[$module->name]['answers']), null];
             }
         }
 
-        foreach ($steps as [$command, $arguments]) {
-            if ($this->runStep($command, $arguments) !== self::SUCCESS) {
-                $this->components->error("`{$command}` failed. Fix it, then run this again: php artisan saucebase:module-setup ".implode(' ', $this->argument('modules')).($this->option('demo') ? ' --demo' : ''));
+        foreach ($steps as $index => [$command, $arguments]) {
+            $failed = $this->runStep($command, $arguments) !== self::SUCCESS;
+
+            // Once migrated (the settings exist), before seeders read them.
+            if (! $failed && $index === 0 && $this->option('configure')) {
+                $this->applySettings($plan);
+            }
+
+            if ($failed) {
+                $this->components->error("`{$command}` failed. Fix it, then run this again: php artisan saucebase:module-setup ".implode(' ', $this->argument('modules')).($this->option('state') ? ' --state='.$this->option('state') : '').($this->option('force') ? ' --force' : ''));
 
                 return self::FAILURE;
             }
@@ -97,6 +121,143 @@ class ModuleSetupCommand extends Command
     }
 
     /**
+     * What this run configures, checked before anything is written: each module's keys
+     * from `extra.saucebase.configure.<module>` in the modules being set up (a template's),
+     * then `--set` flags, which win. A key marked #[InstallSetting] is a setting, cast and
+     * validated; any other key answers the module's install command, `--key=value`.
+     *
+     * @param  ModuleConfig[]  $modules
+     * @return array<string, array{settings: InstallSettings, template: array<string, mixed>, flags: array<string, mixed>, answers: array<string, string|int|float|bool|null>, options: array<string, InputOption>}>|string
+     */
+    private function configuration(array $modules): array|string
+    {
+        $plan = [];
+
+        foreach ($modules as $module) {
+            $plan[$module->name] = ['settings' => InstallSettings::of($module), 'template' => [], 'flags' => [], 'answers' => [], 'options' => $this->installOptions($module)];
+        }
+
+        $entries = [];
+
+        foreach ($modules as $module) {
+            $declared = data_get(json_decode((string) @file_get_contents($module->path('composer.json')), true), 'extra.saucebase.configure', []);
+
+            foreach ((array) $declared as $target => $values) {
+                foreach ((array) $values as $key => $value) {
+                    $entries[] = ['template', (string) $target, (string) $key, $value];
+                }
+            }
+        }
+
+        foreach ((array) $this->option('set') as $flag) {
+            if (! preg_match('/^([a-z0-9-]+)\.([A-Za-z_][A-Za-z0-9_-]*)=(.*)$/', (string) $flag, $match)) {
+                return "configure: --set takes module.key=value: {$flag}";
+            }
+
+            $entries[] = ['flags', $match[1], $match[2], $match[3]];
+        }
+
+        try {
+            foreach ($entries as [$source, $target, $key, $value]) {
+                $settings = $plan[$target]['settings'] ?? throw new \InvalidArgumentException("{$target} is not being installed here.");
+
+                if ($settings->marks($key)) {
+                    $plan[$target][$source][$key] = $settings->cast($key, $value);
+                } elseif ($settings->declares($key)) {
+                    throw new \InvalidArgumentException("{$target}.{$key} can't be set at install: it is not marked #[InstallSetting].");
+                } elseif (! isset($plan[$target]['options'][$key])) {
+                    throw new \InvalidArgumentException("{$target}.{$key} is neither an install setting nor an option of {$target}'s install command.");
+                } elseif (! $plan[$target]['options'][$key]->acceptValue()) {
+                    // A flag: on or off, whatever spelling the template or `--set` used.
+                    $flag = is_bool($value) ? $value : filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                    $plan[$target]['answers'][$key] = $flag ?? throw new \InvalidArgumentException("{$target}.{$key} is a flag: true or false, not ".json_encode($value).'.');
+                } elseif (! (is_scalar($value) || $value === null)
+                    || (is_string($value) && ! preg_match('#^[A-Za-z0-9._:/@+-]*$#', $value))) {
+                    // Option names and plain values only, so an answer can never become another command.
+                    throw new \InvalidArgumentException("{$target}.{$key} answers the install command, so it takes an option name and a plain value: ".json_encode($value));
+                } else {
+                    $plan[$target]['answers'][$key] = $value;
+                }
+            }
+        } catch (\InvalidArgumentException $e) {
+            return 'configure: '.$e->getMessage();
+        }
+
+        return $plan;
+    }
+
+    /**
+     * The options a module's install commands take: the only answers `configure` may give
+     * it. Read from the commands themselves, so a typo fails before anything is written.
+     *
+     * @return array<string, InputOption>
+     */
+    private function installOptions(ModuleConfig $module): array
+    {
+        $options = [];
+        $composer = json_decode((string) @file_get_contents($module->path('composer.json')), true);
+
+        foreach ((array) data_get($composer, 'extra.saucebase.post-install', []) as $line) {
+            $name = strtok(substr((string) $line, strlen('php artisan ')), ' ');
+
+            if (str_starts_with((string) $line, 'php artisan ') && $name && $this->getApplication()?->has($name)) {
+                $options += $this->getApplication()->find($name)->getNativeDefinition()->getOptions();
+            }
+        }
+
+        return $options;
+    }
+
+    /**
+     * Saves each module's settings: a flag beats the person's answer, which beats the
+     * template's value. Asked only when somebody is there and wants to.
+     *
+     * @param  array<string, array{settings: InstallSettings, template: array<string, mixed>, flags: array<string, mixed>, answers: array<string, mixed>}>  $plan
+     */
+    private function applySettings(array $plan): void
+    {
+        foreach ($plan as $name => ['settings' => $settings, 'template' => $template, 'flags' => $flags]) {
+            if ($settings->isEmpty()) {
+                continue;
+            }
+
+            $answers = $this->input->isInteractive() && confirm(__('Configure :module?', ['module' => $name]), false)
+                ? $settings->ask($template, array_keys($flags))
+                : [];
+
+            $settings->save([...$template, ...$answers, ...$flags]);
+        }
+    }
+
+    /**
+     * `--option=value` for each answer the line doesn't already give, a bare `--option` for
+     * true; false and null are left out. The line's own options win.
+     *
+     * @param  array<string, string|int|float|bool|null>  $options
+     */
+    private function appendOptions(string $line, array $options): string
+    {
+        $appended = '';
+        // The answers cover all of a module's post-install commands; each gets only its own.
+        $name = strtok(substr($line, strlen('php artisan ')), ' ');
+        $definition = $name && $this->getApplication()?->has($name) ? $this->getApplication()->find($name)->getNativeDefinition() : null;
+
+        foreach ($options as $option => $value) {
+            if ($definition !== null && ! $definition->hasOption($option)) {
+                continue;
+            }
+
+            if ($value === false || $value === null || preg_match('/(^|\s)--'.preg_quote($option, '/').'(=|\s|$)/', $line)) {
+                continue;
+            }
+
+            $appended .= $value === true ? " --{$option}" : " --{$option}={$value}";
+        }
+
+        return $appended;
+    }
+
+    /**
      * A post-install line keeps its own options (`tenancy:install --mode=path`), and
      * asks its questions when this command can.
      *
@@ -111,7 +272,14 @@ class ModuleSetupCommand extends Command
         $input = new StringInput($command);
         $input->setInteractive($this->input->isInteractive());
 
-        return $this->getApplication()->find((string) $input->getFirstArgument())->run($input, $this->output);
+        try {
+            return $this->getApplication()->find((string) $input->getFirstArgument())->run($input, $this->output);
+        } catch (ExceptionInterface $e) {
+            // An answer the command doesn't take (a typo in `configure`): said, not thrown.
+            $this->components->error($e->getMessage());
+
+            return self::FAILURE;
+        }
     }
 
     /**
