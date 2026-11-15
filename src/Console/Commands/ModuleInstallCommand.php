@@ -60,7 +60,17 @@ class ModuleInstallCommand extends Command
             ...$modules,
         ], $after);
 
-        return $this->runSetup($modules, $this->option('state'), (bool) $this->option('force')) ? self::SUCCESS : self::FAILURE;
+        $force = (bool) $this->option('force');
+
+        if (! $this->runSetup($modules, null, $force)) {
+            return self::FAILURE;
+        }
+
+        // Last, in a process of its own, as template-install does: setup patches models
+        // (api-tokens adds HasApiTokens to User) in a process that already loaded them.
+        $state = $this->option('state');
+
+        return $state === null || $this->seedState($modules, $state, $force) ? self::SUCCESS : self::FAILURE;
     }
 
     /** @return string[]|null Module names on Packagist the app doesn't require yet; null when it has them all. */

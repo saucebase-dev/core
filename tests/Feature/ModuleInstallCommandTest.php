@@ -90,7 +90,8 @@ class ModuleInstallCommandTest extends TestCase
 
         $this->artisan('saucebase:module-install', ['modules' => ['uptime'], '--state' => 'uptime'])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'billing', 'uptime', '--state=uptime', '--configure']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'auth', 'billing', 'uptime', '--configure']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'modules:seed', '--module=auth', '--module=billing', '--module=uptime', '--state=uptime']);
     }
 
     public function test_modules_are_set_up_after_the_modules_they_require(): void
@@ -129,13 +130,25 @@ class ModuleInstallCommandTest extends TestCase
         return (string) json_encode(['packages' => [['name' => 'laravel/sanctum', 'type' => 'library'], ...$packages]]);
     }
 
-    public function test_a_state_is_passed_on_to_the_setup(): void
+    /**
+     * Seeded in a process of its own, after setup: setup patches models (api-tokens adds
+     * HasApiTokens to User) in a process that already loaded them, so a seeder there
+     * would call the unpatched class.
+     */
+    public function test_a_state_is_seeded_after_the_setup_in_a_new_process(): void
     {
-        Process::fake();
+        $order = [];
+        Process::fake(function (PendingProcess $p) use (&$order) {
+            $order[] = $p->command[0] === 'composer' ? 'composer' : $p->command[2];
+
+            return Process::result();
+        });
         config(['saucebase.demo_password' => 'secret']);
         $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--state' => 'showcase'])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase', '--configure']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--configure']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'modules:seed', '--module=blog', '--state=showcase']);
+        $this->assertSame(['composer', 'saucebase:module-setup', 'modules:seed'], $order);
     }
 
     /** The seeding makes a missing DEMO_PASSWORD (modules:seed), so the install doesn't stop for it. */
@@ -145,7 +158,7 @@ class ModuleInstallCommandTest extends TestCase
         config(['saucebase.demo_password' => null]);
         $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--state' => 'showcase'])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase', '--configure']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'modules:seed', '--module=blog', '--state=showcase']);
     }
 
     public function test_force_is_passed_on_to_the_setup(): void
@@ -154,7 +167,8 @@ class ModuleInstallCommandTest extends TestCase
         config(['saucebase.demo_password' => 'secret']);
         $this->artisan('saucebase:module-install', ['modules' => ['blog'], '--state' => 'showcase', '--force' => true])->assertSuccessful();
 
-        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--state=showcase', '--force', '--configure']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'saucebase:module-setup', 'blog', '--force', '--configure']);
+        Process::assertRan(fn (PendingProcess $p) => $p->command === [PHP_BINARY, 'artisan', 'modules:seed', '--module=blog', '--state=showcase', '--force']);
     }
 
     public function test_install_settings_are_passed_on_to_the_setup(): void
