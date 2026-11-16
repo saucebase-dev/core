@@ -54,7 +54,7 @@ class TemplateInstallCommand extends Command
         }
 
         if (! $this->requirePackages([$package])) {
-            return $this->refuse('Composer could not install the template. composer.json and composer.lock are back as they were; run composer install to remove anything Composer left in vendor/ or modules/.');
+            return $this->refuse('Composer could not install the template. Nothing was changed: composer.json, composer.lock and modules/ are back as they were.');
         }
 
         if (($this->lockedPackages()[$template]['type'] ?? null) !== 'saucebase-template') {

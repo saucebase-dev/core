@@ -199,7 +199,11 @@ class TemplateInstallCommandTest extends TestCase
     /** Composer can fail after writing them (a plugin, a script): the app gets its files back. */
     public function test_a_failed_composer_require_puts_composer_files_back(): void
     {
+        $this->files->ensureDirectoryExists($this->appPath.'/modules/blog');
         Process::fake(function (PendingProcess $process) {
+            // A plugin fails after Composer unpacked packages into modules/.
+            $this->files->ensureDirectoryExists($this->appPath.'/modules/uptime/src');
+            $this->files->ensureDirectoryExists($this->appPath.'/modules/auth');
             $this->files->put($this->appPath.'/composer.json', '{"require": {"saucebase/uptime": "*"}}');
             $this->files->put($this->appPath.'/composer.lock', $this->lock(['saucebase/uptime' => []], templates: ['saucebase/uptime']));
 
@@ -207,11 +211,15 @@ class TemplateInstallCommandTest extends TestCase
         });
 
         $this->artisan('saucebase:template-install', ['template' => 'uptime'])
-            ->expectsOutputToContain('composer install')
+            ->expectsOutputToContain('Nothing was changed')
             ->assertFailed();
 
         $this->assertSame('{}', $this->files->get($this->appPath.'/composer.json'));
         $this->assertSame($this->lock([]), $this->files->get($this->appPath.'/composer.lock'));
+        // Left behind, they stop the app booting (Composer does not autoload them).
+        $this->assertDirectoryDoesNotExist($this->appPath.'/modules/uptime');
+        $this->assertDirectoryDoesNotExist($this->appPath.'/modules/auth');
+        $this->assertDirectoryExists($this->appPath.'/modules/blog');
     }
 
     public function test_a_package_that_is_not_a_template_is_refused(): void
