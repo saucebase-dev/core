@@ -2,24 +2,24 @@
 
 namespace Saucebase\Core\Tests\Unit;
 
-use Composer\Semver\Comparator;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
 /**
- * The `dev` branch installs as `dev-dev`, which no `^2.x` constraint accepts on its
- * own. Its branch alias names the next minor, so apps can test it against modules
- * that require a release. After a release, the alias moves to the minor after it.
+ * The `dev` branch installs as `dev-dev`, which no `^3.x` constraint accepts on its
+ * own. Its branch alias names the major (`3.x-dev`, as Laravel does), which sorts above
+ * every 3.x release, so apps can test it against modules that require a release and it
+ * never falls behind a minor release. Only a new major moves it.
  */
 class BranchAliasTest extends TestCase
 {
-    public function test_the_dev_branch_is_aliased_ahead_of_the_newest_release(): void
+    public function test_the_dev_branch_is_aliased_to_the_newest_releases_major(): void
     {
         $composer = json_decode((string) file_get_contents(__DIR__.'/../../composer.json'), true);
         $alias = $composer['extra']['branch-alias']['dev-dev'] ?? null;
 
         $this->assertIsString($alias, 'composer.json needs extra.branch-alias.dev-dev');
-        $this->assertMatchesRegularExpression('/^\d+\.\d+\.x-dev$/', $alias);
+        $this->assertMatchesRegularExpression('/^\d+\.x-dev$/', $alias, 'Alias the major only, like 3.x-dev.');
 
         $tags = new Process(['git', 'tag', '--list', 'v*', '--sort=-v:refname'], dirname(__DIR__, 2));
         $newest = strtok((string) $tags->mustRun()->getOutput(), "\n");
@@ -28,10 +28,10 @@ class BranchAliasTest extends TestCase
             $this->markTestSkipped('No release tags in this checkout.');
         }
 
-        // 2.13.x-dev against v2.12.0: compare the alias's minor as 2.13.0.
-        $this->assertTrue(
-            Comparator::greaterThan(str_replace('.x-dev', '.0', $alias), ltrim($newest, 'v')),
-            "dev-dev is aliased {$alias}, but {$newest} is already released: move the alias past it.",
+        $this->assertGreaterThanOrEqual(
+            (int) ltrim($newest, 'v'),
+            (int) $alias,
+            "dev-dev is aliased {$alias}, behind {$newest}: alias the new major.",
         );
     }
 }
