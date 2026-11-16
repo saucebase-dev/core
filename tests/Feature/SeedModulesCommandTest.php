@@ -48,6 +48,15 @@ class SeedModulesCommandTest extends TestCase
     }
 
     /** No DEMO_PASSWORD: one is made, saved in .env, and shown, so the demo accounts can be used. */
+    /** Seeding by hand ends the way the installer does: with the account to sign in with. */
+    public function test_a_state_names_its_featured_accounts_to_sign_in_with(): void
+    {
+        $this->artisan('modules:seed', ['--state' => 'showcase'])
+            ->expectsOutputToContain('fixture-admin@example.com')
+            ->doesntExpectOutputToContain('fixture-staff@example.com')
+            ->assertSuccessful();
+    }
+
     public function test_a_state_without_a_demo_password_makes_one_and_saves_it(): void
     {
         config(['saucebase.demo_password' => null]);

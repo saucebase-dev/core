@@ -26,7 +26,7 @@ The recipe writes it: `type: saucebase-template`, `require` = core and every Sau
 
 - A module added later: `saucebase:module-install <module>`, then add it to `require` by hand.
 - `extra.saucebase.configure` (optional): module settings for the install, e.g. `{"auth": {"registration_enabled": true}}`.
-- `extra.saucebase.demo_account` (optional): the email the demo signs in with; the installer prints it after `--demo`.
+- The demo's account goes on `Default{Template}DatabaseSeeder`, not here: `#[DemoAccount('notes@saucebase.dev', 'your notes and lists', featured: true)]`. The installer names it after `--demo` (see `saucebase-module-development`, Seeders).
 - Keep the template's frontend in `resources/js/{stack}/`. The installer flattens it into apps of that stack and refuses a module without the folder.
 
 ## Stubs: replacing app files

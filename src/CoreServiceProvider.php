@@ -14,6 +14,7 @@ use InterNACHI\Modular\Support\Facades\Modules;
 use InterNACHI\Modular\Support\ModularizedCommandsServiceProvider;
 use InterNACHI\Modular\Support\ModularServiceProvider;
 use InterNACHI\Modular\Support\ModuleRegistry;
+use Saucebase\Core\Console\Commands\DemoAccountsCommand;
 use Saucebase\Core\Console\Commands\GenerateModuleTypesCommand;
 use Saucebase\Core\Console\Commands\InstallCommand;
 use Saucebase\Core\Console\Commands\ModuleInstallCommand;
@@ -110,6 +111,7 @@ class CoreServiceProvider extends ServiceProvider
             ModuleSetupCommand::class,
             RecipeToModuleCommand::class,
             SeedModulesCommand::class,
+            DemoAccountsCommand::class,
             SyncModuleTaskfileCommand::class,
             SyncModuleBoostCommand::class,
         ]);
