@@ -1,3 +1,11 @@
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from '@/components/ui/empty';
 import { cn } from '@/lib/utils';
 import type { ComponentProps, ReactNode } from 'react';
 
@@ -7,6 +15,10 @@ type EmptyStateProps = ComponentProps<'div'> & {
     icon?: ReactNode;
 };
 
+/**
+ * The common empty state: an icon, a title, a line and an action. `className` lands on the
+ * container. Other sizes or an illustration: compose `@/components/ui/empty` instead.
+ */
 export default function EmptyState({
     title,
     description,
@@ -16,23 +28,32 @@ export default function EmptyState({
     ...props
 }: EmptyStateProps) {
     return (
-        <div
+        <Empty
             className={cn(
-                'flex flex-col items-center gap-2 rounded-lg border border-dashed px-6 py-10 text-center',
+                'flex-none gap-2 border px-6 py-10 md:px-6 md:py-10',
                 className,
             )}
             {...props}
         >
-            {icon && (
-                <div className="bg-muted text-muted-foreground flex size-10 items-center justify-center rounded-full [&>svg]:size-5">
-                    {icon}
-                </div>
+            <EmptyHeader className="max-w-none">
+                {icon && (
+                    <EmptyMedia
+                        variant="icon"
+                        className="text-muted-foreground mb-0 rounded-full [&_svg:not([class*='size-'])]:size-5"
+                    >
+                        {icon}
+                    </EmptyMedia>
+                )}
+                <EmptyTitle className="text-base tracking-normal">
+                    {title}
+                </EmptyTitle>
+                {description && (
+                    <EmptyDescription>{description}</EmptyDescription>
+                )}
+            </EmptyHeader>
+            {children && (
+                <EmptyContent className="mt-2">{children}</EmptyContent>
             )}
-            <p className="font-medium">{title}</p>
-            {description && (
-                <p className="text-muted-foreground text-sm">{description}</p>
-            )}
-            {children && <div className="mt-2">{children}</div>}
-        </div>
+        </Empty>
     );
 }
