@@ -15,7 +15,7 @@ import { useT } from '@saucebase/react/i18n';
 import { handleAction } from '@saucebase/react/lib/navigation';
 import type { MenuBadge, MenuItem } from '@saucebase/core/types';
 import { Link } from '@inertiajs/react';
-import { ChevronRight } from 'lucide-react';
+import { ArrowUpRight, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import NavIcon from './NavIcon';
@@ -41,12 +41,18 @@ function isItemActive(item: MenuItem): boolean {
     }
 }
 
-function NavBadge({ badge }: { badge: MenuBadge | null }) {
+function NavBadge({
+    badge,
+    beforeIcon = false,
+}: {
+    badge: MenuBadge | null;
+    beforeIcon?: boolean;
+}) {
     if (!badge) return null;
     return (
         <Badge
             variant={badge.variant}
-            className={`ml-auto ${badge.class ?? ''}`}
+            className={`ml-auto ${beforeIcon ? 'mr-1' : ''} ${badge.class ?? ''}`}
         >
             {badge.content ?? (
                 <span className="size-1.5 rounded-xl bg-current" />
@@ -55,13 +61,18 @@ function NavBadge({ badge }: { badge: MenuBadge | null }) {
     );
 }
 
+/** Icon, title and badge; an item opening in a new tab ends on an arrow, pushed right like the badge. */
 function NavLinkContent({ item }: { item: MenuItem }) {
     const badge = getBadgeConfig(item);
+    const newTab = item.newPage === true;
+
     return (
         <>
             <NavIcon icon={item.icon} />
             <span>{useT()(item.title)}</span>
-            <NavBadge badge={badge} />
+            <NavBadge badge={badge} beforeIcon={newTab} />
+            {newTab && !badge && <span className="ml-auto" />}
+            {newTab && <ArrowUpRight className="size-4" />}
         </>
     );
 }
