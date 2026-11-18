@@ -13,12 +13,16 @@ use Saucebase\Core\ProjectConfig;
  * stubs/, which saucebase:template-install later copies into customers' apps.
  * stubs/ is the list: only its files are refreshed, so module patches and other
  * app changes stay out. A file joins the list when named.
+ *
+ * --restore runs it backwards, for a workspace that has just switched stacks: the stubs for
+ * the stack now in use go back into the app, over what the switch put there.
  */
 class TemplateCaptureCommand extends Command
 {
     protected $signature = 'saucebase:template-capture
                             {files?* : App files to add to the stubs (routes/web.php)}
-                            {--check : Fail if stubs/ is out of date, without writing}';
+                            {--check : Fail if stubs/ is out of date, without writing}
+                            {--restore : The other way: copy the stubs for the stack in use into the app (after switching stacks)}';
 
     protected $description = 'Copy the app files a template overrides into its stubs';
 
@@ -58,6 +62,10 @@ class TemplateCaptureCommand extends Command
             ->mapWithKeys(fn (string $path) => [$path => $this->appPath($path, $stack)])
             ->filter();
 
+        if ($this->option('restore')) {
+            return $this->restore($files, $stubs, $sources->all(), $config);
+        }
+
         $missing = $sources->reject(fn (string $app) => $files->isFile(base_path($app)));
 
         if ($missing->isNotEmpty()) {
@@ -82,6 +90,46 @@ class TemplateCaptureCommand extends Command
         $this->components->bulletList($stale->all());
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Each stub over its app file, overwritten: it is what the template ships. In a workspace,
+     * type-checking is then pointed at resources/js/<stack> before core's, as Vite already is.
+     *
+     * @param  array<string, string>  $sources  Stub => app file.
+     */
+    private function restore(Filesystem $files, string $stubs, array $sources, ProjectConfig $config): int
+    {
+        foreach ($sources as $stub => $app) {
+            $files->ensureDirectoryExists(dirname(base_path($app)));
+            $files->copy("{$stubs}/{$stub}", base_path($app));
+        }
+
+        if ($config->isContributor()) {
+            $this->typeCheckOwnFilesFirst($files, (string) $config->getFramework());
+        }
+
+        $this->components->info('Restored '.count($sources).' files from the stubs.');
+        $this->components->bulletList(array_values($sources));
+
+        return self::SUCCESS;
+    }
+
+    private function typeCheckOwnFilesFirst(Filesystem $files, string $framework): void
+    {
+        $path = base_path('tsconfig.json');
+        $tsconfig = $files->exists($path) ? json_decode($files->get($path), true) : null;
+
+        if (! is_array($tsconfig)) {
+            return;
+        }
+
+        $own = "./resources/js/{$framework}/*";
+        $paths = $tsconfig['compilerOptions']['paths']['@/*'] ?? [];
+        $tsconfig['compilerOptions']['paths']['@/*'] = [$own, ...array_values(array_diff($paths, [$own]))];
+        $tsconfig['include'] = array_values(array_unique([...($tsconfig['include'] ?? []), "resources/js/{$framework}/**/*"]));
+
+        $files->put($path, json_encode($tsconfig, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL);
     }
 
     /**
