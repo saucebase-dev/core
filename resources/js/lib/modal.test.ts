@@ -14,11 +14,15 @@ class FakeKeyboardEvent extends Event {
 
 const layerAbove = { closest: () => null };
 
+/** reka marks its layers; Radix (React) doesn't, so its open layers are found by shadcn's slot. */
+let layerSelector = '[data-dismissable-layer]';
+
 beforeEach(() => {
     const document = Object.assign(new EventTarget(), {
         querySelector: (selector: string) =>
             selector === '.im-modal-wrapper' ? {} : null,
-        querySelectorAll: () => [layerAbove],
+        querySelectorAll: (selector: string) =>
+            selector.includes(layerSelector) ? [layerAbove] : [],
     });
 
     Object.assign(globalThis, {
@@ -52,6 +56,18 @@ describe('Escape over a modal', () => {
         window.addEventListener('keydown', () => (layerHeardIt = true));
 
         pressEscape();
+
+        expect(layerHeardIt).toBe(true);
+    });
+
+    /** React's menus and selects (Radix) carry no layer mark, only shadcn's open content slot. */
+    it('goes to a Radix layer above too', () => {
+        layerSelector = '[data-slot$="-content"][data-state="open"]';
+        let layerHeardIt = false;
+        window.addEventListener('keydown', () => (layerHeardIt = true));
+
+        pressEscape();
+        layerSelector = '[data-dismissable-layer]';
 
         expect(layerHeardIt).toBe(true);
     });
