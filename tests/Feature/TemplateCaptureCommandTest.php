@@ -162,6 +162,23 @@ class TemplateCaptureCommandTest extends TestCase
         $this->assertSame('react', $this->stub('resources/js/react/pages/Index.tsx'));
     }
 
+    /**
+     * A workspace keeps its stack's frontend under resources/js/<stack>, as the stubs do, but
+     * Laravel loads its one view from resources/views: the view stubs keep the stack folder.
+     */
+    public function test_a_workspace_files_its_view_under_its_stack_and_leaves_the_other(): void
+    {
+        $this->write('resources/views/app.blade.php', 'vue view');
+        $this->write('modules/uptime/stubs/resources/views/react/app.blade.php', 'react view');
+
+        $this->artisan('saucebase:template-capture', ['files' => ['resources/views/app.blade.php']])->assertSuccessful();
+
+        $this->assertSame('vue view', $this->stub('resources/views/vue/app.blade.php'));
+        $this->assertSame('react view', $this->stub('resources/views/react/app.blade.php'));
+        $this->assertFileDoesNotExist($this->appPath.'/modules/uptime/stubs/resources/views/app.blade.php');
+        $this->artisan('saucebase:template-capture', ['--check' => true])->assertSuccessful();
+    }
+
     private function write(string $path, string $contents): void
     {
         $this->files->ensureDirectoryExists(dirname($this->appPath.'/'.$path));

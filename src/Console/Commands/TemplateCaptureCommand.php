@@ -34,7 +34,8 @@ class TemplateCaptureCommand extends Command
         }
 
         // An installed app's frontend is flat; the stubs keep the stack folder install drops.
-        $stack = $config->isContributor() ? null : $config->getFramework();
+        // A workspace keeps resources/js/<stack> as the stubs do, but its view is flat too.
+        $stack = ['js' => $config->isContributor() ? null : $config->getFramework(), 'views' => $config->getFramework()];
         $stubs = base_path("modules/{$template}/stubs");
 
         $paths = $files->isDirectory($stubs)
@@ -83,24 +84,32 @@ class TemplateCaptureCommand extends Command
         return self::SUCCESS;
     }
 
-    /** resources/js/pages/Index.vue → resources/js/vue/pages/Index.vue, in an installed app. */
-    private function stubPath(?string $path, ?string $stack): ?string
+    /**
+     * resources/js/pages/Index.vue → resources/js/vue/pages/Index.vue, where that folder is flat.
+     *
+     * @param  array{js: ?string, views: ?string}  $stack  The stack each folder is flat for; null: kept as is.
+     */
+    private function stubPath(?string $path, array $stack): ?string
     {
-        if ($path === null || $stack === null || ! preg_match('#^resources/(js|views)/(?!vue/|react/)(.+)$#', $path, $match)) {
+        if ($path === null || ! preg_match('#^resources/(js|views)/(?!vue/|react/)(.+)$#', $path, $match) || $stack[$match[1]] === null) {
             return $path;
         }
 
-        return "resources/{$match[1]}/{$stack}/{$match[2]}";
+        return "resources/{$match[1]}/{$stack[$match[1]]}/{$match[2]}";
     }
 
-    /** The app file a stub comes from; null for another stack's stub in an installed app. */
-    private function appPath(string $stub, ?string $stack): ?string
+    /**
+     * The app file a stub comes from; null for another stack's stub where the folder is flat.
+     *
+     * @param  array{js: ?string, views: ?string}  $stack
+     */
+    private function appPath(string $stub, array $stack): ?string
     {
-        if ($stack === null || ! preg_match('#^resources/(js|views)/(vue|react)/(.+)$#', $stub, $match)) {
+        if (! preg_match('#^resources/(js|views)/(vue|react)/(.+)$#', $stub, $match) || $stack[$match[1]] === null) {
             return $stub;
         }
 
-        return $match[2] === $stack ? "resources/{$match[1]}/{$match[3]}" : null;
+        return $match[2] === $stack[$match[1]] ? "resources/{$match[1]}/{$match[3]}" : null;
     }
 
     /** `./.env` and `routes/../.env` are `.env`: dot segments resolved, so no spelling slips past OWN. Null: outside the app. */

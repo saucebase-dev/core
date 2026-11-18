@@ -27,6 +27,13 @@ export function initializeModals(putConfig: PutConfig): void {
 }
 
 /**
+ * Open layers (menus, selects, popovers, dialogs) in either stack: reka-ui (Vue) marks
+ * its own; Radix (React) marks none, so its are found by shadcn's open content slot.
+ */
+const OPEN_LAYERS =
+    '[data-dismissable-layer]:not([data-state="closed"]), [data-slot$="-content"][data-state="open"]';
+
+/**
  * Escape closes what is on top: a menu, select or dialog opened over a modal, not the
  * modal under it.
  *
@@ -49,11 +56,9 @@ function escapeClosesTheTopLayerFirst(): void {
             }
 
             // A closing layer stays in the page until its exit animation ends.
-            const layerAbove = [
-                ...document.querySelectorAll(
-                    '[data-dismissable-layer]:not([data-state="closed"])',
-                ),
-            ].some((layer) => !layer.closest('.im-modal-wrapper'));
+            const layerAbove = [...document.querySelectorAll(OPEN_LAYERS)].some(
+                (layer) => !layer.closest('.im-modal-wrapper'),
+            );
 
             if (layerAbove) {
                 event.stopPropagation();
@@ -113,7 +118,7 @@ function releaseCoveredModalFocus(): void {
             const covered = modal.closest('[data-aria-hidden]') !== null;
             const intoLayer =
                 target.closest(
-                    '[data-reka-popper-content-wrapper], [data-dismissable-layer]',
+                    '[data-reka-popper-content-wrapper], [data-dismissable-layer], [data-radix-popper-content-wrapper], [data-slot$="-content"]',
                 ) !== null;
 
             if (covered || intoLayer) {
