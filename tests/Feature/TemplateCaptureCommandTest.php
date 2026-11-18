@@ -179,6 +179,60 @@ class TemplateCaptureCommandTest extends TestCase
         $this->artisan('saucebase:template-capture', ['--check' => true])->assertSuccessful();
     }
 
+    /** --restore runs capture backwards: after a stack switch, this stack's stubs go back into the app. */
+    public function test_restore_puts_this_stacks_stubs_back_into_the_workspace(): void
+    {
+        $this->write('modules/uptime/stubs/routes/web.php', 'routes');
+        $this->write('modules/uptime/stubs/resources/css/theme.css', 'template css');
+        $this->write('modules/uptime/stubs/resources/js/vue/pages/Index.vue', 'vue home');
+        $this->write('modules/uptime/stubs/resources/views/vue/app.blade.php', 'vue view');
+        $this->write('modules/uptime/stubs/resources/views/react/app.blade.php', 'react view');
+        // What switching to Vue left: core's CSS and view.
+        $this->write('resources/css/theme.css', 'core css');
+        $this->write('resources/views/app.blade.php', 'core view');
+
+        $this->artisan('saucebase:template-capture', ['--restore' => true])->assertSuccessful();
+
+        $this->assertSame('routes', $this->app('routes/web.php'));
+        $this->assertSame('template css', $this->app('resources/css/theme.css'));
+        $this->assertSame('vue home', $this->app('resources/js/vue/pages/Index.vue'));
+        $this->assertSame('vue view', $this->app('resources/views/app.blade.php'));
+        $this->artisan('saucebase:template-capture', ['--check' => true])->assertSuccessful();
+    }
+
+    /** Vite reads a workspace's resources/js/<stack> before core's; type-checking is pointed the same way. */
+    public function test_restore_points_a_workspaces_type_checking_at_its_own_files_first(): void
+    {
+        $this->write('tsconfig.json', json_encode([
+            'compilerOptions' => ['paths' => ['@/*' => ['./vendor/saucebase/core/stubs/stack/vue/js/*']]],
+            'include' => ['resources/js/*.ts'],
+        ]));
+
+        $this->artisan('saucebase:template-capture', ['--restore' => true])->assertSuccessful();
+
+        $tsconfig = json_decode($this->app('tsconfig.json'), true);
+        $this->assertSame(['./resources/js/vue/*', './vendor/saucebase/core/stubs/stack/vue/js/*'], $tsconfig['compilerOptions']['paths']['@/*']);
+        $this->assertContains('resources/js/vue/**/*', $tsconfig['include']);
+    }
+
+    /** An installed app is flat: its stubs land where install put them, and its tsconfig is its own. */
+    public function test_restore_in_an_installed_app_is_flat(): void
+    {
+        $this->write('saucebase.json', '{"framework": "vue", "template": "uptime"}');
+        $this->write('modules/uptime/stubs/resources/js/vue/pages/Index.vue', 'vue home');
+        $this->write('tsconfig.json', '{"include": []}');
+
+        $this->artisan('saucebase:template-capture', ['--restore' => true])->assertSuccessful();
+
+        $this->assertSame('vue home', $this->app('resources/js/pages/Index.vue'));
+        $this->assertSame('{"include": []}', $this->app('tsconfig.json'));
+    }
+
+    private function app(string $path): string
+    {
+        return $this->files->get($this->appPath.'/'.$path);
+    }
+
     private function write(string $path, string $contents): void
     {
         $this->files->ensureDirectoryExists(dirname($this->appPath.'/'.$path));
