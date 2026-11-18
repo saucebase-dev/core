@@ -27,6 +27,7 @@
     "exclude": [
         "stubs",
         "modules/**/vendor",
+        "modules/*/stubs",
         "modules/*/resources/js/react",
         "node_modules"
     ],
