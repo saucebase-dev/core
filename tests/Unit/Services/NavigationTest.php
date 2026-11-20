@@ -300,6 +300,26 @@ class NavigationTest extends TestCase
         $this->assertFalse($grouped['main'][0]['active']);
     }
 
+    /** The site root has no path at all (`parse_url` gives null), on either side. */
+    public function test_a_home_item_is_active_at_the_site_root(): void
+    {
+        app()->instance('request', Request::create('http://localhost'));
+
+        $this->navigation->add('Home', 'http://localhost', function (Section $section) {
+            $section->attributes(['group' => 'main']);
+        });
+
+        set_error_handler(fn (int $level, string $message) => throw new \ErrorException($message, 0, $level), E_DEPRECATED);
+
+        try {
+            $grouped = $this->navigation->treeGrouped();
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertTrue($grouped['main'][0]['active']);
+    }
+
     public function test_is_item_active_normalizes_trailing_slashes(): void
     {
         app()->instance('request', Request::create('http://localhost/dashboard/'));

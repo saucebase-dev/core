@@ -274,8 +274,9 @@ class Navigation extends SpatieNavigation
 
         $currentUrl = request()->url();
 
-        $itemPath = rtrim(parse_url($itemUrl, PHP_URL_PATH), '/');
-        $currentPath = rtrim(parse_url($currentUrl, PHP_URL_PATH), '/');
+        // The site root has no path: parse_url() gives null.
+        $itemPath = rtrim((string) parse_url($itemUrl, PHP_URL_PATH), '/');
+        $currentPath = rtrim((string) parse_url($currentUrl, PHP_URL_PATH), '/');
 
         return $currentPath === $itemPath;
     }
