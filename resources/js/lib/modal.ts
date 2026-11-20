@@ -27,11 +27,30 @@ export function initializeModals(putConfig: PutConfig): void {
 }
 
 /**
+ * Overlays in core's shadcn UI. Not every `-content` slot: an open collapsible (the
+ * sidebar's nav groups) has one too, and it would swallow the modal's Escape.
+ */
+const OVERLAY_SLOTS = [
+    'dialog',
+    'alert-dialog',
+    'sheet',
+    'popover',
+    'dropdown-menu',
+    'dropdown-menu-sub',
+    'select',
+    'tooltip',
+];
+
+/**
  * Open layers (menus, selects, popovers, dialogs) in either stack: reka-ui (Vue) marks
  * its own; Radix (React) marks none, so its are found by shadcn's open content slot.
  */
-const OPEN_LAYERS =
-    '[data-dismissable-layer]:not([data-state="closed"]), [data-slot$="-content"][data-state="open"]';
+const OPEN_LAYERS = [
+    '[data-dismissable-layer]:not([data-state="closed"])',
+    ...OVERLAY_SLOTS.map(
+        (slot) => `[data-slot="${slot}-content"][data-state="open"]`,
+    ),
+].join(', ');
 
 /**
  * Escape closes what is on top: a menu, select or dialog opened over a modal, not the
