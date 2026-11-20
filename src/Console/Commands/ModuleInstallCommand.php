@@ -46,8 +46,8 @@ class ModuleInstallCommand extends Command
 
         $locked = $this->lockedModules();
 
-        if (! $this->requirePackages($packages)) {
-            $this->components->error('Composer could not install the modules. composer.json and composer.lock are back as they were; run composer install to remove anything Composer left in vendor/ or modules/.');
+        if (($failed = $this->requirePackages($packages)) !== null) {
+            $this->components->error("Composer could not install the modules. {$failed}");
 
             return self::FAILURE;
         }
@@ -60,7 +60,17 @@ class ModuleInstallCommand extends Command
             ...$modules,
         ], $after);
 
-        return $this->runSetup($modules, $this->option('state'), (bool) $this->option('force')) ? self::SUCCESS : self::FAILURE;
+        $force = (bool) $this->option('force');
+
+        if (! $this->runSetup($modules, null, $force)) {
+            return self::FAILURE;
+        }
+
+        // Last, in a process of its own, as template-install does: setup patches models
+        // (api-tokens adds HasApiTokens to User) in a process that already loaded them.
+        $state = $this->option('state');
+
+        return $state === null || $this->seedState($modules, $state, $force) ? self::SUCCESS : self::FAILURE;
     }
 
     /** @return string[]|null Module names on Packagist the app doesn't require yet; null when it has them all. */

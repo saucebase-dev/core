@@ -11,11 +11,13 @@ use InterNACHI\Modular\Support\ModuleRegistry;
 use ReflectionAttribute;
 use ReflectionClass;
 use Saucebase\Core\Attributes\SeedAfter;
+use Saucebase\Core\Console\Traits\FindsModuleSeeders;
 use Saucebase\Core\Support\DependencyOrder;
 
 class SeedModulesCommand extends Command
 {
     use ConfirmableTrait;
+    use FindsModuleSeeders;
 
     protected $signature = 'modules:seed
         {--module=* : Seed specific modules (case-insensitive), together. Omit to seed all.}
@@ -72,7 +74,18 @@ class SeedModulesCommand extends Command
         }
 
         // Every module's required data exists before any state refers to it.
-        return $this->seed($required) && $this->seed($stated) ? self::SUCCESS : self::FAILURE;
+        if (! $this->seed($required) || ! $this->seed($stated)) {
+            return self::FAILURE;
+        }
+
+        $featured = collect($this->demoAccounts($stated))->where('featured', true)
+            ->map(fn (array $account): string => "{$account['email']} ({$account['description']})");
+
+        if ($featured->isNotEmpty()) {
+            $this->components->info('Sign in as '.$featured->implode(' or ').' with DEMO_PASSWORD. All of them: php artisan modules:demo-accounts --state='.$this->option('state'));
+        }
+
+        return self::SUCCESS;
     }
 
     /**
@@ -112,22 +125,6 @@ class SeedModulesCommand extends Command
         file_put_contents($env, $contents);
 
         $this->components->warn("DEMO_PASSWORD was not set. The demo accounts use {$password}, now saved in .env.");
-    }
-
-    /**
-     * @param  Collection<int, mixed>  $modules
-     * @param  callable(string): string  $seederName
-     * @return Collection<array-key, class-string> Module name => seeder class, for those that have one.
-     */
-    private function seeders(Collection $modules, callable $seederName): Collection
-    {
-        return $modules
-            ->mapWithKeys(function ($module) use ($seederName): array {
-                $studly = Str::studly($module->name);
-
-                return [$module->name => "Modules\\{$studly}\\Database\\Seeders\\".$seederName($studly)];
-            })
-            ->filter(fn (string $seeder): bool => class_exists($seeder));
     }
 
     /** @param  Collection<array-key, class-string>  $seeders */

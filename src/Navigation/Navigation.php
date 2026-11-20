@@ -4,6 +4,7 @@ namespace Saucebase\Core\Navigation;
 
 use Illuminate\Support\Str;
 use InterNACHI\Modular\Support\ModuleRegistry;
+use Spatie\Navigation\Helpers\ActiveUrlChecker;
 use Spatie\Navigation\Navigation as SpatieNavigation;
 
 /**
@@ -16,12 +17,22 @@ class Navigation extends SpatieNavigation
 {
     protected bool $loaded = false;
 
+    /**
+     * Built while the app boots, with routes not cached: internachi/modular runs every module's
+     * routes/*.php then, navigation.php included, so the module items are already here.
+     */
+    protected bool $modulesRanAtBoot;
+
+    public function __construct(ActiveUrlChecker $activeUrlChecker)
+    {
+        parent::__construct($activeUrlChecker);
+
+        $this->modulesRanAtBoot = ! app()->isBooted() && ! app()->routesAreCached();
+    }
+
     protected function ensureLoaded(): void
     {
-        if (! $this->loaded) {
-            $this->loaded = true;
-            $this->load();
-        }
+        $this->load();
     }
 
     /**
@@ -263,8 +274,9 @@ class Navigation extends SpatieNavigation
 
         $currentUrl = request()->url();
 
-        $itemPath = rtrim(parse_url($itemUrl, PHP_URL_PATH), '/');
-        $currentPath = rtrim(parse_url($currentUrl, PHP_URL_PATH), '/');
+        // The site root has no path: parse_url() gives null.
+        $itemPath = rtrim((string) parse_url($itemUrl, PHP_URL_PATH), '/');
+        $currentPath = rtrim((string) parse_url($currentUrl, PHP_URL_PATH), '/');
 
         return $currentPath === $itemPath;
     }
@@ -309,21 +321,35 @@ class Navigation extends SpatieNavigation
      *
      * Only loads module navigation if the module is enabled.
      *
+     * Once per instance, with `require`: the instance is scoped, so an Octane worker or a
+     * queue gets a fresh one per request or job, and `require_once` would leave every one
+     * after the first empty. Module files modular already ran into this instance at boot are
+     * not run again, or every item would be listed twice.
+     *
      * @return $this
      */
     public function load(): self
     {
-        // Load core navigation
+        if ($this->loaded) {
+            return $this;
+        }
+
+        $this->loaded = true;
+
         $coreNavigationPath = base_path('routes/navigation.php');
         if (file_exists($coreNavigationPath)) {
-            require_once $coreNavigationPath;
+            require $coreNavigationPath;
+        }
+
+        if ($this->modulesRanAtBoot) {
+            return $this;
         }
 
         // Load navigation from all modules discovered by InterNACHI
         app(ModuleRegistry::class)->modules()->each(function ($module): void {
             $path = $module->path('routes/navigation.php');
             if (file_exists($path)) {
-                require_once $path;
+                require $path;
             }
         });
 

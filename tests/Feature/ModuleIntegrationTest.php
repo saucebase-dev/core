@@ -92,6 +92,15 @@ class ModuleIntegrationTest extends TestCase
         $this->assertTrue(Breadcrumbs::exists('module-test-fixture.index'));
     }
 
+    /** A second application in the same process (Octane workers, a test suite) registers them too. */
+    public function test_every_application_registers_module_breadcrumbs(): void
+    {
+        $this->refreshApplication();
+        Breadcrumbs::clearResolvedInstances();
+
+        $this->assertTrue(Breadcrumbs::exists('module-test-fixture.index'));
+    }
+
     /**
      * The command resolves paths through module_path(), so it follows the configured
      * modules directory rather than assuming `modules/` under the base path.

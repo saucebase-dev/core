@@ -169,10 +169,18 @@ jobs:
           - uses: actions/checkout@v7
             with:
                 ref: ${{ github.head_ref }}
-          - name: "laravel-pint"
-            uses: aglipanci/laravel-pint-action@36de00d5f5a8a4e12d443e01671daa12a18f4c79 # 2.6
+          - name: Setup PHP
+            uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
             with:
-                configPath: './pint.json'
+                php-version: '8.4'
+                coverage: none
+
+          - name: Install dependencies
+            uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
+
+          # The project's own Pint (composer.lock), so CI formats exactly as a local run does.
+          - name: Pint
+            run: vendor/bin/pint --config pint.json
 
           - name: Commit changes
             uses: stefanzweifel/git-auto-commit-action@d0b01107b5db882071f96de5dd4b54961ea93f4c # v7.2.1

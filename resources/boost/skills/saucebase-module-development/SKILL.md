@@ -167,6 +167,12 @@ no module provides fails. In production it asks first; `--force` (also on `sauce
 same kind; modules that aren't installed are ignored. A module with an admin area creates its `manage {module}` permission
 there (see `saucebase-filament-development`); state seeders never hold anything an install needs.
 
+A state seeder that creates accounts declares them on its class, one attribute each:
+`#[DemoAccount('owner@saucebase.dev', 'owns Acme and Globex', featured: true)]`
+(`Saucebase\Core\Attributes\DemoAccount`). `php artisan modules:demo-accounts --state=showcase` lists them
+(`--json` for the installer); `featured` ones are named where people start, after `modules:seed --state` and in
+the installer's summary. Feature only the one or two to sign in with first. They all use `DEMO_PASSWORD`.
+
 ## Patches
 
 A module changes application files it doesn't own (the `User` model, `routes/web.php`) with

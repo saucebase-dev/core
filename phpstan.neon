@@ -24,3 +24,6 @@ parameters:
         # analysed.
         - identifier: trait.unused
           path: src/Filament/ModulePlugin.php
+        # Same for the test helper modules and templates use in their own tests.
+        - identifier: trait.unused
+          path: src/Testing/AssertsDemoAccounts.php

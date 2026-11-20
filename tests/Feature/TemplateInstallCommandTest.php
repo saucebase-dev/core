@@ -199,7 +199,15 @@ class TemplateInstallCommandTest extends TestCase
     /** Composer can fail after writing them (a plugin, a script): the app gets its files back. */
     public function test_a_failed_composer_require_puts_composer_files_back(): void
     {
+        $this->files->ensureDirectoryExists($this->appPath.'/modules/blog');
         Process::fake(function (PendingProcess $process) {
+            if ($process->command[1] !== 'require') {
+                return Process::result();
+            }
+
+            // A plugin fails after Composer unpacked packages into modules/.
+            $this->files->ensureDirectoryExists($this->appPath.'/modules/uptime/src');
+            $this->files->ensureDirectoryExists($this->appPath.'/modules/auth');
             $this->files->put($this->appPath.'/composer.json', '{"require": {"saucebase/uptime": "*"}}');
             $this->files->put($this->appPath.'/composer.lock', $this->lock(['saucebase/uptime' => []], templates: ['saucebase/uptime']));
 
@@ -207,11 +215,51 @@ class TemplateInstallCommandTest extends TestCase
         });
 
         $this->artisan('saucebase:template-install', ['template' => 'uptime'])
-            ->expectsOutputToContain('composer install')
+            ->expectsOutputToContain('Nothing was changed')
             ->assertFailed();
 
         $this->assertSame('{}', $this->files->get($this->appPath.'/composer.json'));
         $this->assertSame($this->lock([]), $this->files->get($this->appPath.'/composer.lock'));
+        // Left behind, they stop the app booting (Composer does not autoload them).
+        $this->assertDirectoryDoesNotExist($this->appPath.'/modules/uptime');
+        $this->assertDirectoryDoesNotExist($this->appPath.'/modules/auth');
+        $this->assertDirectoryExists($this->appPath.'/modules/blog');
+    }
+
+    /**
+     * A failed require can leave vendor/, a module Composer upgraded, and the generated
+     * autoloader on the new lock. Installing from the restored lock puts them back with it.
+     */
+    public function test_a_failed_composer_require_reinstalls_from_the_restored_lock(): void
+    {
+        $restored = null;
+        Process::fake(function (PendingProcess $process) use (&$restored) {
+            if ($process->command[1] === 'install') {
+                $restored = $this->files->get($this->appPath.'/composer.lock');
+
+                return Process::result();
+            }
+
+            $this->files->put($this->appPath.'/composer.lock', $this->lock(['saucebase/uptime' => []], templates: ['saucebase/uptime']));
+
+            return Process::result(exitCode: 1);
+        });
+
+        $this->artisan('saucebase:template-install', ['template' => 'uptime'])->assertFailed();
+
+        Process::assertRan(fn (PendingProcess $p) => $p->command === ['composer', 'install', '--no-interaction']);
+        $this->assertSame($this->lock([]), $restored);
+    }
+
+    /** The reinstall can fail too (a pre-install script): then vendor/ is not back, and the error says how to fix it. */
+    public function test_a_failed_reinstall_says_vendor_is_not_back(): void
+    {
+        Process::fake(fn () => Process::result(exitCode: 1));
+
+        $this->artisan('saucebase:template-install', ['template' => 'uptime'])
+            ->doesntExpectOutputToContain('Nothing was changed')
+            ->expectsOutputToContain('Run: composer install')
+            ->assertFailed();
     }
 
     public function test_a_package_that_is_not_a_template_is_refused(): void

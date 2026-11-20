@@ -2,6 +2,7 @@
 
 namespace Saucebase\Core\Console\Traits;
 
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Process as SymfonyProcess;
@@ -14,25 +15,45 @@ trait InstallsSaucebasePackages
 {
     /**
      * Composer reverts its own failures, but not one in a plugin or script after it wrote
-     * the lock: composer.json and composer.lock are put back here either way.
+     * the lock: composer.json, composer.lock and modules/ are put back here either way.
      *
      * @param  string[]  $packages  vendor/name
+     * @return string|null Null once installed; otherwise what the failure left, for the error.
      */
-    protected function requirePackages(array $packages): bool
+    protected function requirePackages(array $packages): ?string
     {
         $saved = collect(['composer.json', 'composer.lock'])
             ->mapWithKeys(fn (string $file) => [base_path($file) => @file_get_contents(base_path($file))]);
+        $modules = $this->moduleFolders();
 
         if (Process::path(base_path())->forever()
             ->run(['composer', 'require', ...$packages, '--no-interaction'], $this->writeOutput(...))
             ->successful()) {
-            return true;
+            return null;
         }
 
         $saved->filter(fn ($contents) => $contents !== false)
             ->each(fn (string $contents, string $path) => file_put_contents($path, $contents));
 
-        return false;
+        // vendor/, a module Composer upgraded, and the generated autoloader still follow the
+        // new lock: installing from the restored one puts them back with it.
+        $reinstalled = $saved[base_path('composer.lock')] === false
+            || Process::path(base_path())->forever()->run(['composer', 'install', '--no-interaction'], $this->writeOutput(...))->successful();
+
+        // Folders this run unpacked: left behind, core refuses to boot (UnloadableModules).
+        foreach (array_diff($this->moduleFolders(), $modules) as $folder) {
+            (new Filesystem)->deleteDirectory(base_path("modules/{$folder}"));
+        }
+
+        return $reinstalled
+            ? 'Nothing was changed: composer.json, composer.lock and modules/ are back as they were.'
+            : 'composer.json, composer.lock and modules/ are back as they were, but Composer could not reinstall vendor/ from them. Run: composer install';
+    }
+
+    /** @return string[] */
+    private function moduleFolders(): array
+    {
+        return array_map('basename', glob(base_path('modules/*'), GLOB_ONLYDIR) ?: []);
     }
 
     /**
