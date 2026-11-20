@@ -37,6 +37,10 @@ class TemplateCaptureCommand extends Command
             return $this->refuse('Run this in an app that builds a template: "template" in saucebase.json.');
         }
 
+        if ($this->option('check') && $this->option('restore')) {
+            return $this->refuse('--check never writes, so it cannot run with --restore. Run one of them.');
+        }
+
         // An installed app's frontend is flat; the stubs keep the stack folder install drops.
         // A workspace keeps resources/js/<stack> as the stubs do, but its view is flat too.
         $stack = ['js' => $config->isContributor() ? null : $config->getFramework(), 'views' => $config->getFramework()];
@@ -100,6 +104,10 @@ class TemplateCaptureCommand extends Command
      */
     private function restore(Filesystem $files, string $stubs, array $sources, ProjectConfig $config): int
     {
+        // A workspace keeps both stacks' frontends; only the one in use is restored.
+        $sources = array_filter($sources, fn (string $stub) => ! preg_match('#^resources/js/(vue|react)/#', $stub, $match)
+            || $match[1] === $config->getFramework(), ARRAY_FILTER_USE_KEY);
+
         foreach ($sources as $stub => $app) {
             $files->ensureDirectoryExists(dirname(base_path($app)));
             $files->copy("{$stubs}/{$stub}", base_path($app));

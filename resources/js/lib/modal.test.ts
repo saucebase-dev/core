@@ -39,6 +39,28 @@ afterEach(() => {
     }
 });
 
+/** Just enough of CSS attribute selectors: `[a]`, `[a="v"]`, `[a$="v"]` and `:not(...)` of those. */
+function matches(element: Record<string, string>, selector: string): boolean {
+    const test = (
+        attribute: string,
+        operator?: string,
+        value?: string,
+    ): boolean => {
+        const actual = element[attribute];
+        if (operator === undefined) return actual !== undefined;
+        if (actual === undefined) return false;
+
+        return operator === '$=' ? actual.endsWith(value!) : actual === value;
+    };
+
+    return [
+        ...selector.matchAll(/(:not\()?\[([\w-]+)(?:(\$?=)"([^"]*)")?\]\)?/g),
+    ].every(
+        ([, not, attribute, operator, value]) =>
+            Boolean(not) !== test(attribute, operator, value),
+    );
+}
+
 function pressEscape(): Event {
     const event = new FakeKeyboardEvent('keydown', {
         key: 'Escape',
@@ -60,16 +82,36 @@ describe('Escape over a modal', () => {
         expect(layerHeardIt).toBe(true);
     });
 
-    /** React's menus and selects (Radix) carry no layer mark, only shadcn's open content slot. */
-    it('goes to a Radix layer above too', () => {
-        layerSelector = '[data-slot$="-content"][data-state="open"]';
-        let layerHeardIt = false;
-        window.addEventListener('keydown', () => (layerHeardIt = true));
+    /**
+     * React's menus and selects (Radix) carry no layer mark, only shadcn's open content slot.
+     * An open collapsible (the sidebar's nav groups) carries one too, but is no layer: Escape
+     * must still reach the modal.
+     */
+    it('goes to a Radix overlay above, not to any open content slot', () => {
+        const heard = (slot: string): boolean => {
+            const element = { 'data-slot': slot, 'data-state': 'open' };
+            Object.assign(document, {
+                querySelectorAll: (selector: string) =>
+                    selector
+                        .split(',')
+                        .some((part) => matches(element, part.trim()))
+                        ? [layerAbove]
+                        : [],
+            });
+            let layerHeardIt = false;
+            const listener = () => (layerHeardIt = true);
+            window.addEventListener('keydown', listener);
+            pressEscape();
+            window.removeEventListener('keydown', listener);
 
-        pressEscape();
-        layerSelector = '[data-dismissable-layer]';
+            return layerHeardIt;
+        };
 
-        expect(layerHeardIt).toBe(true);
+        expect(heard('collapsible-content')).toBe(false);
+        expect(heard('sidebar-group-content')).toBe(false);
+        expect(heard('dropdown-menu-content')).toBe(true);
+        expect(heard('select-content')).toBe(true);
+        expect(heard('dialog-content')).toBe(true);
     });
 
     /** A layer may refuse Escape (mid-submit, say); the refusal must hold. */
