@@ -108,6 +108,12 @@ class TemplateCaptureCommand extends Command
         $sources = array_filter($sources, fn (string $stub) => ! preg_match('#^resources/js/(vue|react)/#', $stub, $match)
             || $match[1] === $config->getFramework(), ARRAY_FILTER_USE_KEY);
 
+        $missing = array_filter(array_keys($sources), fn (string $stub) => ! $files->isFile("{$stubs}/{$stub}"));
+
+        if ($missing !== []) {
+            return $this->refuse('These files have no stub to restore: '.implode(', ', $missing).'. Nothing was restored.');
+        }
+
         foreach ($sources as $stub => $app) {
             $files->ensureDirectoryExists(dirname(base_path($app)));
             $files->copy("{$stubs}/{$stub}", base_path($app));

@@ -251,6 +251,17 @@ class TemplateInstallCommandTest extends TestCase
         $this->assertSame($this->lock([]), $restored);
     }
 
+    /** The reinstall can fail too (a pre-install script): then vendor/ is not back, and the error says how to fix it. */
+    public function test_a_failed_reinstall_says_vendor_is_not_back(): void
+    {
+        Process::fake(fn () => Process::result(exitCode: 1));
+
+        $this->artisan('saucebase:template-install', ['template' => 'uptime'])
+            ->doesntExpectOutputToContain('Nothing was changed')
+            ->expectsOutputToContain('Run: composer install')
+            ->assertFailed();
+    }
+
     public function test_a_package_that_is_not_a_template_is_refused(): void
     {
         $this->template(['routes/web.php' => 'template'], type: 'saucebase-module');

@@ -46,8 +46,8 @@ class ModuleInstallCommand extends Command
 
         $locked = $this->lockedModules();
 
-        if (! $this->requirePackages($packages)) {
-            $this->components->error('Composer could not install the modules. Nothing was changed: composer.json, composer.lock and modules/ are back as they were.');
+        if (($failed = $this->requirePackages($packages)) !== null) {
+            $this->components->error("Composer could not install the modules. {$failed}");
 
             return self::FAILURE;
         }

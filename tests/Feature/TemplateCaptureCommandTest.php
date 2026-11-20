@@ -224,6 +224,17 @@ class TemplateCaptureCommandTest extends TestCase
         $this->assertSame('mine', $this->app('routes/web.php'));
     }
 
+    /** A named file with no stub fails the restore before any file is overwritten. */
+    public function test_restore_without_a_stub_writes_nothing(): void
+    {
+        $this->write('modules/uptime/stubs/resources/css/theme.css', 'template css');
+        $this->write('resources/css/theme.css', 'mine');
+
+        $this->artisan('saucebase:template-capture', ['--restore' => true, 'files' => ['routes/new.php']])->assertFailed();
+
+        $this->assertSame('mine', $this->app('resources/css/theme.css'));
+    }
+
     /** Vite reads a workspace's resources/js/<stack> before core's; type-checking is pointed the same way. */
     public function test_restore_points_a_workspaces_type_checking_at_its_own_files_first(): void
     {

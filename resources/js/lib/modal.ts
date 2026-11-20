@@ -27,10 +27,10 @@ export function initializeModals(putConfig: PutConfig): void {
 }
 
 /**
- * Overlays in core's shadcn UI. Not every `-content` slot: an open collapsible (the
- * sidebar's nav groups) has one too, and it would swallow the modal's Escape.
+ * Overlays in core's shadcn UI, by content slot. Not every `-content` slot: a card, a
+ * field or an open collapsible (the sidebar's nav groups) has one too, and is no layer.
  */
-const OVERLAY_SLOTS = [
+const OVERLAY_CONTENT = [
     'dialog',
     'alert-dialog',
     'sheet',
@@ -39,18 +39,16 @@ const OVERLAY_SLOTS = [
     'dropdown-menu-sub',
     'select',
     'tooltip',
-];
+].map((slot) => `[data-slot="${slot}-content"]`);
 
 /**
  * Open layers (menus, selects, popovers, dialogs) in either stack: reka-ui (Vue) marks
- * its own; Radix (React) marks none, so its are found by shadcn's open content slot.
+ * its own; Radix (React) marks none, so its are found by shadcn's content slot. Not
+ * closed, rather than open: a Radix tooltip is `delayed-open` or `instant-open`.
  */
-const OPEN_LAYERS = [
-    '[data-dismissable-layer]:not([data-state="closed"])',
-    ...OVERLAY_SLOTS.map(
-        (slot) => `[data-slot="${slot}-content"][data-state="open"]`,
-    ),
-].join(', ');
+const OPEN_LAYERS = ['[data-dismissable-layer]', ...OVERLAY_CONTENT]
+    .map((layer) => `${layer}:not([data-state="closed"])`)
+    .join(', ');
 
 /**
  * Escape closes what is on top: a menu, select or dialog opened over a modal, not the
@@ -110,40 +108,38 @@ function escapeClosesTheTopLayerFirst(): void {
  * An overlay marks everything it covered with `data-aria-hidden` when it opens,
  * so a covered modal has an overlay above it and no business holding focus. A
  * non-modal layer (popover, combobox) marks nothing, so focus landing inside one
- * counts too. Swallowing the event in the capture phase keeps it from reaching
- * either trap.
+ * counts too. Every trap (the modal's, reka-ui's, Radix's) listens on `document`, so
+ * stopping the event on `<html>` on its way up keeps it from all of them, after
+ * React has read its `onFocus` from it on its own containers below.
  */
 function releaseCoveredModalFocus(): void {
     // The server renders the same app but has no document to listen on.
     if (typeof document === 'undefined') return;
 
-    document.addEventListener(
-        'focusin',
-        (event) => {
-            const modal = document.querySelector('.im-modal-wrapper');
-            const target = event.target;
+    document.documentElement.addEventListener('focusin', (event) => {
+        const modal = document.querySelector('.im-modal-wrapper');
+        const target = event.target;
 
-            if (
-                !modal ||
-                !(target instanceof Element) ||
-                modal.contains(target)
-            ) {
-                return;
-            }
+        if (!modal || !(target instanceof Element) || modal.contains(target)) {
+            return;
+        }
 
-            // Covered by a modal layer, or focus moving into a non-modal one (a popover
-            // or combobox opened from the modal): either way the trap must let go, or
-            // it pulls focus back and the layer closes as soon as it opens.
-            const covered = modal.closest('[data-aria-hidden]') !== null;
-            const intoLayer =
-                target.closest(
-                    '[data-reka-popper-content-wrapper], [data-dismissable-layer], [data-radix-popper-content-wrapper], [data-slot$="-content"]',
-                ) !== null;
+        // Covered by a modal layer, or focus moving into a non-modal one (a popover
+        // or combobox opened from the modal): either way the trap must let go, or
+        // it pulls focus back and the layer closes as soon as it opens.
+        const covered = modal.closest('[data-aria-hidden]') !== null;
+        const intoLayer =
+            target.closest(
+                [
+                    '[data-reka-popper-content-wrapper]',
+                    '[data-dismissable-layer]',
+                    '[data-radix-popper-content-wrapper]',
+                    ...OVERLAY_CONTENT,
+                ].join(', '),
+            ) !== null;
 
-            if (covered || intoLayer) {
-                event.stopPropagation();
-            }
-        },
-        true,
-    );
+        if (covered || intoLayer) {
+            event.stopPropagation();
+        }
+    });
 }
