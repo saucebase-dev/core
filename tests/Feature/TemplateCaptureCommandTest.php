@@ -200,6 +200,30 @@ class TemplateCaptureCommandTest extends TestCase
         $this->artisan('saucebase:template-capture', ['--check' => true])->assertSuccessful();
     }
 
+    /** "The stack in use": the other stack's frontend in a workspace is not this restore's to overwrite. */
+    public function test_restore_in_a_workspace_leaves_the_other_stacks_frontend_alone(): void
+    {
+        $this->write('modules/uptime/stubs/resources/js/vue/pages/Index.vue', 'vue home');
+        $this->write('modules/uptime/stubs/resources/js/react/pages/Index.tsx', 'react home');
+        $this->write('resources/js/react/pages/Index.tsx', 'react work in progress');
+
+        $this->artisan('saucebase:template-capture', ['--restore' => true])->assertSuccessful();
+
+        $this->assertSame('vue home', $this->app('resources/js/vue/pages/Index.vue'));
+        $this->assertSame('react work in progress', $this->app('resources/js/react/pages/Index.tsx'));
+    }
+
+    /** --check never writes, so it can't ride along with --restore. */
+    public function test_check_and_restore_together_are_refused_before_writing(): void
+    {
+        $this->write('modules/uptime/stubs/routes/web.php', 'template');
+        $this->write('routes/web.php', 'mine');
+
+        $this->artisan('saucebase:template-capture', ['--check' => true, '--restore' => true])->assertFailed();
+
+        $this->assertSame('mine', $this->app('routes/web.php'));
+    }
+
     /** Vite reads a workspace's resources/js/<stack> before core's; type-checking is pointed the same way. */
     public function test_restore_points_a_workspaces_type_checking_at_its_own_files_first(): void
     {
