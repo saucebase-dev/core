@@ -201,6 +201,10 @@ class TemplateInstallCommandTest extends TestCase
     {
         $this->files->ensureDirectoryExists($this->appPath.'/modules/blog');
         Process::fake(function (PendingProcess $process) {
+            if ($process->command[1] !== 'require') {
+                return Process::result();
+            }
+
             // A plugin fails after Composer unpacked packages into modules/.
             $this->files->ensureDirectoryExists($this->appPath.'/modules/uptime/src');
             $this->files->ensureDirectoryExists($this->appPath.'/modules/auth');
@@ -220,6 +224,31 @@ class TemplateInstallCommandTest extends TestCase
         $this->assertDirectoryDoesNotExist($this->appPath.'/modules/uptime');
         $this->assertDirectoryDoesNotExist($this->appPath.'/modules/auth');
         $this->assertDirectoryExists($this->appPath.'/modules/blog');
+    }
+
+    /**
+     * A failed require can leave vendor/, a module Composer upgraded, and the generated
+     * autoloader on the new lock. Installing from the restored lock puts them back with it.
+     */
+    public function test_a_failed_composer_require_reinstalls_from_the_restored_lock(): void
+    {
+        $restored = null;
+        Process::fake(function (PendingProcess $process) use (&$restored) {
+            if ($process->command[1] === 'install') {
+                $restored = $this->files->get($this->appPath.'/composer.lock');
+
+                return Process::result();
+            }
+
+            $this->files->put($this->appPath.'/composer.lock', $this->lock(['saucebase/uptime' => []], templates: ['saucebase/uptime']));
+
+            return Process::result(exitCode: 1);
+        });
+
+        $this->artisan('saucebase:template-install', ['template' => 'uptime'])->assertFailed();
+
+        Process::assertRan(fn (PendingProcess $p) => $p->command === ['composer', 'install', '--no-interaction']);
+        $this->assertSame($this->lock([]), $restored);
     }
 
     public function test_a_package_that_is_not_a_template_is_refused(): void
