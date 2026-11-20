@@ -53,8 +53,8 @@ class TemplateInstallCommand extends Command
             return $this->refuse("This app already has the {$other} template. An app takes one template, installed fresh.");
         }
 
-        if (! $this->requirePackages([$package])) {
-            return $this->refuse('Composer could not install the template. Nothing was changed: composer.json, composer.lock and modules/ are back as they were.');
+        if (($failed = $this->requirePackages([$package])) !== null) {
+            return $this->refuse("Composer could not install the template. {$failed}");
         }
 
         if (($this->lockedPackages()[$template]['type'] ?? null) !== 'saucebase-template') {

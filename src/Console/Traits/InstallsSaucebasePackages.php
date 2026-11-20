@@ -18,8 +18,9 @@ trait InstallsSaucebasePackages
      * the lock: composer.json, composer.lock and modules/ are put back here either way.
      *
      * @param  string[]  $packages  vendor/name
+     * @return string|null Null once installed; otherwise what the failure left, for the error.
      */
-    protected function requirePackages(array $packages): bool
+    protected function requirePackages(array $packages): ?string
     {
         $saved = collect(['composer.json', 'composer.lock'])
             ->mapWithKeys(fn (string $file) => [base_path($file) => @file_get_contents(base_path($file))]);
@@ -28,7 +29,7 @@ trait InstallsSaucebasePackages
         if (Process::path(base_path())->forever()
             ->run(['composer', 'require', ...$packages, '--no-interaction'], $this->writeOutput(...))
             ->successful()) {
-            return true;
+            return null;
         }
 
         $saved->filter(fn ($contents) => $contents !== false)
@@ -36,16 +37,17 @@ trait InstallsSaucebasePackages
 
         // vendor/, a module Composer upgraded, and the generated autoloader still follow the
         // new lock: installing from the restored one puts them back with it.
-        if ($saved[base_path('composer.lock')] !== false) {
-            Process::path(base_path())->forever()->run(['composer', 'install', '--no-interaction'], $this->writeOutput(...));
-        }
+        $reinstalled = $saved[base_path('composer.lock')] === false
+            || Process::path(base_path())->forever()->run(['composer', 'install', '--no-interaction'], $this->writeOutput(...))->successful();
 
         // Folders this run unpacked: left behind, core refuses to boot (UnloadableModules).
         foreach (array_diff($this->moduleFolders(), $modules) as $folder) {
             (new Filesystem)->deleteDirectory(base_path("modules/{$folder}"));
         }
 
-        return false;
+        return $reinstalled
+            ? 'Nothing was changed: composer.json, composer.lock and modules/ are back as they were.'
+            : 'composer.json, composer.lock and modules/ are back as they were, but Composer could not reinstall vendor/ from them. Run: composer install';
     }
 
     /** @return string[] */
