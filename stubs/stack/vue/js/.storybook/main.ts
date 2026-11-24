@@ -21,10 +21,19 @@ export const framework = {
 };
 
 // The design system's introduction first; Storybook orders entries as they are found.
-export const stories = [
+// Then each module's own stories, under Modules/. Found from the app, so the same glob
+// fits a contributor checkout (resources/js/vue/) and an installed app (flattened).
+// `directory` is relative to the config folder as Storybook got it: the Vitest plugin
+// joins it onto that folder, so an absolute one would break `npm run test:stories`.
+export const stories = (_: unknown, { configDir }: { configDir: string }) => [
     './design-system/Introduction.mdx',
     './design-system/*.mdx',
     '../**/*.stories.ts',
+    {
+        directory: path.relative(configDir, path.resolve('modules')),
+        files: '*/resources/js/**/*.stories.ts',
+        titlePrefix: 'Modules',
+    },
 ];
 
 // The brand artwork the UI loads from /images, as the app serves it from public/.
@@ -43,10 +52,13 @@ export const addons = [
     'storybook-addon-tag-badges',
 ].map(pkg);
 
-// Props tables and "Show code" snippets come from docgen. Server docgen finds a
-// component by its real path, which must be inside the app's tsconfig. In a contributor
-// checkout this folder is a symlink into saucebase/core, outside it, so there the
-// builder's docgen reads the components instead (deprecated; gone in Storybook 12).
+// Props tables, "Show code" snippets and the /mcp docs come from docgen. Server docgen
+// finds a component's tsconfig by walking up from its real path. In a contributor
+// checkout that path is in saucebase/core, outside the app: `saucebase stack --dev` puts
+// a tsconfig beside this folder for it. Without one, the builder's docgen reads the
+// components instead (deprecated; gone in Storybook 12).
 export const features = {
-    docgenServer: fs.existsSync('resources/js/.storybook'),
+    docgenServer:
+        fs.existsSync('resources/js/.storybook') ||
+        fs.existsSync(path.resolve(import.meta.dirname, '../tsconfig.json')),
 };

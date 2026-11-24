@@ -28,8 +28,11 @@ describe('vue Storybook preview', () => {
             'utf8',
         );
 
+        // Installed apps, and contributor checkouts whose `saucebase stack --dev` wrote
+        // core a tsconfig (js/tsconfig.json): there server docgen reaches the components.
+        expect(source).toContain("fs.existsSync('resources/js/.storybook')");
         expect(source).toContain(
-            "docgenServer: fs.existsSync('resources/js/.storybook')",
+            "fs.existsSync(path.resolve(import.meta.dirname, '../tsconfig.json'))",
         );
         // vue-docgen-api, the builder's default, can't follow imported prop types
         // (SidebarProps): their controls would be JSON boxes, or missing.
