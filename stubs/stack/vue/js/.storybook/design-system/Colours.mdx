@@ -1,0 +1,316 @@
+import { Meta, Unstyled } from '@storybook/addon-docs/blocks';
+import { useEffect, useState } from 'react';
+import { contrast, hex, passes, toRgb } from './colour';
+
+<Meta title="Design system/Colours" />
+
+export const groups = [
+    {
+        title: 'Brand',
+        note: 'Actions and highlights, with the text that sits on them.',
+        rows: [
+            ['primary', 'primary-foreground'],
+            ['secondary', 'secondary-foreground'],
+            ['accent', 'accent-foreground'],
+        ],
+    },
+    {
+        title: 'Surfaces',
+        note: 'Where content sits, with its text.',
+        rows: [
+            ['background', 'foreground'],
+            ['card', 'card-foreground'],
+            ['popover', 'popover-foreground'],
+            ['muted', 'muted-foreground'],
+            ['sidebar', 'sidebar-foreground'],
+        ],
+    },
+    {
+        title: 'Secondary and error text',
+        note: 'Text colours read against the surfaces they appear on.',
+        rows: [
+            ['background', 'muted-foreground'],
+            ['sidebar', 'muted-foreground'],
+            ['background', 'destructive'],
+        ],
+    },
+    {
+        title: 'Feedback',
+        note: 'Destructive actions and errors.',
+        rows: [['destructive', 'destructive-foreground']],
+    },
+    {
+        title: 'Lines and focus',
+        note: 'Interface parts, read against the page: AA asks 3:1 of input borders and focus rings. Dividers are decorative, so WCAG exempts them: their ratio is shown for reference.',
+        kind: 'ui',
+        rows: [
+            ['background', 'border', 'info'],
+            ['background', 'input'],
+            ['background', 'ring'],
+        ],
+    },
+    {
+        title: 'Charts',
+        note: 'Data series, read against the page: AA asks 3:1.',
+        kind: 'ui',
+        rows: [1, 2, 3, 4, 5].map((n) => ['background', `chart-${n}`]),
+    },
+];
+
+export const read = (names, dark) => {
+    const probe = document.createElement('div');
+    probe.className = dark ? 'dark' : '';
+    document.body.appendChild(probe);
+    const style = getComputedStyle(probe);
+    const values = Object.fromEntries(
+        names.map((name) => [name, style.getPropertyValue(`--${name}`).trim()]),
+    );
+    probe.remove();
+    return values;
+};
+
+export const grade = (values, [background, text, info], kind) => {
+    const ratio = contrast(toRgb(values[background]), toRgb(values[text]));
+    return {
+        ratio,
+        verdict: info
+            ? 'reference'
+            : passes(ratio, kind ?? 'text')
+              ? 'pass'
+              : 'fail',
+    };
+};
+
+export const focusRing =
+    'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+
+export const Copy = ({ value, label }) => {
+    const [copied, setCopied] = useState(false);
+    return (
+        <button
+            type="button"
+            aria-label={`Copy ${label ?? value}`}
+            className={`hover:bg-muted -mx-1 rounded-[4px] px-1 text-left font-mono text-xs ${focusRing}`}
+            onClick={() =>
+                navigator.clipboard.writeText(value).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1200);
+                })
+            }
+        >
+            <span aria-live="polite">{copied ? 'Copied' : value}</span>
+        </button>
+    );
+};
+
+export const verdicts = {
+    // The badges hold AA themselves: white on green-700 and red-700.
+    pass: ['Pass', 'bg-green-700 text-white'],
+    fail: ['Fail', 'bg-red-700 text-white'],
+    reference: ['Reference', 'bg-muted text-foreground'],
+};
+
+export const Badge = ({ ratio, verdict }) => {
+    const [word, tone] = verdicts[verdict];
+    return (
+        <span
+            className={`inline-flex items-baseline gap-1.5 rounded-[4px] px-1.5 py-0.5 text-xs font-medium tabular-nums ${tone}`}
+        >
+            {ratio.toFixed(2)}:1{' '}
+            <span className="font-normal opacity-90">{word}</span>
+        </span>
+    );
+};
+
+export const Theme = ({ name, values, row, kind }) => {
+    const [background, text] = row;
+    const { ratio, verdict } = grade(values, row, kind);
+    return (
+        <div className="min-w-0">
+            <div className="text-muted-foreground mb-1 text-xs font-medium sm:hidden">
+                {name}
+            </div>
+            <div
+                className="flex h-11 items-center justify-center rounded-[4px] border text-sm font-medium"
+                style={{ background: values[background], color: values[text] }}
+            >
+                {kind === 'ui' ? (
+                    <span
+                        className="h-1 w-10 rounded-[2px]"
+                        style={{ background: values[text] }}
+                    />
+                ) : (
+                    'Aa'
+                )}
+            </div>
+            <div className="mt-2">
+                <Badge ratio={ratio} verdict={verdict} />
+            </div>
+            <dl className="mt-2 grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-1 text-xs">
+                {[background, text].map((token) => (
+                    <div key={token} className="contents">
+                        <dt
+                            className="text-muted-foreground truncate"
+                            title={`--${token}`}
+                        >
+                            {token}
+                        </dt>
+                        <dd>
+                            <Copy
+                                value={hex(toRgb(values[token]))}
+                                label={`${name.toLowerCase()} --${token}`}
+                            />
+                        </dd>
+                    </div>
+                ))}
+            </dl>
+        </div>
+    );
+};
+
+export const Group = ({ group, values }) => (
+    <section
+        className="not-prose"
+        style={{ marginTop: 48 }}
+        aria-labelledby={`colours-${group.title}`}
+    >
+        <h2
+            id={`colours-${group.title}`}
+            className="text-foreground text-lg font-semibold"
+        >
+            {group.title}
+        </h2>
+        <p className="text-muted-foreground mt-1 max-w-[65ch] text-sm">
+            {group.note}
+        </p>
+        <div className="mt-4 divide-y rounded-[6px] border">
+            <div className="text-muted-foreground hidden grid-cols-[1.2fr_1fr_1fr] gap-6 px-4 py-2 text-xs font-medium sm:grid">
+                <span>Token</span>
+                <span>Light</span>
+                <span>Dark</span>
+            </div>
+            {group.rows.map((row) => (
+                <div
+                    key={row.join()}
+                    className="grid grid-cols-2 gap-x-4 gap-y-3 px-4 py-4 sm:grid-cols-[1.2fr_1fr_1fr] sm:gap-6"
+                >
+                    <div className="col-span-2 min-w-0 sm:col-span-1">
+                        <Copy
+                            value={`var(--${row[1]})`}
+                            label={`var(--${row[1]})`}
+                        />
+                        <div className="text-muted-foreground text-xs">
+                            on --{row[0]}
+                        </div>
+                    </div>
+                    <Theme
+                        name="Light"
+                        values={values.light}
+                        row={row}
+                        kind={group.kind}
+                    />
+                    <Theme
+                        name="Dark"
+                        values={values.dark}
+                        row={row}
+                        kind={group.kind}
+                    />
+                </div>
+            ))}
+        </div>
+    </section>
+);
+
+export const Colours = () => {
+    // Reads every token once, for both themes, then grades the whole page.
+    const [values, setValues] = useState(null);
+    useEffect(() => {
+        const names = [
+            ...new Set(
+                groups.flatMap((group) =>
+                    group.rows.flatMap((row) => row.slice(0, 2)),
+                ),
+            ),
+        ];
+        setValues({ light: read(names, false), dark: read(names, true) });
+    }, []);
+    if (!values) return null;
+    // One line per pair, naming the themes it fails in.
+    const failing = groups.flatMap((group) =>
+        group.rows
+            .map((row) => ({
+                pair: `--${row[1]} on --${row[0]}`,
+                themes: ['light', 'dark'].filter(
+                    (theme) =>
+                        grade(values[theme], row, group.kind).verdict ===
+                        'fail',
+                ),
+            }))
+            .filter(({ themes }) => themes.length > 0),
+    );
+    const code =
+        'bg-muted rounded-[4px] border px-1 py-0.5 font-mono text-[0.85em]';
+    return (
+        <div className="text-foreground font-sans">
+            <header className="max-w-[70ch]">
+                <h1 className="text-3xl font-semibold tracking-tight">
+                    Colours
+                </h1>
+                <p className="text-muted-foreground mt-3 text-base">
+                    Every colour token by role, in light and dark. Text needs
+                    4.5:1, interface parts 3:1. Click a value to copy it.
+                </p>
+            </header>
+            <div style={{ marginTop: 32 }} />
+            <div
+                className={`rounded-[6px] border p-4 text-sm ${failing.length ? 'border-red-700/40' : 'border-green-700/40'}`}
+                role="status"
+            >
+                <p className="text-foreground font-medium">
+                    {failing.length
+                        ? `${failing.length} pairs fail WCAG AA`
+                        : 'Every pair passes WCAG AA, in light and dark.'}
+                </p>
+                {failing.length > 0 && (
+                    <ul className="text-muted-foreground mt-2 grid gap-x-6 gap-y-1 font-mono text-xs sm:grid-cols-2">
+                        {failing.map(({ pair, themes }) => (
+                            <li key={pair}>
+                                {pair}{' '}
+                                <span className="font-sans">
+                                    ({themes.join(' and ')})
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+            {groups.map((group) => (
+                <Group key={group.title} group={group} values={values} />
+            ))}
+            <footer className="text-muted-foreground mt-10 border-t pt-4 text-sm *:max-w-[70ch]">
+                <p>
+                    Values are read live from{' '}
+                    <code className={code}>resources/css/theme.css</code>:
+                    change a token there, or with the Themes module, and this
+                    page follows.
+                </p>
+                <p className="mt-2">
+                    Ratios follow{' '}
+                    <a
+                        href="https://www.w3.org/WAI/WCAG22/quickref/#contrast-minimum"
+                        className={`text-primary underline underline-offset-2 ${focusRing}`}
+                    >
+                        WCAG 2 AA contrast
+                    </a>
+                    .
+                </p>
+            </footer>
+        </div>
+    );
+};
+
+{/* Unstyled: the page is the app's own Tailwind, not Storybook's docs styles. */}
+
+<Unstyled>
+    <Colours />
+</Unstyled>

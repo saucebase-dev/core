@@ -240,7 +240,10 @@ onBeforeUnmount(() => {
                                     {{ $t('Sign In') }}
                                 </a>
                                 <a
-                                    v-if="route().has('register') && auth?.registration_enabled"
+                                    v-if="
+                                        route().has('register') &&
+                                        auth?.registration_enabled
+                                    "
                                     :href="route('register')"
                                     class="bg-primary text-primary-foreground hover:bg-primary/90 flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200"
                                     data-testid="header-get-started-mobile"

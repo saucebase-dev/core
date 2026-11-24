@@ -33,6 +33,9 @@ export function saucebase({
 }): PluginOption[] {
     const settings = readSettings(process.cwd());
     const contributor = settings.contributor === true;
+    // Storybook's CLI sets this. It runs Vite from its config folder (resources/js/.storybook)
+    // and serves the UI itself: no Laravel entry to wire, no app.ts to server-render.
+    const storybook = process.env.STORYBOOK === 'true';
 
     // The Inertia plugin turns app.ts's createInertiaApp() call into the server
     // renderer, so there is no ssr.ts. A contributor checkout's app.ts only imports
@@ -46,7 +49,9 @@ export function saucebase({
         {
             name: 'saucebase',
             config: (userConfig, env) => {
-                const root = path.resolve(userConfig.root ?? process.cwd());
+                const root = storybook
+                    ? process.cwd()
+                    : path.resolve(userConfig.root ?? process.cwd());
 
                 if (env?.isSsrBuild && settings.ssr === false) {
                     console.log(
@@ -60,6 +65,7 @@ export function saucebase({
                     : 'resources/js';
 
                 return {
+                    ...(storybook && { root }),
                     // Core is symlinked in a contributor checkout, and its own vendor/
                     // loops back on itself through testbench: 500,000+ watched files.
                     ...(contributor && {
@@ -147,17 +153,18 @@ export function saucebase({
             },
         },
         tailwindcss(),
-        laravel({
-            input: [
-                'resources/css/app.css',
-                entry,
-                'resources/css/filament/admin/theme.css',
-            ],
-            // Without it the server build would bundle every input, CSS included.
-            ssr: ssrEntry,
-            refresh: true,
-        }),
-        inertia({ ssr: ssrEntry }),
+        !storybook &&
+            laravel({
+                input: [
+                    'resources/css/app.css',
+                    entry,
+                    'resources/css/filament/admin/theme.css',
+                ],
+                // Without it the server build would bundle every input, CSS included.
+                ssr: ssrEntry,
+                refresh: true,
+            }),
+        !storybook && inertia({ ssr: ssrEntry }),
     ];
 }
 

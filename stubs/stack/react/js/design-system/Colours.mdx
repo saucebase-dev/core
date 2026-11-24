@@ -1,0 +1,156 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { useEffect, useState } from 'react';
+import { contrast, hex, passes, toRgb } from './colour';
+
+<Meta title="Design system/Colours" />
+
+export const groups = [
+    {
+        title: 'Brand',
+        note: 'Actions and highlights, with the text that sits on them.',
+        rows: [
+            ['primary', 'primary-foreground'],
+            ['secondary', 'secondary-foreground'],
+            ['accent', 'accent-foreground'],
+        ],
+    },
+    {
+        title: 'Surfaces',
+        note: 'Where content sits, with its text.',
+        rows: [
+            ['background', 'foreground'],
+            ['card', 'card-foreground'],
+            ['popover', 'popover-foreground'],
+            ['muted', 'muted-foreground'],
+            ['sidebar', 'sidebar-foreground'],
+        ],
+    },
+    {
+        title: 'Secondary and error text',
+        note: 'Text colours read against the surfaces they appear on.',
+        rows: [
+            ['background', 'muted-foreground'],
+            ['sidebar', 'muted-foreground'],
+            ['background', 'destructive'],
+        ],
+    },
+    {
+        title: 'Feedback',
+        note: 'Destructive actions and errors.',
+        rows: [['destructive', 'destructive-foreground']],
+    },
+    {
+        title: 'Lines and focus',
+        note: 'Interface parts, read against the page: AA asks 3:1 of input borders and focus rings. Dividers are decorative, so WCAG exempts them: their ratio is shown for reference.',
+        kind: 'ui',
+        rows: [
+            ['background', 'border', 'info'],
+            ['background', 'input'],
+            ['background', 'ring'],
+        ],
+    },
+    {
+        title: 'Charts',
+        note: 'Data series, read against the page: AA asks 3:1.',
+        kind: 'ui',
+        rows: [1, 2, 3, 4, 5].map((n) => ['background', `chart-${n}`]),
+    },
+];
+
+export const read = (names, dark) => {
+    const probe = document.createElement('div');
+    probe.className = dark ? 'dark' : '';
+    document.body.appendChild(probe);
+    const style = getComputedStyle(probe);
+    const values = Object.fromEntries(names.map((name) => [name, style.getPropertyValue(`--${name}`).trim()]));
+    probe.remove();
+    return values;
+};
+
+export const Copy = ({ value }) => {
+    const [copied, setCopied] = useState(false);
+    return (
+        <button
+            type="button"
+            title={`Copy ${value}`}
+            className="hover:bg-muted rounded px-1 text-left font-mono text-xs"
+            onClick={() => navigator.clipboard.writeText(value).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1200);
+            })}
+        >
+            {copied ? 'Copied' : value}
+        </button>
+    );
+};
+
+export const Grade = ({ background, text, kind, info }) => {
+    const ratio = contrast(toRgb(background), toRgb(text));
+    if (info) {
+        return <span className="bg-muted rounded px-1.5 py-0.5 text-xs font-medium">{ratio.toFixed(2)} reference</span>;
+    }
+    const ok = passes(ratio, kind);
+    return (
+        <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${ok ? 'bg-green-600 text-white' : 'bg-red-700 text-white'}`}>
+            {ratio.toFixed(2)} {ok ? 'AA' : 'fails AA'}
+        </span>
+    );
+};
+
+export const Theme = ({ values, background, text, kind, info }) => (
+    <div className="space-y-1">
+        <div
+            className="flex h-10 items-center justify-center rounded-md border text-sm font-medium"
+            style={{ background: values[background], color: values[text] }}
+        >
+            {kind === 'ui' ? <span className="h-1 w-10 rounded" style={{ background: values[text] }} /> : 'Aa'}
+        </div>
+        <Grade background={values[background]} text={values[text]} kind={kind ?? 'text'} info={info} />
+        <div className="flex flex-col">
+            <Copy value={hex(toRgb(values[background]))} />
+            <Copy value={hex(toRgb(values[text]))} />
+        </div>
+    </div>
+);
+
+export const Group = ({ group }) => {
+    const [values, setValues] = useState(null);
+    useEffect(() => {
+        const names = [...new Set(group.rows.flat())];
+        setValues({ light: read(names, false), dark: read(names, true) });
+    }, []);
+    if (!values) return null;
+    return (
+        <div className="not-prose" style={{ marginBottom: 40 }}>
+            <div className="text-lg font-semibold">{group.title}</div>
+            <div className="text-muted-foreground mb-3 text-sm">{group.note}</div>
+            <div className="divide-y rounded-lg border">
+                <div className="text-muted-foreground grid grid-cols-[1.4fr_1fr_1fr] gap-4 px-4 py-2 text-xs font-medium">
+                    <span>Token</span>
+                    <span>Light</span>
+                    <span>Dark</span>
+                </div>
+                {group.rows.map(([background, text, info]) => (
+                    <div key={background + text} className="grid grid-cols-[1.4fr_1fr_1fr] items-start gap-4 px-4 py-3">
+                        <div className="text-sm">
+                            <Copy value={`var(--${text})`} />
+                            <div className="text-muted-foreground px-1 text-xs">on --{background}</div>
+                        </div>
+                        <Theme values={values.light} background={background} text={text} kind={group.kind} info={info} />
+                        <Theme values={values.dark} background={background} text={text} kind={group.kind} info={info} />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+# Colours
+
+Every colour token, read live from `resources/css/theme.css`, by role. Each pair is graded against
+[WCAG 2 AA](https://www.w3.org/WAI/WCAG22/quickref/#contrast-minimum): 4.5:1 for text, 3:1 for
+interface parts. Click a value to copy it.
+
+Change a token in `theme.css`, or with the Themes module, and this page follows.
+
+{groups.map((group) => <Group key={group.title} group={group} />)}
