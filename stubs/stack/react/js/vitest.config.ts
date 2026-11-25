@@ -11,7 +11,9 @@ process.env.STORYBOOK = 'true';
 // Resolved from the app, not from this file: in a contributor checkout this folder is a
 // symlink into saucebase/core, which has no node_modules of its own.
 const app = createRequire(path.resolve('package.json'));
-const { storybookTest } = await import(app.resolve('@storybook/addon-vitest/vitest-plugin'));
+const { storybookTest } = await import(
+    app.resolve('@storybook/addon-vitest/vitest-plugin')
+);
 const { playwright } = await import(app.resolve('@vitest/browser-playwright'));
 
 // This folder by its path in the app, as the Storybook CLI gets it: through the symlink,
@@ -46,6 +48,9 @@ const config: ViteUserConfig = {
                 plugins: [storybookTest({ configDir })],
                 test: {
                     name: 'storybook',
+                    // Stories match `../**/*.stories.tsx`, which in a contributor checkout reaches
+                    // the node_modules link `saucebase stack --dev` puts beside them.
+                    exclude: ['**/node_modules/**'],
                     browser: {
                         enabled: true,
                         headless: true,

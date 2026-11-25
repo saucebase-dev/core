@@ -1,0 +1,82 @@
+import { Meta, Unstyled } from '@storybook/addon-docs/blocks';
+
+<Meta title="Design system/Shape" />
+
+export const radii = ['sm', 'md', 'lg', 'xl', '2xl', '3xl'];
+
+export const shadows = ['2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'];
+
+export const code =
+    'bg-muted rounded-[4px] border px-1 py-0.5 font-mono text-[0.85em]';
+
+export const Section = ({ id, title, note, children }) => (
+    <section className="mt-12" aria-labelledby={`shape-${id}`}>
+        <h2 id={`shape-${id}`} className="text-lg font-semibold">
+            {title}
+        </h2>
+        <p className="text-muted-foreground mt-1 max-w-[65ch] text-sm">
+            {note}
+        </p>
+        <div className="mt-4">{children}</div>
+    </section>
+);
+
+export const Shadows = ({ dark }) => (
+    <div
+        className={`${dark ? 'dark' : ''} bg-background text-foreground rounded-[6px] border p-6`}
+    >
+        <div className="mb-4 text-sm font-medium">
+            {dark ? 'Dark' : 'Light'}
+        </div>
+        <div className="flex flex-wrap gap-6">
+            {shadows.map((size) => (
+                <div key={size} className="text-center">
+                    <div
+                        className="bg-card size-16 rounded-[4px]"
+                        style={{ boxShadow: `var(--shadow-${size})` }}
+                    />
+                    <code className="mt-2 block font-mono text-xs">
+                        --shadow-{size}
+                    </code>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+export const Shape = () => (
+    <div className="text-foreground font-sans">
+        <header className="max-w-[70ch]">
+            <h1 className="text-3xl font-semibold tracking-tight">Shape</h1>
+            <p className="text-muted-foreground mt-3 text-base">
+                Corner radius and shadows from <code className={code}>resources/css/theme.css</code>.
+            </p>
+        </header>
+
+        <Section id="radius" title="Radius" note={<>All derived from <code className={code}>--radius</code>: change it, and every corner follows.</>}>
+            <div className="flex flex-wrap gap-6 rounded-[6px] border p-6">
+                {radii.map((size) => (
+                    <div key={size} className="text-center">
+                        {/* The theme's own radius: these corners are what the page shows. */}
+                        <div className="bg-primary size-16" style={{ borderRadius: `var(--radius-${size})` }} />
+                        <code className="mt-2 block font-mono text-xs">--radius-{size}</code>
+                    </div>
+                ))}
+            </div>
+        </Section>
+
+        <Section id="shadows" title="Shadows" note="Shadows change with the theme, so both are shown.">
+            <div className="grid gap-4 lg:grid-cols-2">
+                <Shadows />
+                <Shadows dark />
+            </div>
+        </Section>
+    </div>
+
+);
+
+{/* Unstyled: the page is the app's own Tailwind, not Storybook's docs styles. */}
+
+<Unstyled>
+    <Shape />
+</Unstyled>

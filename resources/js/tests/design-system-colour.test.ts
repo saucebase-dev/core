@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import * as react from '../../../stubs/stack/react/js/design-system/colour.ts';
+import * as react from '../../../stubs/stack/react/js/.storybook/design-system/colour.ts';
 import * as vue from '../../../stubs/stack/vue/js/.storybook/design-system/colour.ts';
 
 // The design-system pages grade each token pair against WCAG AA with these. The colours

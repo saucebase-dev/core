@@ -2,13 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const PREVIEW = path.resolve(
-    import.meta.dirname,
-    '../../../stubs/stack/vue/js/.storybook/preview.ts',
-);
+const STACKS = path.resolve(import.meta.dirname, '../../../stubs/stack');
 
-// React follows once its Storybook catches up with Vue's.
-describe('vue Storybook preview', () => {
+describe.each([
+    ['vue', 'ts'],
+    ['react', 'tsx'],
+])('%s Storybook', (stack, ext) => {
+    const PREVIEW = path.join(STACKS, stack, `js/.storybook/preview.${ext}`);
+
     // Storybook reads the preview's tags without running it, and only from
     // `const preview = definePreview({...}); export default preview;`. Any other
     // export hides them, and every component silently loses its docs page.
@@ -36,7 +37,9 @@ describe('vue Storybook preview', () => {
         );
         // vue-docgen-api, the builder's default, can't follow imported prop types
         // (SidebarProps): their controls would be JSON boxes, or missing.
-        expect(source).toContain("docgen: 'vue-component-meta'");
+        if (stack === 'vue') {
+            expect(source).toContain("docgen: 'vue-component-meta'");
+        }
     });
 
     // A full-width story (Header, Footer, layouts) renders in a frame as wide as the docs
@@ -84,11 +87,26 @@ describe('vue Storybook preview', () => {
             const story = fs.readFileSync(
                 path.resolve(
                     dir,
-                    `../components/ui/saucebase/${name}.stories.ts`,
+                    `../components/ui/saucebase/${name}.stories.${ext}`,
                 ),
                 'utf8',
             );
             expect(story).toMatch(/tags:\s*\['contributor'\]/);
         }
     });
+});
+
+// The design-system pages are MDX, rendered by Storybook's React whatever the stack: one
+// page, kept the same in both.
+it('has the same design-system pages in both stacks', () => {
+    const dir = (stack: string) =>
+        path.join(STACKS, stack, 'js/.storybook/design-system');
+    const files = fs.readdirSync(dir('vue'));
+
+    expect(fs.readdirSync(dir('react'))).toEqual(files);
+    for (const file of files) {
+        expect(fs.readFileSync(path.join(dir('react'), file), 'utf8')).toBe(
+            fs.readFileSync(path.join(dir('vue'), file), 'utf8'),
+        );
+    }
 });

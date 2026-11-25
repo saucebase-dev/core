@@ -81,18 +81,17 @@ export const rules = [
             Components in <code className={code}>ui/</code> get their data from
             props and emit events. They never read the Inertia page or call{' '}
             <code className={code}>route()</code>, so they work in any page and
-            in a story. Pass a field its error:{' '}
-            <code className={code}>
-                {'<InputField :error="errors.email" />'}
-            </code>
-            . Only <code className={code}>ui/saucebase/</code> may know the app.
+            in a story. A field gets its error as the{' '}
+            <code className={code}>error</code> prop. Only{' '}
+            <code className={code}>ui/saucebase/</code> may know the app.
         </>,
     ],
     [
         'Add components with shadcn',
         <>
-            <code className={code}>npx shadcn-vue@latest add dialog</code>{' '}
-            writes the primitive into <code className={code}>ui/</code>,
+            <code className={code}>npx shadcn-vue@latest add dialog</code> (Vue)
+            or <code className={code}>npx shadcn@latest add dialog</code>{' '}
+            (React) writes the primitive into <code className={code}>ui/</code>,
             configured by <code className={code}>components.json</code>. It is
             your code from then on.
         </>,

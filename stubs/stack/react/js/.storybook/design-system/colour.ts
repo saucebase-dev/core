@@ -21,7 +21,9 @@ function luminance(rgb: Rgb): number {
     const [r, g, b] = rgb.map((channel) => {
         const value = channel / 255;
 
-        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+        return value <= 0.04045
+            ? value / 12.92
+            : ((value + 0.055) / 1.055) ** 2.4;
     });
 
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -29,7 +31,9 @@ function luminance(rgb: Rgb): number {
 
 /** WCAG 2 contrast ratio between two colours: 1 (none) to 21 (black on white). */
 export function contrast(a: Rgb, b: Rgb): number {
-    const [lighter, darker] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    const [lighter, darker] = [luminance(a), luminance(b)].sort(
+        (x, y) => y - x,
+    );
 
     return (lighter + 0.05) / (darker + 0.05);
 }
@@ -40,5 +44,8 @@ export function passes(ratio: number, kind: 'text' | 'ui'): boolean {
 }
 
 export function hex(rgb: Rgb): string {
-    return '#' + rgb.map((channel) => channel.toString(16).padStart(2, '0')).join('');
+    return (
+        '#' +
+        rgb.map((channel) => channel.toString(16).padStart(2, '0')).join('')
+    );
 }
