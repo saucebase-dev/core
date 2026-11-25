@@ -39,6 +39,23 @@ describe('vue Storybook preview', () => {
         expect(source).toContain("docgen: 'vue-component-meta'");
     });
 
+    // A full-width story (Header, Footer, layouts) renders in a frame as wide as the docs
+    // column. Storybook's 1000px column is under `lg` (1024px): every one of them would
+    // show its phone layout.
+    it('gives docs pages room for the desktop layout', () => {
+        const head = fs.readFileSync(
+            path.resolve(path.dirname(PREVIEW), 'preview-head.html'),
+            'utf8',
+        );
+        const width = Number(
+            /\.sbdocs\.sbdocs-content\s*\{[^}]*max-width:\s*(\d+)px/.exec(
+                head,
+            )?.[1],
+        );
+
+        expect(width).toBeGreaterThan(1024 + 100);
+    });
+
     // Stories of the welcome page's parts are for Saucebase's own team. Contributor mode
     // comes from saucebase.json, never from core being symlinked: a contributor checkout
     // can run a released core.
