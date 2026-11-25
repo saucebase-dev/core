@@ -49,6 +49,15 @@ export const Checked = meta.story({ args: { defaultChecked: true } });
 /** Some, not all, of a group: the "select all" box of a table. */
 export const Indeterminate = meta.story({
     args: { defaultChecked: 'indeterminate' },
+    play: async ({ canvas }) => {
+        const box = canvas.getByRole('checkbox');
+        await expect(box).toHaveAttribute('aria-checked', 'mixed');
+        // A dash, not a tick: a tick would read as "all of them".
+        const icon = [...box.querySelectorAll('svg')].find((svg) =>
+            svg.checkVisibility(),
+        );
+        await expect(icon?.getAttribute('class')).toMatch(/minus/);
+    },
 });
 
 /** Can't be changed; its label dims with it. */
