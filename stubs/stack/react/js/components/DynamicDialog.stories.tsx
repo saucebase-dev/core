@@ -37,6 +37,11 @@ function Demo({ onAnswer, ...options }: Args) {
 const meta = preview.meta({
     title: 'App/DynamicDialog',
     component: DynamicDialog,
+    parameters: {
+        // useDialog() keeps one dialog for the page: inline, every example's button would
+        // open them all.
+        docs: { story: { inline: false, iframeHeight: '320px' } },
+    },
     args: {
         title: 'Archive this project?',
         description: 'Its members lose access until you restore it.',

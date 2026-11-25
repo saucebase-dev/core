@@ -1,7 +1,24 @@
 import preview from '@/.storybook/preview';
 import { Label } from '@/components/ui/label';
+import { useId, type ComponentProps } from 'react';
 import { expect } from 'storybook/test';
 import { Checkbox } from './checkbox';
+
+// A box and its label, joined by an id of their own: the docs page shows every example
+// at once, and a shared id would send each label's click to the first box.
+function Labelled({
+    label,
+    ...props
+}: ComponentProps<typeof Checkbox> & { label: string }) {
+    const id = useId();
+
+    return (
+        <div className="flex items-center gap-2">
+            <Checkbox {...props} id={id} />
+            <Label htmlFor={id}>{label}</Label>
+        </div>
+    );
+}
 
 /**
  * A yes-or-no choice that takes effect when the form is sent: accept the terms, email me
@@ -10,13 +27,7 @@ import { Checkbox } from './checkbox';
 const meta = preview.meta({
     title: 'UI/Checkbox',
     component: Checkbox,
-    args: { id: 'updates' },
-    render: (args) => (
-        <div className="flex items-center gap-2">
-            <Checkbox {...args} />
-            <Label htmlFor="updates">Email me product updates</Label>
-        </div>
-    ),
+    render: (args) => <Labelled {...args} label="Email me product updates" />,
 });
 export default meta;
 
@@ -51,9 +62,10 @@ export const Disabled = meta.story({
 /** Required and left unchecked when the form was sent. */
 export const Invalid = meta.story({
     render: (args) => (
-        <div className="flex items-center gap-2">
-            <Checkbox {...args} aria-invalid="true" />
-            <Label htmlFor="updates">I accept the terms of service</Label>
-        </div>
+        <Labelled
+            {...args}
+            aria-invalid="true"
+            label="I accept the terms of service"
+        />
     ),
 });

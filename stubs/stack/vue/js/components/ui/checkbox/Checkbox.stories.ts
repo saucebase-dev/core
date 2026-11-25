@@ -1,7 +1,7 @@
 import preview from '@/.storybook/preview';
 import { Label } from '@/components/ui/label';
 import { expect } from 'storybook/test';
-import { ref } from 'vue';
+import { ref, useId } from 'vue';
 import { Checkbox } from '.';
 
 /**
@@ -11,14 +11,15 @@ import { Checkbox } from '.';
 const meta = preview.meta({
     title: 'UI/Checkbox',
     component: Checkbox,
-    args: { id: 'updates' },
+    // Each example's own id (useId): the docs page shows them all, and a shared one would
+    // send every label's click to the first box.
     render: (args) => ({
         components: { Checkbox, Label },
-        setup: () => ({ args }),
+        setup: () => ({ args, id: useId() }),
         template: `
             <div class="flex items-center gap-2">
-                <Checkbox v-bind="args" />
-                <Label for="updates">Email me product updates</Label>
+                <Checkbox v-bind="args" :id="id" />
+                <Label :for="id">Email me product updates</Label>
             </div>`,
     }),
 });
@@ -28,11 +29,11 @@ export default meta;
 export const Default = meta.story({
     render: (args) => ({
         components: { Checkbox, Label },
-        setup: () => ({ args, checked: ref(false) }),
+        setup: () => ({ args, id: useId(), checked: ref(false) }),
         template: `
             <div class="flex items-center gap-2">
-                <Checkbox v-bind="args" v-model="checked" />
-                <Label for="updates">Email me product updates</Label>
+                <Checkbox v-bind="args" :id="id" v-model="checked" />
+                <Label :for="id">Email me product updates</Label>
             </div>`,
     }),
     play: async ({ canvas, userEvent }) => {
@@ -65,11 +66,11 @@ export const Disabled = meta.story({
 export const Invalid = meta.story({
     render: (args) => ({
         components: { Checkbox, Label },
-        setup: () => ({ args }),
+        setup: () => ({ args, id: useId() }),
         template: `
             <div class="flex items-center gap-2">
-                <Checkbox v-bind="args" aria-invalid="true" />
-                <Label for="updates">I accept the terms of service</Label>
+                <Checkbox v-bind="args" :id="id" aria-invalid="true" />
+                <Label :for="id">I accept the terms of service</Label>
             </div>`,
     }),
 });
