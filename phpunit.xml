@@ -17,4 +17,8 @@
             <directory>src</directory>
         </include>
     </source>
+    <php>
+        <!-- The full suite peaks at about 129 MB, over PHP's default 128M. Tests only. -->
+        <ini name="memory_limit" value="256M"/>
+    </php>
 </phpunit>
