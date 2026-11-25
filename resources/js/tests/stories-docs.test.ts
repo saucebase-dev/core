@@ -56,6 +56,17 @@ describe('vue Storybook preview', () => {
         expect(width).toBeGreaterThan(1024 + 100);
     });
 
+    // In a contributor checkout `saucebase stack --dev` links node_modules beside the
+    // stories, where `../**/*.stories.ts` finds Storybook's own template stories.
+    it('runs no story tests from node_modules', () => {
+        const source = fs.readFileSync(
+            path.resolve(path.dirname(PREVIEW), '../vitest.config.ts'),
+            'utf8',
+        );
+
+        expect(source).toContain("exclude: ['**/node_modules/**']");
+    });
+
     // Stories of the welcome page's parts are for Saucebase's own team. Contributor mode
     // comes from saucebase.json, never from core being symlinked: a contributor checkout
     // can run a released core.

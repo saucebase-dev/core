@@ -8,7 +8,7 @@ tests/Fixtures/modules/*/resources/js/
 /node_modules/
 /resources/js/node_modules/
 /stubs/stack/*/config/node_modules/
-/stubs/stack/*/js/node_modules/
 
 # Written by `saucebase stack --dev` in a contributor checkout: this machine's paths.
 /stubs/stack/*/js/tsconfig.json
+/stubs/stack/*/js/node_modules

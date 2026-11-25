@@ -48,6 +48,9 @@ const config: ViteUserConfig = {
                 plugins: [storybookTest({ configDir })],
                 test: {
                     name: 'storybook',
+                    // Stories match `../**/*.stories.ts`, which in a contributor checkout reaches
+                    // the node_modules link `saucebase stack --dev` puts beside them.
+                    exclude: ['**/node_modules/**'],
                     browser: {
                         enabled: true,
                         headless: true,

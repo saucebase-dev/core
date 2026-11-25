@@ -58,6 +58,11 @@ export const groups = [
 ];
 
 export const read = (names, dark) => {
+    // Light tokens live on :root; `.dark` on <html> (a story left in the dark theme)
+    // would override them for the probe too, so it's off while reading.
+    const root = document.documentElement;
+    const wasDark = root.classList.contains('dark');
+    if (!dark) root.classList.remove('dark');
     const probe = document.createElement('div');
     probe.className = dark ? 'dark' : '';
     document.body.appendChild(probe);
@@ -66,6 +71,7 @@ export const read = (names, dark) => {
         names.map((name) => [name, style.getPropertyValue(`--${name}`).trim()]),
     );
     probe.remove();
+    if (wasDark) root.classList.add('dark');
     return values;
 };
 
