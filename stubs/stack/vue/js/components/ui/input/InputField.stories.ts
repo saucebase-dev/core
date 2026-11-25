@@ -36,3 +36,19 @@ export const WithError = meta.story({
         );
     },
 });
+
+/** A password: hidden as typed, with a button to show it. */
+export const Password = meta.story({
+    args: { name: 'password', label: 'Password', type: 'password', placeholder: undefined },
+    play: async ({ canvas, userEvent }) => {
+        const input = canvas.getByLabelText('Password');
+        await expect(input).toHaveAttribute('type', 'password');
+
+        await userEvent.click(canvas.getByRole('button', { name: 'Show password' }));
+
+        await expect(input).toHaveAttribute('type', 'text');
+        await expect(
+            canvas.getByRole('button', { name: 'Hide password' }),
+        ).toBeVisible();
+    },
+});
