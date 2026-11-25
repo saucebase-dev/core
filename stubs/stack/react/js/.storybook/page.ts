@@ -19,7 +19,13 @@ export function page(props: Record<string, unknown> = {}): Page {
             auth: { user: null },
             modules: [],
             navigation: {},
-            settings: { sections: [], general: {} },
+            settings: {
+                sections: [],
+                general: {
+                    site_name: 'Saucebase',
+                    site_description: 'Laravel SaaS starter kit',
+                },
+            },
             ...props,
         },
     } as unknown as Page;
@@ -36,7 +42,13 @@ export const user = {
 
 // Core's own navigation (stubs/app/routes/navigation.php) as the server shares it to a
 // signed-in user on the dashboard. Modules add their items (Settings, Log out…) to these groups.
-const welcome = { title: 'Welcome', slug: 'dashboard', url: '/dashboard', icon: 'dashboard', active: true };
+const welcome = {
+    title: 'Welcome',
+    slug: 'dashboard',
+    url: '/dashboard',
+    icon: 'dashboard',
+    active: true,
+};
 
 const secondary = [
     {
@@ -65,7 +77,13 @@ export const itemTypes = {
     main: [
         { title: 'Platform', type: 'label' },
         welcome,
-        { title: 'Inbox', slug: 'inbox', url: '/inbox', icon: 'documentation', badge: { content: 3 } },
+        {
+            title: 'Inbox',
+            slug: 'inbox',
+            url: '/inbox',
+            icon: 'documentation',
+            badge: { content: 3 },
+        },
         {
             title: 'Projects',
             slug: 'projects',

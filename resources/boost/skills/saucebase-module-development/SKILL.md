@@ -195,9 +195,9 @@ through `@/components`, `@/layouts` and `@/lib/utils`. The app's
 ## Stories
 
 A module's components get Storybook stories beside them, as core's do:
-`resources/js/vue/components/Banner.stories.ts`. Storybook and `npm run test:stories` find
-every module's stories; they list under `Modules/`. Vue only for now: React's Storybook doesn't
-look in modules yet.
+`resources/js/vue/components/Banner.stories.ts` and `resources/js/react/components/Banner.stories.tsx`.
+Storybook and `npm run test:stories` find every module's stories for the app's stack; they list
+under `Modules/`.
 
 - Set `title: '<Module>/<Component>'`. Storybook adds the `Modules/` prefix.
 - Import the preview as core's stories do (`import preview from '@/.storybook/preview'`) and

@@ -1,0 +1,12 @@
+<style>
+    /* Wider than Storybook's 1000px, so a full-width story's frame passes `lg` (1024px)
+       and shows the desktop layout. Descriptions keep a readable line length. Two classes:
+       Storybook's own rule has one and comes later. */
+    .sbdocs.sbdocs-content {
+        max-width: 1200px;
+    }
+    /* The component description: paragraphs in a plain div, not .sbdocs-p. */
+    .sbdocs.sbdocs-content > div > p {
+        max-width: 80ch;
+    }
+</style>
