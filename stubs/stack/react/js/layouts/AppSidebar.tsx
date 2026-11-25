@@ -55,6 +55,8 @@ export default function AppSidebar({
             <SidebarContent>
                 <GlobalComponents position="dashboard::sidebar.start" />
                 <NavGroup items={items} />
+                {/* Between the nav and the bottom links: a module's own list (chat history). */}
+                <GlobalComponents position="dashboard::sidebar.content" />
                 <NavGroup items={secondaryItems} className="mt-auto" />
                 <GlobalComponents position="dashboard::sidebar.end" />
             </SidebarContent>

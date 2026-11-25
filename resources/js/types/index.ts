@@ -94,6 +94,7 @@ export interface GlobalComponentSlots {
     'dashboard::content.before': true;
     'dashboard::content.after': true;
     'dashboard::sidebar.start': true;
+    'dashboard::sidebar.content': true;
     'dashboard::sidebar.end': true;
     'dashboard::sidebar.brand': true;
     'dashboard::user-menu.subtitle': true;
