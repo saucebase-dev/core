@@ -47,6 +47,7 @@ export function saucebase({
 
     return [
         contributor && overrides(framework, settings.template),
+        contributor && corePackages(),
         {
             name: 'saucebase',
             config: (userConfig, env) => {
@@ -296,6 +297,32 @@ function overrides(
             server.ws.send({ type: 'full-reload' });
 
             return [];
+        },
+    };
+}
+
+/**
+ * A contributor checkout reads core through vendor/ (`preserveSymlinks`), and the
+ * installer's `stack --dev` links node_modules into core's stack for TypeScript. Vite
+ * would find packages there under a second path: two copies of Vue and Inertia in one
+ * build, and a module's usePage() reading the copy that has no page. Core's imports
+ * resolve from the app root instead, as an installed app's do.
+ */
+function corePackages(): PluginOption {
+    const root = process.cwd();
+    const core = path.join(root, 'vendor/saucebase/core') + path.sep;
+    const fromApp = path.join(root, 'package.json');
+
+    return {
+        name: 'saucebase:core-packages',
+        enforce: 'pre',
+        resolveId(id, importer, options) {
+            // Relative, absolute (aliases are already applied) and virtual ids stay as they are.
+            if (!importer?.startsWith(core) || /^[./\\\0]|:/.test(id)) {
+                return null;
+            }
+
+            return this.resolve(id, fromApp, { ...options, skipSelf: true });
         },
     };
 }
