@@ -10,6 +10,7 @@ import {
     unmetRequirements,
     versionLine,
 } from './requirements.ts';
+import { readSettings } from './settings.ts';
 
 /** Where Composer installs this package's JavaScript, relative to the app root. */
 const SAUCEBASE_JS = 'vendor/saucebase/core/resources/js';
@@ -297,19 +298,6 @@ function overrides(
             return [];
         },
     };
-}
-
-/** The app's `saucebase.json`: its framework, contributor mode and server rendering. */
-function readSettings(root: string): {
-    contributor?: boolean;
-    ssr?: boolean;
-    template?: string;
-} {
-    const file = path.join(root, 'saucebase.json');
-
-    return fs.existsSync(file)
-        ? JSON.parse(fs.readFileSync(file, 'utf-8'))
-        : {};
 }
 
 /** PHP dependencies and runtime files, except core's frontend, which hot-reloads from vendor/. */

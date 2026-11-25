@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 // Storybook runs from this folder; the app's own vite.config.js (saucebase()) supplies
 // the aliases, Tailwind and icons, and leaves out what only Laravel needs.
@@ -9,6 +10,15 @@ import path from 'node:path';
 // symlink into saucebase/core, which has no node_modules of its own.
 const app = createRequire(path.resolve('package.json'));
 const pkg = (name: string) => path.dirname(app.resolve(`${name}/package.json`));
+
+// saucebase.json says whether this is a contributor checkout; core's Vite preset reads it
+// the same way. Imported from the app's vendor/, as vite.config.js imports the preset.
+const { readSettings } = await import(
+    pathToFileURL(
+        path.resolve('vendor/saucebase/core/resources/js/settings.ts'),
+    ).href
+);
+const { contributor = false } = readSettings(process.cwd());
 
 export const framework = {
     name: pkg('@storybook/vue3-vite'),
@@ -62,3 +72,7 @@ export const features = {
         fs.existsSync('resources/js/.storybook') ||
         fs.existsSync(path.resolve(import.meta.dirname, '../tsconfig.json')),
 };
+
+// Stories tagged `contributor` (the welcome page's parts) are for Saucebase's own team:
+// an installed app's sidebar leaves them out. They still run as tests.
+export const tags = { contributor: { hideFromSidebar: !contributor } };

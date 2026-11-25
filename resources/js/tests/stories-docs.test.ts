@@ -38,4 +38,29 @@ describe('vue Storybook preview', () => {
         // (SidebarProps): their controls would be JSON boxes, or missing.
         expect(source).toContain("docgen: 'vue-component-meta'");
     });
+
+    // Stories of the welcome page's parts are for Saucebase's own team. Contributor mode
+    // comes from saucebase.json, never from core being symlinked: a contributor checkout
+    // can run a released core.
+    it('shows contributor-only stories in contributor mode alone', () => {
+        const dir = path.dirname(PREVIEW);
+        const main = fs.readFileSync(path.resolve(dir, 'main.ts'), 'utf8');
+
+        expect(main).toContain('readSettings(process.cwd())');
+        expect(main).toMatch(
+            /contributor:\s*\{\s*hideFromSidebar:\s*!contributor\s*\}/,
+        );
+        expect(main).not.toMatch(/isSymbolicLink/);
+
+        for (const name of ['ModuleCard', 'ModuleModal']) {
+            const story = fs.readFileSync(
+                path.resolve(
+                    dir,
+                    `../components/ui/saucebase/${name}.stories.ts`,
+                ),
+                'utf8',
+            );
+            expect(story).toMatch(/tags:\s*\['contributor'\]/);
+        }
+    });
 });

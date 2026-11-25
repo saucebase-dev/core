@@ -13,6 +13,7 @@ const [custom, auth, , , , , , tenancy] = modules;
  */
 const meta = preview.meta({
     title: 'Site/ModuleModal',
+    tags: ['contributor'],
     component: ModuleModal,
     parameters: {
         // It covers the page, so each story gets its own frame.

@@ -13,6 +13,7 @@ const [custom, auth, , , , themes, , tenancy] = modules;
  */
 const meta = preview.meta({
     title: 'Site/ModuleCard',
+    tags: ['contributor'],
     component: ModuleCard,
     args: { module: auth, index: 0, onSelect: fn() },
     decorators: [() => ({ template: '<div class="w-56 p-6"><story /></div>' })],
