@@ -42,12 +42,16 @@ const brandIsClaimed = hasGlobalComponent('dashboard::sidebar.brand');
 
 <template>
     <Sidebar
+        :side="side"
         :variant="variant"
         :collapsible="collapsible"
         data-sidebar="sidebar"
     >
         <SidebarHeader data-testid="sidebar-header">
-            <GlobalComponents v-if="brandIsClaimed" position="dashboard::sidebar.brand" />
+            <GlobalComponents
+                v-if="brandIsClaimed"
+                position="dashboard::sidebar.brand"
+            />
             <AppBrand v-else />
         </SidebarHeader>
 

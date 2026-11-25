@@ -136,6 +136,15 @@ jobs:
         timeout-minutes: 2
         run: ./node_modules/.bin/playwright install chromium --with-deps
 
+      # The design system: every story renders, and its play function passes.
+      - name: Execute the story tests
+        working-directory: app
+        run: npm run test:stories
+
+      - name: Build Storybook
+        working-directory: app
+        run: npm run storybook:build
+
       # Playwright serves .env.e2e itself (laravelServer() in playwright.config.ts).
       - name: Prepare the E2E environment
         working-directory: app

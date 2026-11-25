@@ -80,6 +80,7 @@ onUnmounted(() => {
                         <!-- Close button -->
                         <button
                             class="text-muted-foreground hover:text-foreground hover:border-foreground absolute top-3 right-3 z-20 cursor-pointer rounded-full border p-1.5 transition-colors"
+                            :aria-label="$t('Close')"
                             @click="emit('close')"
                         >
                             <X class="size-4" />
@@ -161,6 +162,7 @@ onUnmounted(() => {
                                 </code>
                                 <button
                                     class="cursor-pointer self-start text-gray-300 transition-colors hover:text-gray-300"
+                                    :aria-label="$t('Copy')"
                                     @click="copyCommand"
                                 >
                                     <Check

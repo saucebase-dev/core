@@ -134,6 +134,42 @@ describe('saucebase()', () => {
         expect(define.__SAUCEBASE_CONTRIBUTOR__).toBe('true');
     });
 
+    describe('in Storybook', () => {
+        beforeEach(() => vi.stubEnv('STORYBOOK', 'true'));
+        afterEach(() => vi.unstubAllEnvs());
+
+        it('leaves out the Laravel and Inertia plugins: Storybook serves the UI itself, with no app entry or server renderer', () => {
+            const plugins = saucebase({
+                framework: 'vue',
+                entry: 'resources/js/app.ts',
+                requires: {},
+            });
+
+            for (const name of ['laravel', 'inertia']) {
+                expect(plugins).not.toContainEqual(
+                    expect.objectContaining({ name }),
+                );
+            }
+        });
+
+        it('resolves @ from the app root, not the config folder Storybook runs Vite from', () => {
+            const storybookRoot = path.join(root, 'resources/js');
+            const plugin = saucebase({
+                framework: 'vue',
+                entry: 'resources/js/app.ts',
+                requires: {},
+            }).find((p: any) => p?.name === 'saucebase') as any;
+
+            const { root: viteRoot, resolve } = plugin.config(
+                { root: storybookRoot },
+                {},
+            );
+
+            expect(viteRoot).toBe(root);
+            expect(resolve.alias['@']).toBe(path.join(root, 'resources/js'));
+        });
+    });
+
     it('skips the server build when saucebase.json turns server rendering off', () => {
         fs.writeFileSync(path.join(root, 'saucebase.json'), '{"ssr": false}');
         const exit = vi

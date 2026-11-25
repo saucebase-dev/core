@@ -1,0 +1,189 @@
+import { Meta, Unstyled } from '@storybook/addon-docs/blocks';
+
+<Meta title="Design system/Introduction" />
+
+export const code =
+    'bg-muted rounded-[4px] border px-1 py-0.5 font-mono text-[0.85em]';
+
+export const focusRing =
+    'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+
+export const pages = [
+    [
+        'Colours',
+        'design-system-colours--docs',
+        'Every colour token by role, light and dark, graded for contrast.',
+    ],
+    [
+        'Typography',
+        'design-system-typography--docs',
+        'The three fonts and the type scale.',
+    ],
+    ['Shape', 'design-system-shape--docs', 'Corner radius and shadows.'],
+    [
+        'Brand',
+        'design-system-brand--docs',
+        'The logo and icon, and the settings that replace them.',
+    ],
+];
+
+export const places = [
+    [
+        'resources/css/theme.css',
+        'The tokens: colours, fonts, radius, shadows, for light and dark.',
+    ],
+    [
+        'resources/js/components/ui/',
+        'The primitives, from shadcn: button, input, dialog and the rest.',
+    ],
+    [
+        'resources/js/components/ui/saucebase/',
+        "Saucebase's own composites built from them, such as the navigation.",
+    ],
+    [
+        'resources/js/.storybook/',
+        "Storybook's setup, the page every story renders in, and these pages (design-system/).",
+    ],
+];
+
+export const rules = [
+    [
+        'Tokens are the only source',
+        <>
+            Every colour, font, radius and shadow comes from{' '}
+            <code className={code}>theme.css</code>. Change it there, or pick a
+            theme with the Themes module (
+            <code className={code}>php artisan saucebase:theme:apply</code>),
+            and the whole interface follows, these pages included.
+        </>,
+    ],
+    [
+        'Use tokens, not raw colours',
+        <>
+            Write <code className={code}>bg-primary</code> or{' '}
+            <code className={code}>text-muted-foreground</code>, never a palette
+            colour such as <code className={code}>bg-blue-500</code> or a hex
+            value. A token has a dark value; a raw colour does not, and breaks
+            dark mode.
+        </>,
+    ],
+    [
+        'Every pair passes WCAG AA',
+        <>
+            Text needs 4.5:1 against its background, input borders and focus
+            rings 3:1, in light and in dark. The Colours page grades every pair;
+            the Accessibility panel checks each story.
+        </>,
+    ],
+    [
+        'Primitives take props',
+        <>
+            Components in <code className={code}>ui/</code> get their data from
+            props and emit events. They never read the Inertia page or call{' '}
+            <code className={code}>route()</code>, so they work in any page and
+            in a story. Pass a field its error:{' '}
+            <code className={code}>
+                {'<InputField :error="errors.email" />'}
+            </code>
+            . Only <code className={code}>ui/saucebase/</code> may know the app.
+        </>,
+    ],
+    [
+        'Add components with shadcn',
+        <>
+            <code className={code}>npx shadcn-vue@latest add dialog</code>{' '}
+            writes the primitive into <code className={code}>ui/</code>,
+            configured by <code className={code}>components.json</code>. It is
+            your code from then on.
+        </>,
+    ],
+    [
+        'Lucide for icons',
+        <>
+            Interface icons come from Lucide, the library{' '}
+            <code className={code}>components.json</code> names. Brand logos
+            come from Simple Icons, language flags from Circle Flags.
+        </>,
+    ],
+    [
+        'A component ships with its story',
+        <>
+            The story sits next to the component and shows each state it has.
+            Every story is a test: it must render, and its play function must
+            pass (<code className={code}>npm run test:stories</code>).
+        </>,
+    ],
+];
+
+export const Section = ({ id, title, note, children }) => (
+    <section className="mt-12" aria-labelledby={`intro-${id}`}>
+        <h2 id={`intro-${id}`} className="text-lg font-semibold">
+            {title}
+        </h2>
+        {note && (
+            <p className="text-muted-foreground mt-1 max-w-[65ch] text-sm">
+                {note}
+            </p>
+        )}
+        <div className="mt-4">{children}</div>
+    </section>
+);
+
+export const Introduction = () => (
+    <div className="text-foreground font-sans">
+        <header className="max-w-[70ch]">
+            <h1 className="text-3xl font-semibold tracking-tight">Design system</h1>
+            <p className="text-muted-foreground mt-3 text-base">
+                The tokens, components and rules every Saucebase screen is built from, in Vue and in React. Both
+                stacks share the same tokens, so a theme looks the same in either. Everything here renders live from
+                the app's own code: change it, and these pages change with it.
+            </p>
+        </header>
+
+        <Section id="pages" title="Foundations">
+            <ul className="grid gap-3 sm:grid-cols-2">
+                {pages.map(([title, id, about]) => (
+                    <li key={id}>
+                        <a
+                            href={`./?path=/docs/${id}`}
+                            target="_top"
+                            className={`hover:bg-muted block h-full rounded-[6px] border p-4 transition-colors ${focusRing}`}
+                        >
+                            <span className="text-primary text-sm font-semibold">{title}</span>
+                            <span className="text-muted-foreground mt-1 block text-sm">{about}</span>
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </Section>
+
+        <Section id="rules" title="Rules" note="What keeps the interface consistent, and themeable, as it grows.">
+            <ol className="divide-y rounded-[6px] border">
+                {rules.map(([title, body]) => (
+                    <li key={title} className="px-4 py-4">
+                        <h3 className="text-sm font-semibold">{title}</h3>
+                        <p className="text-muted-foreground mt-1 max-w-[75ch] text-sm leading-relaxed">{body}</p>
+                    </li>
+                ))}
+            </ol>
+        </Section>
+
+        <Section id="places" title="Where things live" note="Paths in an installed app.">
+            <dl className="divide-y rounded-[6px] border">
+                {places.map(([path, what]) => (
+                    <div key={path} className="grid gap-1 px-4 py-3 sm:grid-cols-[minmax(0,22rem)_1fr] sm:gap-6">
+                        <dt className="font-mono text-xs break-all">{path}</dt>
+                        <dd className="text-muted-foreground text-sm">{what}</dd>
+                    </div>
+                ))}
+            </dl>
+        </Section>
+    </div>
+
+);
+
+{/* Unstyled: the page is the app's own Tailwind, not Storybook's docs styles. */}
+
+<Unstyled>
+    <Introduction />
+</Unstyled>

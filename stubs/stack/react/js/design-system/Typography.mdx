@@ -1,0 +1,65 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Design system/Typography" />
+
+export const fonts = [
+    ['sans', 'Interface and body text (--font-body)'],
+    ['serif', 'Long-form reading, such as articles'],
+    ['mono', 'Code, values and identifiers'],
+];
+
+export const scale = [
+    ['text-4xl', 'Page title'],
+    ['text-3xl', 'Hero heading'],
+    ['text-2xl', 'Section heading'],
+    ['text-xl', 'Card heading'],
+    ['text-lg', 'Lead paragraph'],
+    ['text-base', 'Body'],
+    ['text-sm', 'Interface text: buttons, inputs, menus'],
+    ['text-xs', 'Labels, captions, badges'],
+];
+
+# Typography
+
+The fonts in `resources/css/theme.css` and the type scale the interface uses.
+
+## Fonts
+
+<div className="not-prose grid gap-3">
+    {fonts.map(([font, role]) => (
+        <div key={font} className="bg-card flex items-baseline justify-between gap-6 rounded-lg border p-4">
+            <span style={{ fontFamily: `var(--font-${font})`, fontSize: 'var(--text-3xl)' }}>
+                Aa Bb Cc 0123
+            </span>
+            <span className="text-right text-sm">
+                <code>--font-{font}</code>
+                <span className="text-muted-foreground block">{role}</span>
+            </span>
+        </div>
+    ))}
+</div>
+
+## Scale
+
+Tailwind's text sizes, in the body font.
+
+<div className="not-prose divide-y rounded-lg border">
+    {scale.map(([size, use]) => (
+        <div key={size} className="flex items-baseline justify-between gap-6 px-4 py-3">
+            {/* Inline: the docs page's own styles override Tailwind's size classes here. */}
+            <span
+                style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: `var(--${size})`,
+                    lineHeight: `var(--${size}--line-height)`,
+                }}
+            >
+                The quick brown fox
+            </span>
+            <span className="shrink-0 text-right text-xs">
+                <code>{size}</code>
+                <span className="text-muted-foreground block">{use}</span>
+            </span>
+        </div>
+    ))}
+</div>
