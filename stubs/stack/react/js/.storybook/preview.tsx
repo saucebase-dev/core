@@ -1,5 +1,6 @@
 import '@css/app.css';
 import { App, router } from '@inertiajs/react';
+import { ModalStackProvider } from '@inertiaui/modal-react';
 import addonA11y from '@storybook/addon-a11y';
 import addonDocs from '@storybook/addon-docs';
 import addonThemes, { withThemeByClassName } from '@storybook/addon-themes';
@@ -58,15 +59,17 @@ const preview = definePreview({
     },
     decorators: [
         // Every story renders inside Inertia's App, so usePage() works, and inside the
-        // translations, as in app.tsx. A story sets its own page props with
-        // `parameters: { inertia: { ... } }`.
+        // translations and the modal stack (useAuth() needs it), as in app.tsx. A story sets
+        // its own page props with `parameters: { inertia: { ... } }`.
         (Story, { parameters }) => (
             <I18nProvider initialLocale="en">
-                <App
-                    initialPage={page(parameters.inertia)}
-                    initialComponent={Story}
-                    resolveComponent={() => Story}
-                />
+                <ModalStackProvider>
+                    <App
+                        initialPage={page(parameters.inertia)}
+                        initialComponent={Story}
+                        resolveComponent={() => Story}
+                    />
+                </ModalStackProvider>
             </I18nProvider>
         ),
         // The app's theme selector (in the user menu) applies the stored `appearance`, or
