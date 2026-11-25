@@ -11,7 +11,12 @@ import Footer from './Footer.vue';
 const meta = preview.meta({
     title: 'Layout/Footer',
     component: Footer,
-    parameters: { layout: 'fullscreen' },
+    parameters: {
+        // In its own frame: the watermark is sized from the window's width, which inline
+        // would be the whole docs page's.
+        docs: { story: { inline: false, iframeHeight: '400px' } },
+        layout: 'fullscreen',
+    },
 });
 export default meta;
 
@@ -30,7 +35,6 @@ export const Default = meta.story({
 /** A long name: the watermark shrinks to stay on one line. */
 export const LongName = meta.story({
     parameters: {
-        docs: { story: { inline: false, iframeHeight: '320px' } },
         inertia: {
             settings: {
                 sections: [],

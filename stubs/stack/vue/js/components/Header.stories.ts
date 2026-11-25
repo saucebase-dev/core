@@ -1,6 +1,6 @@
 import { user } from '@/.storybook/page';
 import preview from '@/.storybook/preview';
-import { expect } from 'storybook/test';
+import { expect, waitFor } from 'storybook/test';
 import Header from './Header.vue';
 
 const landing = [
@@ -27,10 +27,25 @@ const meta = preview.meta({
     component: Header,
     parameters: {
         // Its stories differ only in page props, which one docs page shares.
-        docs: { story: { inline: false, iframeHeight: '120px' } },
+        docs: { story: { inline: false, iframeHeight: '480px' } },
         layout: 'fullscreen',
         inertia: { navigation: { landing } },
     },
+    // A page under it, tall enough to scroll, so hiding on scroll can be seen; the frame fits
+    // the open mobile menu.
+    decorators: [
+        () => ({
+            template: `
+                <story />
+                <main class="mx-auto min-h-[250vh] max-w-7xl space-y-6 px-6 pt-24 pb-12">
+                    <div class="bg-muted h-48 rounded-xl" />
+                    <div class="grid gap-6 sm:grid-cols-3">
+                        <div v-for="n in 3" :key="n" class="bg-muted h-40 rounded-xl" />
+                    </div>
+                    <div class="bg-muted h-96 rounded-xl" />
+                </main>`,
+        }),
+    ],
 });
 export default meta;
 
@@ -66,6 +81,24 @@ export const SignedIn = meta.story({
             canvas.getByRole('link', { name: 'Dashboard' }),
         ).toBeVisible();
         await expect(canvas.queryByTestId('header-sign-in')).toBeNull();
+    },
+});
+
+/** Scrolling down hides it; scrolling back up brings it back. */
+export const Scrolling = meta.story({
+    parameters: {
+        inertia: { auth: { user: null, registration_enabled: true } },
+    },
+    play: async ({ canvas }) => {
+        const header = canvas.getByRole('banner');
+
+        window.scrollTo({ top: 400, behavior: 'instant' });
+        await waitFor(() => expect(header).toHaveClass('-translate-y-full'));
+
+        window.scrollTo({ top: 300, behavior: 'instant' });
+        await waitFor(() => expect(header).toHaveClass('translate-y-0'));
+
+        window.scrollTo({ top: 0, behavior: 'instant' });
     },
 });
 
