@@ -318,7 +318,11 @@ function corePackages(): PluginOption {
         enforce: 'pre',
         resolveId(id, importer, options) {
             // Relative, absolute (aliases are already applied) and virtual ids stay as they are.
-            if (!importer?.startsWith(core) || /^[./\\\0]|:/.test(id)) {
+            if (
+                !importer?.startsWith(core) ||
+                /^[./\\\0]/.test(id) ||
+                id.includes(':')
+            ) {
                 return null;
             }
 

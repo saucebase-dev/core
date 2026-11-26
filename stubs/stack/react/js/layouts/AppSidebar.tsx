@@ -12,10 +12,7 @@ import type { PageProps, User } from '@/types';
 import type { ComponentProps } from 'react';
 import type { Navigation } from '@saucebase/core/types';
 import { usePage } from '@inertiajs/react';
-import {
-    getGlobalComponents,
-    hasGlobalComponent,
-} from '@saucebase/react/lib/globalComponents';
+import { hasGlobalComponent } from '@saucebase/react/lib/globalComponents';
 
 // Sidebar's props, with the app's defaults: an inset that collapses to icons.
 export default function AppSidebar({
@@ -45,9 +42,7 @@ export default function AppSidebar({
         >
             <SidebarHeader data-testid="sidebar-header">
                 {brandIsClaimed ? (
-                    getGlobalComponents('dashboard::sidebar.brand').map(
-                        (C, i) => <C key={i} />,
-                    )
+                    <GlobalComponents position="dashboard::sidebar.brand" />
                 ) : (
                     <AppBrand />
                 )}
