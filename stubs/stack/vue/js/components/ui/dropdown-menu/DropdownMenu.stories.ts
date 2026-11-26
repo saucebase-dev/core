@@ -48,6 +48,10 @@ type Args = { onSelect: (action: string) => void };
 const meta = preview.meta({
     title: 'UI/DropdownMenu',
     component: DropdownMenu,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        default: { control: false },
+    },
     args: { onSelect: fn() },
     render: (args: Args) => ({
         components,

@@ -20,6 +20,10 @@ const components = {
 const meta = preview.meta({
     title: 'UI/Popover',
     component: Popover,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        default: { control: false },
+    },
     render: (args) => ({
         components,
         setup: () => ({ args }),

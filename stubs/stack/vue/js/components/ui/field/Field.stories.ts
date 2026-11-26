@@ -40,6 +40,10 @@ const components = {
 const meta = preview.meta({
     title: 'UI/Field',
     component: Field,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        default: { control: false },
+    },
     decorators: [() => ({ template: '<div class="max-w-md"><story /></div>' })],
     render: (args) => ({
         components,

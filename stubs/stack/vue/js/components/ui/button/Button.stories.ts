@@ -14,24 +14,6 @@ const meta = preview.meta({
     component: Button,
     // The default slot: the button's label.
     args: { default: 'Save' },
-    // The variants' types allow null, so Storybook can't offer them as a list itself.
-    argTypes: {
-        variant: {
-            control: 'select',
-            options: [
-                'default',
-                'secondary',
-                'outline',
-                'destructive',
-                'ghost',
-                'link',
-            ],
-        },
-        size: {
-            control: 'select',
-            options: ['default', 'sm', 'lg', 'icon', 'icon-sm', 'icon-lg'],
-        },
-    },
 });
 export default meta;
 

@@ -12,6 +12,10 @@ type Args = { src: string; class?: string };
 const meta = preview.meta({
     title: 'UI/Avatar',
     component: Avatar,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        default: { control: false },
+    },
     args: { src: '/images/icon-on-light.svg' },
     render: (args: Args) => ({
         components: { Avatar, AvatarFallback, AvatarImage },

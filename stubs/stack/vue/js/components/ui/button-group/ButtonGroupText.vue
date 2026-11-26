@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 interface Props extends PrimitiveProps {
     class?: HTMLAttributes['class'];
-    orientation?: ButtonGroupVariants['orientation'];
+    orientation?: NonNullable<ButtonGroupVariants['orientation']>;
 }
 
 const props = withDefaults(defineProps<Props>(), {

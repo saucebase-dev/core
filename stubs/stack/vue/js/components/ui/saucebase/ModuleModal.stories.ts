@@ -15,17 +15,23 @@ const meta = preview.meta({
     title: 'Site/ModuleModal',
     tags: ['contributor'],
     component: ModuleModal,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        before: { control: false },
+    },
     parameters: {
         // It covers the page, so each story gets its own frame.
         docs: { story: { inline: false, iframeHeight: '640px' } },
         layout: 'fullscreen',
     },
-    args: { selectedMod: auth, onClose: fn() },
+    args: { selectedMod: auth },
 });
 export default meta;
 
 /** A module to install: its command and docs. The close button closes it. */
 export const Default = meta.story({
+    // The spy here only: in the meta's args it would leave every snippet incomplete.
+    args: { onClose: fn() },
     play: async ({ args, userEvent }) => {
         await expect(
             await screen.findByTestId('module-install-command'),

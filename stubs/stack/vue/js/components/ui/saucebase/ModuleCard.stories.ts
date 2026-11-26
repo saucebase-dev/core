@@ -15,13 +15,15 @@ const meta = preview.meta({
     title: 'Site/ModuleCard',
     tags: ['contributor'],
     component: ModuleCard,
-    args: { module: auth, index: 0, onSelect: fn() },
+    args: { module: auth, index: 0 },
     decorators: [() => ({ template: '<div class="w-56 p-6"><story /></div>' })],
 });
 export default meta;
 
 /** An available module. Clicking it selects it. */
 export const Available = meta.story({
+    // The spy here only: in the meta's args it would leave every snippet incomplete.
+    args: { onSelect: fn() },
     play: async ({ args, canvas, userEvent }) => {
         await userEvent.click(canvas.getByRole('button', { name: 'Auth' }));
 

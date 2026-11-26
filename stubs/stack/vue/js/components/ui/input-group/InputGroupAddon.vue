@@ -6,7 +6,7 @@ import { inputGroupAddonVariants } from '.';
 
 const props = withDefaults(
     defineProps<{
-        align?: InputGroupVariants['align'];
+        align?: NonNullable<InputGroupVariants['align']>;
         class?: HTMLAttributes['class'];
     }>(),
     {

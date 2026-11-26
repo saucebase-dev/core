@@ -2,6 +2,8 @@ import preview from '@/.storybook/preview';
 import { Button } from '@/components/ui/button';
 import { expect } from 'storybook/test';
 import IconNewspaper from '~icons/lucide/newspaper';
+import IconRocket from '~icons/lucide/rocket';
+import IconMap from '~icons/lucide/map';
 import { PageHero } from '.';
 
 /**
@@ -18,7 +20,18 @@ const meta = preview.meta({
     args: {
         title: 'Blog',
         description: 'Product news, guides and the occasional deep dive.',
-        icon: IconNewspaper,
+        // Its name in `mapping` below, which Storybook swaps for the component.
+        icon: 'Newspaper' as never,
+    },
+    argTypes: {
+        // A component can't go through the URL: pick one by name.
+        icon: {
+            options: ['Newspaper', 'Rocket', 'Map'],
+            mapping: { Newspaper: IconNewspaper, Rocket: IconRocket, Map: IconMap },
+            control: 'select',
+        },
+        // The story fills it itself: its control would do nothing.
+        actions: { control: false },
     },
 });
 export default meta;

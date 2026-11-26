@@ -9,7 +9,7 @@ import { badgeVariants } from '.';
 
 const props = defineProps<
     PrimitiveProps & {
-        variant?: BadgeVariants['variant'];
+        variant?: NonNullable<BadgeVariants['variant']>;
         class?: HTMLAttributes['class'];
     }
 >();

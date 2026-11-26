@@ -18,6 +18,10 @@ const components = {
 const meta = preview.meta({
     title: 'UI/ButtonGroup',
     component: ButtonGroup,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        default: { control: false },
+    },
     render: (args) => ({
         components,
         setup: () => ({ args }),

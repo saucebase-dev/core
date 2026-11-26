@@ -13,6 +13,11 @@ const locales = { en: 'English', pt_BR: 'Português (Brasil)' };
 const meta = preview.meta({
     title: 'App/LanguageSelector',
     component: LanguageSelector,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        trigger: { control: false },
+        'submenu-trigger': { control: false },
+    },
     parameters: {
         // Its stories differ only in page props, which one docs page shares.
         docs: { story: { inline: false, iframeHeight: '200px' } },

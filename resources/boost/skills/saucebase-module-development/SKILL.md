@@ -206,8 +206,40 @@ under `Modules/`.
   Storybook merges parameters, so a story can override a meta's prop but not remove it.
 - Every story is a test: it must render, and its `play` function must pass. Inertia visits are
   cancelled and logged in the Actions panel, so a story never needs a server.
+- A plain link (`<a href>`) in an example points at `#`. Plain link clicks are cancelled and
+  logged too, but `#` shows the reader it goes nowhere. Inertia links keep real paths: Inertia
+  renders `#` as `href=""`, which is not a link to screen readers or to `getByRole('link')`.
 - A story of a component that fetches on render needs a network mock; there is none, so don't
   write one for it.
+
+### Controls
+
+Every control in the Controls panel must change the story, following Storybook's
+[Controls guide](https://storybook.js.org/docs/essentials/controls). The preview already
+shows each control's description and default, and hides `as`, `asChild`, `by`, `testId`,
+`defaultValue` and `modelValue`. A component reads `defaultValue` only once and `modelValue`
+two-way, so a control can't change either; stories still set both in `args`.
+
+- Let docgen choose controls from the prop types. Write `argTypes` only for a control that
+  docgen gets wrong.
+- Give union props a type without `null`: docgen shows `'a' | 'b' | null` as a JSON
+  editor. Wrap cva's types: `variant?: NonNullable<AlertVariants['variant']>`.
+- Give a prop that takes a component (an icon) a list of names and a `mapping` to the real
+  components. Put the name in `args`, cast it (`icon: 'Rocket' as never`), because `mapping`
+  swaps it for the component.
+- Give a text slot an arg with a starting value, and show it in the render
+  (`{{ args.default }}`). Set `control: false` on a slot the render fills itself.
+- Leave object and array props on the JSON editor: that is their control.
+- Give every main prop a starting value in the meta's `args`.
+- Keep `fn()` out of the meta's `args`: Storybook can't print a call as an event handler,
+  so every story's snippet gets an "Incomplete code snippet" warning. Put the spy only on
+  the story whose `play` reads it, or handle the event in a decorator that passes its own
+  handler (`story({ args: { onDismiss } })`) and logs it with `action()`.
+- Render stories inline on the docs page: controls there don't reach a story in its own
+  frame (`docs.story.inline: false`). A component that sticks or scrolls with the page
+  gets a scrolling box of its own in a decorator instead.
+- Describe every prop, slot and event with a JSDoc comment in the component: the panel shows
+  it next to the control.
 
 ## npm Packages
 

@@ -14,6 +14,10 @@ import { Alert, AlertDescription, AlertTitle } from '.';
 const meta = preview.meta({
     title: 'UI/Alert',
     component: Alert,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        default: { control: false },
+    },
     render: (args) => ({
         components: { Alert, AlertDescription, AlertTitle, IconInfo },
         setup: () => ({ args }),
