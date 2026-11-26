@@ -348,7 +348,7 @@ class InstallCommandTest extends TestCase
         // Laravel's own lines stay.
         $this->assertStringStartsWith("/vendor\n/public/build\n", $ignored);
 
-        foreach (['/bootstrap/ssr', '/playwright-report', '/test-results', '/storage/framework/playwright', '/public/css/filament', '/public/js/filament', '/public/fonts/filament'] as $path) {
+        foreach (['/bootstrap/ssr', '/playwright-report', '/test-results', '/storage/framework/playwright', '/public/css/filament', '/public/js/filament', '/public/fonts/filament', '/coverage', '/storage/storybook'] as $path) {
             $this->assertStringContainsString("\n{$path}\n", $ignored);
         }
     }

@@ -84,6 +84,36 @@ class ConfigOverrideTest extends TestCase
         $this->assertTrue($config['sort-keys']);
     }
 
+    /**
+     * React's strings are `t('…')` in `.tsx` files. The exporter puts each function name
+     * into `/([FUNCTIONS])\(\s*(['"])…\2\s*[\),]/u` (CodeParser::$basePattern, copied
+     * here: core doesn't install the package) with nothing before it, so a bare `t` would
+     * also export `import('./page')` and `emit('submit')`.
+     */
+    public function test_string_exporter_finds_react_strings_and_nothing_else(): void
+    {
+        $config = config('laravel-translatable-string-exporter');
+        $source = <<<'TSX'
+            <button aria-label={t('Close')} onClick={() => emit('submit')} />
+            const page = import('./pages/Index');
+            {$t('Copy')} {trans('Increase')} {cn(t("Decrease"), split('x'))}
+            TSX;
+
+        $found = [];
+        foreach ($config['functions'] as $function) {
+            preg_match_all(
+                '/('.$function.')\(\s*([\'"])(?P<string>(?:(?![^\\\]\2).)+.)\2\s*[\),]/u',
+                $source,
+                $matches,
+            );
+            array_push($found, ...$matches['string']);
+        }
+        sort($found);
+
+        $this->assertContains('*.tsx', $config['patterns']);
+        $this->assertSame(['Close', 'Copy', 'Decrease', 'Increase'], array_values(array_unique($found)));
+    }
+
     public function test_vendor_defaults_still_merge_for_keys_core_does_not_set(): void
     {
         $this->assertSame('Tests\TestCase', config('app-modules.tests_base'));

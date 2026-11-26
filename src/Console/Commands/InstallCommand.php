@@ -39,6 +39,9 @@ class InstallCommand extends Command
         '/playwright-report',
         '/test-results',
         '/storage/framework/playwright',
+        // Storybook: test coverage, and the static build.
+        '/coverage',
+        '/storage/storybook',
         // Every env file, the E2E suite's `.env.e2e` included, but the examples.
         '.env',
         '.env.*',

@@ -1,0 +1,76 @@
+import { Meta, Unstyled } from '@storybook/addon-docs/blocks';
+import { BRAND_FALLBACKS } from '@saucebase/core/lib/settings';
+
+<Meta title="Design system/Brand" />
+
+export const assets = [
+    ['site_logo_on_light', 'Logo', 'Light backgrounds', false],
+    ['site_logo_on_dark', 'Logo', 'Dark backgrounds', true],
+    [
+        'site_icon_on_light',
+        'Icon',
+        'Light backgrounds, favicon, small spaces',
+        false,
+    ],
+    ['site_icon_on_dark', 'Icon', 'Dark backgrounds, small spaces', true],
+];
+
+export const code =
+    'bg-muted rounded-[4px] border px-1 py-0.5 font-mono text-[0.85em]';
+
+export const focusRing =
+    'outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+
+export const Brand = () => (
+    <div className="text-foreground font-sans">
+        <header className="max-w-[70ch]">
+            <h1 className="text-3xl font-semibold tracking-tight">Brand</h1>
+            <p className="text-muted-foreground mt-3 text-base">
+                The artwork the interface shows: the sidebar, the auth pages, the favicon. These are the defaults
+                core ships in <code className={code}>public/images</code>. Upload your own in the admin panel's
+                settings (the brand assets), and the app shows yours instead.
+            </p>
+        </header>
+
+        <section className="mt-12" aria-labelledby="brand-assets">
+            <h2 id="brand-assets" className="text-lg font-semibold">
+                Logo and icon
+            </h2>
+            <p className="text-muted-foreground mt-1 max-w-[65ch] text-sm">
+                Each on the background it is made for. The key is the setting that replaces it.
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {assets.map(([key, kind, use, dark]) => (
+                    <figure key={key} className="overflow-hidden rounded-[6px] border">
+                        <div className={`${dark ? 'dark' : ''} bg-background flex h-36 items-center justify-center p-6`}>
+                            <img src={BRAND_FALLBACKS[key]} alt={`${kind} for ${use.toLowerCase()}`} className="max-h-16 w-auto" />
+                        </div>
+                        <figcaption className="flex flex-wrap items-center justify-between gap-3 border-t px-4 py-3">
+                            <span>
+                                <span className="text-sm font-medium">{kind}</span>
+                                <span className="text-muted-foreground block text-xs">{use}</span>
+                            </span>
+                            <span className="flex items-center gap-3">
+                                <code className="font-mono text-xs">{key}</code>
+                                <a
+                                    href={BRAND_FALLBACKS[key]}
+                                    download
+                                    className={`text-primary text-xs underline underline-offset-2 ${focusRing}`}
+                                >
+                                    Download
+                                </a>
+                            </span>
+                        </figcaption>
+                    </figure>
+                ))}
+            </div>
+        </section>
+    </div>
+
+);
+
+{/* Unstyled: the page is the app's own Tailwind, not Storybook's docs styles. */}
+
+<Unstyled>
+    <Brand />
+</Unstyled>

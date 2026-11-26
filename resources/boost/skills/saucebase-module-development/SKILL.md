@@ -192,6 +192,23 @@ through `@/components`, `@/layouts` and `@/lib/utils`. The app's
 `saucebase-frontend-development` skill lists exactly what is available. Never import a
 `vendor/` path.
 
+## Stories
+
+A module's components get Storybook stories beside them, as core's do:
+`resources/js/vue/components/Banner.stories.ts` and `resources/js/react/components/Banner.stories.tsx`.
+Storybook and `npm run test:stories` find every module's stories for the app's stack; they list
+under `Modules/`.
+
+- Set `title: '<Module>/<Component>'`. Storybook adds the `Modules/` prefix.
+- Import the preview as core's stories do (`import preview from '@/.storybook/preview'`) and
+  page fixtures from `@/.storybook/page`.
+- A component that reads page props gets them per story with `parameters: { inertia: { … } }`.
+  Storybook merges parameters, so a story can override a meta's prop but not remove it.
+- Every story is a test: it must render, and its `play` function must pass. Inertia visits are
+  cancelled and logged in the Actions panel, so a story never needs a server.
+- A story of a component that fetches on render needs a network mock; there is none, so don't
+  write one for it.
+
 ## npm Packages
 
 Every module has a `package.json` (the recipe creates it), with only `name` and `private` until

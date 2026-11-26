@@ -94,8 +94,12 @@ export function FieldError({
     const content = (() => {
         if (children) return null;
         if (!errors || errors.length === 0) return null;
-        if (errors.length === 1 && errors[0]?.message) return errors[0].message;
-        return errors.some((e) => e?.message) ? errors : null;
+        // The same message twice (two rules, one fault) is shown once.
+        const unique = [
+            ...new Map(errors.map((e) => [e?.message, e])).values(),
+        ];
+        if (unique.length === 1 && unique[0]?.message) return unique[0].message;
+        return unique.some((e) => e?.message) ? unique : null;
     })();
 
     if (!children && !content) return null;

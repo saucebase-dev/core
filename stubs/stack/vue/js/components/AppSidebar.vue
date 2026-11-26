@@ -42,18 +42,24 @@ const brandIsClaimed = hasGlobalComponent('dashboard::sidebar.brand');
 
 <template>
     <Sidebar
+        :side="side"
         :variant="variant"
         :collapsible="collapsible"
         data-sidebar="sidebar"
     >
         <SidebarHeader data-testid="sidebar-header">
-            <GlobalComponents v-if="brandIsClaimed" position="dashboard::sidebar.brand" />
+            <GlobalComponents
+                v-if="brandIsClaimed"
+                position="dashboard::sidebar.brand"
+            />
             <AppBrand v-else />
         </SidebarHeader>
 
         <SidebarContent data-sidebar="content">
             <GlobalComponents position="dashboard::sidebar.start" />
             <NavGroup :items="items" />
+            <!-- Between the nav and the bottom links: a module's own list (chat history). -->
+            <GlobalComponents position="dashboard::sidebar.content" />
             <NavGroup :items="secondaryItems" class="mt-auto" />
             <GlobalComponents position="dashboard::sidebar.end" />
         </SidebarContent>

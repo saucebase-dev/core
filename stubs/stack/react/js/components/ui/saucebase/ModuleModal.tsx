@@ -126,6 +126,7 @@ export function ModuleModal({ selectedMod, onClose }: ModuleModalProps) {
                         <button
                             className="text-muted-foreground hover:text-foreground hover:border-foreground absolute top-3 right-3 z-20 cursor-pointer rounded-full border p-1.5 transition-colors"
                             onClick={onClose}
+                            aria-label={t('Close')}
                         >
                             <X className="size-4" />
                         </button>
@@ -192,6 +193,7 @@ export function ModuleModal({ selectedMod, onClose }: ModuleModalProps) {
                                     <button
                                         className="cursor-pointer self-start text-gray-300 transition-colors hover:text-gray-300"
                                         onClick={copyCommand}
+                                        aria-label={t('Copy')}
                                     >
                                         {copied ? (
                                             <Check className="size-4 text-green-400" />
