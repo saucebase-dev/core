@@ -77,7 +77,7 @@ export function InputGroup({
 }
 
 interface InputGroupAddonProps extends HTMLAttributes<HTMLDivElement> {
-    align?: InputGroupAddonVariants['align'];
+    align?: NonNullable<InputGroupAddonVariants['align']>;
 }
 
 export function InputGroupAddon({
@@ -109,7 +109,7 @@ export function InputGroupAddon({
 }
 
 interface InputGroupButtonProps extends ComponentProps<typeof Button> {
-    size?: InputGroupButtonVariants['size'];
+    size?: NonNullable<InputGroupButtonVariants['size']>;
 }
 
 export function InputGroupButton({

@@ -15,6 +15,14 @@ import CardLayout from './CardLayout';
 const meta = preview.meta({
     title: 'Layout/CardLayout',
     component: CardLayout,
+    // Props the story fills itself: their controls would do nothing.
+    argTypes: {
+        children: { control: false },
+        outside: { control: false },
+        icon: { control: false },
+        heading: { control: false },
+        subheading: { control: false },
+    },
     parameters: {
         // Its stories differ only in page props, which one docs page shares.
         docs: { story: { inline: false, iframeHeight: '640px' } },

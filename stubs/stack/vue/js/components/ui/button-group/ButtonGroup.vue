@@ -6,7 +6,7 @@ import { buttonGroupVariants } from '.';
 
 const props = defineProps<{
     class?: HTMLAttributes['class'];
-    orientation?: ButtonGroupVariants['orientation'];
+    orientation?: NonNullable<ButtonGroupVariants['orientation']>;
 }>();
 </script>
 

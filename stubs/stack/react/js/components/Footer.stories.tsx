@@ -43,3 +43,21 @@ export const LongName = meta.story({
         },
     },
 });
+
+/** A plain link, such as GitHub's, stays in the story: it goes to the Actions panel. */
+export const ClickingALink = meta.story({
+    play: async ({ canvas, userEvent }) => {
+        // Heard last, after Storybook's own handler: whether the click would leave. Then
+        // cancelled either way, so a failing test doesn't take the test runner away.
+        let leaves = true;
+        const listen = (event: Event) => {
+            leaves = !event.defaultPrevented;
+            event.preventDefault();
+        };
+        window.addEventListener('click', listen);
+        await userEvent.click(canvas.getByRole('link', { name: 'GitHub' }));
+        window.removeEventListener('click', listen);
+
+        await expect(leaves).toBe(false);
+    },
+});

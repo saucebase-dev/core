@@ -14,6 +14,15 @@ import CardLayout from './CardLayout.vue';
 const meta = preview.meta({
     title: 'Layout/CardLayout',
     component: CardLayout,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        cardClass: { control: 'text' },
+        icon: { control: false },
+        heading: { control: false },
+        subheading: { control: false },
+        default: { control: false },
+        outside: { control: false },
+    },
     parameters: {
         // Its stories differ only in page props, which one docs page shares.
         docs: { story: { inline: false, iframeHeight: '640px' } },

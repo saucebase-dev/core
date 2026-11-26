@@ -1,5 +1,7 @@
 import preview from '@/.storybook/preview';
 import { expect } from 'storybook/test';
+import IconBell from '~icons/lucide/bell';
+import IconSparkles from '~icons/lucide/sparkles';
 import AlertMessage from './AlertMessage.vue';
 
 /**
@@ -12,6 +14,14 @@ import AlertMessage from './AlertMessage.vue';
 const meta = preview.meta({
     title: 'App/AlertMessage',
     component: AlertMessage,
+    argTypes: {
+        // A component can't go through the URL: pick one by name. Unset, the variant's own.
+        icon: {
+            options: ['Bell', 'Sparkles'],
+            mapping: { Bell: IconBell, Sparkles: IconSparkles },
+            control: 'select',
+        },
+    },
     args: { message: 'Your profile has been saved.', variant: 'success' },
 });
 export default meta;

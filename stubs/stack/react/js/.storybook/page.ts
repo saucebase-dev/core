@@ -50,11 +50,12 @@ const welcome = {
     active: true,
 };
 
+// Plain links, which leave the app: `#`, so a click in a story goes nowhere.
 const secondary = [
     {
         title: 'Star us on Github',
         slug: 'github',
-        url: 'https://github.com/saucebase-dev/saucebase',
+        url: '#',
         icon: 'github',
         external: true,
         newPage: true,
@@ -62,7 +63,7 @@ const secondary = [
     {
         title: 'Documentation',
         slug: 'documentation',
-        url: 'https://saucebase-dev.github.io/docs/',
+        url: '#',
         icon: 'documentation',
         external: true,
         newPage: true,

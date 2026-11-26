@@ -21,6 +21,10 @@ import {
 const meta = preview.meta({
     title: 'UI/AlertDialog',
     component: AlertDialog,
+    // Props the story fills itself: their controls would do nothing.
+    argTypes: {
+        children: { control: false },
+    },
     render: (args) => (
         <AlertDialog {...args}>
             <AlertDialogTrigger asChild>

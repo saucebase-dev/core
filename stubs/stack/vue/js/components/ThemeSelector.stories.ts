@@ -12,6 +12,11 @@ import ThemeSelector from './ThemeSelector.vue';
 const meta = preview.meta({
     title: 'App/ThemeSelector',
     component: ThemeSelector,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        trigger: { control: false },
+        'submenu-trigger': { control: false },
+    },
     // No reveal animation: the View Transitions API would hold the play function up.
     args: { disableAnimation: true },
 });

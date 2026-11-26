@@ -46,6 +46,8 @@ const meta = preview.meta({
             control: 'select',
             options: ['right', 'left', 'top', 'bottom'],
         },
+        // The story fills it itself: its control would do nothing.
+        default: { control: false },
     },
     render: (args: Args) => ({
         components,

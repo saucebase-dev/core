@@ -11,10 +11,11 @@ import { Label } from './label';
 const meta = preview.meta({
     title: 'UI/Label',
     component: Label,
-    args: { htmlFor: 'workspace' },
+    // The label's text.
+    args: { htmlFor: 'workspace', children: 'Workspace name' },
     render: (args) => (
         <div className="grid max-w-sm gap-2">
-            <Label {...args}>Workspace name</Label>
+            <Label {...args} />
             <Input id="workspace" placeholder="Acme Inc." />
         </div>
     ),
@@ -42,9 +43,7 @@ export const Disabled = meta.story({
                 disabled
                 placeholder="Acme Inc."
             />
-            <Label {...args} className="order-1">
-                Workspace name
-            </Label>
+            <Label {...args} className="order-1" />
         </div>
     ),
 });

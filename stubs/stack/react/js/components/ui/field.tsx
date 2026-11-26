@@ -29,7 +29,7 @@ export const fieldVariants = cva(
 export type FieldVariants = VariantProps<typeof fieldVariants>;
 
 interface FieldProps extends HTMLAttributes<HTMLDivElement> {
-    orientation?: FieldVariants['orientation'];
+    orientation?: NonNullable<FieldVariants['orientation']>;
 }
 
 export function Field({ className, orientation, ...props }: FieldProps) {

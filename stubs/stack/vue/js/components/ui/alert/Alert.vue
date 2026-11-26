@@ -6,7 +6,7 @@ import { alertVariants } from '.';
 
 const props = defineProps<{
     class?: HTMLAttributes['class'];
-    variant?: AlertVariants['variant'];
+    variant?: NonNullable<AlertVariants['variant']>;
 }>();
 </script>
 

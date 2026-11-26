@@ -12,6 +12,10 @@ import SiteLayout from './SiteLayout.vue';
 const meta = preview.meta({
     title: 'Layout/SiteLayout',
     component: SiteLayout,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        default: { control: false },
+    },
     parameters: {
         docs: { story: { inline: false, iframeHeight: '640px' } },
         layout: 'fullscreen',

@@ -52,8 +52,38 @@ router.on('before', (event) => {
     return false;
 });
 
+// A plain link would load its page into the frame too, or jump a docs page to the top
+// (`#`): cancel it and show it in the Actions panel. Inertia's <Link> has cancelled its
+// own click by now. A docs page's own links, outside its stories, still work.
+document.addEventListener('click', (event) => {
+    const link = (event.target as Element).closest?.('a[href]');
+    if (
+        !link ||
+        event.defaultPrevented ||
+        (link.closest('.sbdocs') && !link.closest('.docs-story'))
+    ) {
+        return;
+    }
+    event.preventDefault();
+    action('link')(link.getAttribute('href'));
+});
+
 // What app.ts registers before the first render: the navigation's icons and actions.
 registerNavigationDefaults();
+
+// A docs page runs every story's play function, inline or in its own frame
+// (`docs.story.inline: false`). Focus scrolls to what gets it, through every frame around
+// it, so a click in one story would scroll the docs page down to that story. Focus
+// without scrolling on docs pages; on its own, a story still scrolls to what gets focus.
+const onDocsPage =
+    window.parent !== window.top ||
+    new URLSearchParams(location.search).get('viewMode') === 'docs';
+if (onDocsPage) {
+    const focus = HTMLElement.prototype.focus;
+    HTMLElement.prototype.focus = function (options) {
+        focus.call(this, { ...options, preventScroll: true });
+    };
+}
 
 // Inertia keeps one current page component for every App, so a docs page with several
 // stories would show the last one in each. Every App renders this same component, which
@@ -85,6 +115,14 @@ const preview = definePreview({
     // Every component gets a docs page: its description, live controls, props and stories.
     tags: ['autodocs'],
     parameters: {
+        controls: {
+            // Each control with the prop's description and default, as on the docs page.
+            expanded: true,
+            // Props for building other components, not for trying this one out; and the
+            // value, which a component reads once (defaultValue) or two-way (v-model), so a
+            // control can't change it. Stories still set them in args.
+            exclude: /^(as|asChild|by|testId|defaultValue|modelValue)$/,
+        },
         // Docs pages in the app's own fonts, not Storybook's.
         docs: {
             theme: create({

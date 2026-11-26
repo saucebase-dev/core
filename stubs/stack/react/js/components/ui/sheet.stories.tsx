@@ -30,6 +30,8 @@ const meta = preview.meta({
     component: Sheet,
     args: { side: 'right' } as Args,
     argTypes: {
+        // The story fills it itself: its control would do nothing.
+        children: { control: false },
         side: {
             control: 'select',
             options: ['right', 'left', 'top', 'bottom'],

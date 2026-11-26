@@ -1,4 +1,5 @@
 import preview from '@/.storybook/preview';
+import { Bell, Sparkles } from 'lucide-react';
 import { expect } from 'storybook/test';
 import AlertMessage from './AlertMessage';
 
@@ -13,6 +14,14 @@ const meta = preview.meta({
     title: 'App/AlertMessage',
     component: AlertMessage,
     args: { message: 'Your profile has been saved.', variant: 'success' },
+    argTypes: {
+        // A component can't go through the URL: pick one by name. Unset, the variant's own.
+        icon: {
+            options: ['Bell', 'Sparkles'],
+            mapping: { Bell, Sparkles },
+            control: 'select',
+        },
+    },
 });
 export default meta;
 

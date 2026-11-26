@@ -12,6 +12,10 @@ import SiteLayout from './SiteLayout';
 const meta = preview.meta({
     title: 'Layout/SiteLayout',
     component: SiteLayout,
+    // Props the story fills itself: their controls would do nothing.
+    argTypes: {
+        children: { control: false },
+    },
     parameters: {
         docs: { story: { inline: false, iframeHeight: '640px' } },
         layout: 'fullscreen',

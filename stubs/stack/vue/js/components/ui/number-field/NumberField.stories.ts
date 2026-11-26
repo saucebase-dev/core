@@ -25,6 +25,10 @@ const components = {
 const meta = preview.meta({
     title: 'UI/NumberField',
     component: NumberField,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        default: { control: false },
+    },
     args: { id: 'seats', defaultValue: 5, min: 1, max: 50 },
     decorators: [() => ({ template: '<div class="max-w-48"><story /></div>' })],
     render: (args) => ({

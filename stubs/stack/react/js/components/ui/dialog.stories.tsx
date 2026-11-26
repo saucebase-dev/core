@@ -25,6 +25,10 @@ import {
 const meta = preview.meta({
     title: 'UI/Dialog',
     component: Dialog,
+    // Props the story fills itself: their controls would do nothing.
+    argTypes: {
+        children: { control: false },
+    },
     render: (args) => (
         <Dialog {...args}>
             <DialogTrigger asChild>

@@ -32,9 +32,13 @@ type Args = ComponentProps<typeof DropdownMenu> & {
 const meta = preview.meta({
     title: 'UI/DropdownMenu',
     component: DropdownMenu,
+    // Props the story fills itself: their controls would do nothing.
+    argTypes: {
+        children: { control: false },
+    },
     args: { onSelect: fn() } as Args,
-    render: ({ onSelect }: Args) => (
-        <DropdownMenu>
+    render: ({ onSelect, ...root }: Args) => (
+        <DropdownMenu {...root}>
             <DropdownMenuTrigger asChild>
                 <Button variant="outline">Project actions</Button>
             </DropdownMenuTrigger>

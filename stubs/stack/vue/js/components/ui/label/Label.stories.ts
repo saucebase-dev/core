@@ -11,13 +11,14 @@ import { Label } from '.';
 const meta = preview.meta({
     title: 'UI/Label',
     component: Label,
-    args: { for: 'workspace' },
+    // The default slot: the label's text.
+    args: { for: 'workspace', default: 'Workspace name' },
     render: (args) => ({
         components: { Input, Label },
         setup: () => ({ args }),
         template: `
             <div class="grid max-w-sm gap-2">
-                <Label v-bind="args">Workspace name</Label>
+                <Label :for="args.for">{{ args.default }}</Label>
                 <Input id="workspace" placeholder="Acme Inc." />
             </div>`,
     }),
@@ -43,7 +44,7 @@ export const Disabled = meta.story({
         template: `
             <div class="grid max-w-sm gap-2">
                 <Input id="workspace" class="peer order-2" disabled placeholder="Acme Inc." />
-                <Label v-bind="args" class="order-1">Workspace name</Label>
+                <Label :for="args.for" class="order-1">{{ args.default }}</Label>
             </div>`,
     }),
 });

@@ -11,6 +11,11 @@ import { Checkbox } from '.';
 const meta = preview.meta({
     title: 'UI/Checkbox',
     component: Checkbox,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        value: { control: false },
+        default: { control: false },
+    },
     // Each example's own id (useId): the docs page shows them all, and a shared one would
     // send every label's click to the first box.
     render: (args) => ({

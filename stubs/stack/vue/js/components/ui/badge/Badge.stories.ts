@@ -11,13 +11,6 @@ const meta = preview.meta({
     title: 'UI/Badge',
     component: Badge,
     args: { default: 'Pro' },
-    // The variants' types allow null, so Storybook can't offer them as a list itself.
-    argTypes: {
-        variant: {
-            control: 'select',
-            options: ['default', 'secondary', 'destructive', 'outline'],
-        },
-    },
 });
 export default meta;
 

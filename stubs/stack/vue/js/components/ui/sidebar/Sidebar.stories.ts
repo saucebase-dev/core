@@ -65,6 +65,10 @@ const components = {
 const meta = preview.meta({
     title: 'UI/Sidebar',
     component: Sidebar,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        default: { control: false },
+    },
     parameters: {
         // Each story has its own provider, but the open state is kept in a cookie.
         docs: { story: { inline: false, iframeHeight: '480px' } },

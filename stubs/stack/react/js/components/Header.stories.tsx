@@ -9,7 +9,7 @@ const landing = [
     {
         title: 'Docs',
         slug: 'docs',
-        url: 'https://saucebase-dev.github.io/docs/',
+        url: '#',
         external: true,
         newPage: true,
     },

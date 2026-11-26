@@ -13,6 +13,11 @@ import AppLayout from './AppLayout.vue';
 const meta = preview.meta({
     title: 'Layout/AppLayout',
     component: AppLayout,
+    // Slots the story fills itself: their controls would do nothing.
+    argTypes: {
+        header: { control: false },
+        default: { control: false },
+    },
     parameters: {
         // Its stories differ only in page props, which one docs page shares.
         docs: { story: { inline: false, iframeHeight: '480px' } },

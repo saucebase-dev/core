@@ -12,6 +12,11 @@ import { EmptyState } from '.';
 const meta = preview.meta({
     title: 'UI/EmptyState',
     component: EmptyState,
+    // Props the story fills itself: their controls would do nothing.
+    argTypes: {
+        icon: { control: false },
+        children: { control: false },
+    },
     args: {
         title: 'No API tokens yet',
         description: 'Create a token to call the API from your own scripts.',
