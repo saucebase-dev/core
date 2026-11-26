@@ -27,6 +27,14 @@ function Labelled({
 const meta = preview.meta({
     title: 'UI/Checkbox',
     component: Checkbox,
+    // Its type joins a boolean and a string, which Storybook shows as JSON: offer its
+    // three values instead.
+    argTypes: {
+        checked: {
+            control: 'inline-radio',
+            options: [false, true, 'indeterminate'],
+        },
+    },
     render: (args) => <Labelled {...args} label="Email me product updates" />,
 });
 export default meta;

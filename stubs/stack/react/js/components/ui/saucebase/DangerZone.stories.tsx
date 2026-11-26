@@ -11,6 +11,10 @@ import { DangerZone } from '.';
 const meta = preview.meta({
     title: 'UI/DangerZone',
     component: DangerZone,
+    // Props the story fills itself: their controls would do nothing.
+    argTypes: {
+        children: { control: false },
+    },
     args: {
         children: (
             <div className="flex items-center justify-between gap-6">

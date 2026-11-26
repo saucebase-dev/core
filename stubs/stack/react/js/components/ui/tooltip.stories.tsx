@@ -26,6 +26,8 @@ const meta = preview.meta({
     component: Tooltip,
     args: { side: 'top' } as Args,
     argTypes: {
+        // The story fills it itself: its control would do nothing.
+        children: { control: false },
         side: {
             control: 'select',
             options: ['top', 'right', 'bottom', 'left'],

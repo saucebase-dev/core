@@ -21,7 +21,7 @@ export const buttonGroupVariants = cva(
 export type ButtonGroupVariants = VariantProps<typeof buttonGroupVariants>;
 
 interface ButtonGroupProps extends HTMLAttributes<HTMLDivElement> {
-    orientation?: ButtonGroupVariants['orientation'];
+    orientation?: NonNullable<ButtonGroupVariants['orientation']>;
 }
 
 export function ButtonGroup({

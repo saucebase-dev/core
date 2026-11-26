@@ -13,6 +13,10 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover';
 const meta = preview.meta({
     title: 'UI/Popover',
     component: Popover,
+    // Props the story fills itself: their controls would do nothing.
+    argTypes: {
+        children: { control: false },
+    },
     render: (args) => (
         <Popover {...args}>
             <PopoverTrigger asChild>

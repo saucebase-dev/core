@@ -19,6 +19,10 @@ import {
 const meta = preview.meta({
     title: 'UI/Select',
     component: Select,
+    // Props the story fills itself: their controls would do nothing.
+    argTypes: {
+        children: { control: false },
+    },
     render: (args) => (
         <Select {...args}>
             <SelectTrigger className="w-48" aria-label="Role">

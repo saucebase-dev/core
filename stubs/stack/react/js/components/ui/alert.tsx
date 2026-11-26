@@ -23,7 +23,9 @@ function Alert({
     className,
     variant,
     ...props
-}: React.ComponentProps<'div'> & VariantProps<typeof alertVariants>) {
+}: React.ComponentProps<'div'> & {
+    variant?: NonNullable<VariantProps<typeof alertVariants>['variant']>;
+}) {
     return (
         <div
             data-slot="alert"

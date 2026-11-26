@@ -13,6 +13,10 @@ import AppLayout from './AppLayout';
 const meta = preview.meta({
     title: 'Layout/AppLayout',
     component: AppLayout,
+    // Props the story fills itself: their controls would do nothing.
+    argTypes: {
+        children: { control: false },
+    },
     parameters: {
         // Its stories differ only in page props, which one docs page shares.
         docs: { story: { inline: false, iframeHeight: '480px' } },

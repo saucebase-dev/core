@@ -199,6 +199,19 @@ A module's components get Storybook stories beside them, as core's do:
 Storybook and `npm run test:stories` find every module's stories for the app's stack; they list
 under `Modules/`.
 
+Write stories for every component that shows something and can render from props alone:
+UI, design-system and module components, and any component with states of its own (empty,
+error, loading). Skip the rest; E2E covers them:
+
+- Pages.
+- Slots that only read the page and pass it on (`ComingSoonBannerSlot`).
+- Components with no UI of their own (a toast fired on page load).
+- Large components that only compose others: their parts get the stories.
+
+A component that reads the page, sends requests or submits a form but should have stories
+splits in two: a view that takes props and emits events, with the stories, and a slot or
+parent that reads the page and sends the request (`TenantSwitcher` and `TenantSwitcherSlot`).
+
 - Set `title: '<Module>/<Component>'`. Storybook adds the `Modules/` prefix.
 - Import the preview as core's stories do (`import preview from '@/.storybook/preview'`) and
   page fixtures from `@/.storybook/page`.

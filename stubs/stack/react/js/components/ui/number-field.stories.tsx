@@ -16,6 +16,10 @@ import {
 const meta = preview.meta({
     title: 'UI/NumberField',
     component: NumberField,
+    // Props the story fills itself: their controls would do nothing.
+    argTypes: {
+        children: { control: false },
+    },
     args: { defaultValue: 5, min: 1, max: 50 },
     decorators: [
         (Story) => (

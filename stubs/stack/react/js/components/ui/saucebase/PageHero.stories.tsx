@@ -1,6 +1,6 @@
 import preview from '@/.storybook/preview';
 import { Button } from '@/components/ui/button';
-import { Newspaper } from 'lucide-react';
+import { MapIcon, Newspaper, Rocket } from 'lucide-react';
 import { expect } from 'storybook/test';
 import { PageHero } from '.';
 
@@ -18,7 +18,18 @@ const meta = preview.meta({
     args: {
         title: 'Blog',
         description: 'Product news, guides and the occasional deep dive.',
-        icon: Newspaper,
+        // Its name in `mapping` below, which Storybook swaps for the component.
+        icon: 'Newspaper' as never,
+    },
+    argTypes: {
+        // A component can't go through the URL: pick one by name.
+        icon: {
+            options: ['Newspaper', 'Rocket', 'Map'],
+            mapping: { Newspaper, Rocket, Map: MapIcon },
+            control: 'select',
+        },
+        // The story fills it itself: its control would do nothing.
+        actions: { control: false },
     },
 });
 export default meta;

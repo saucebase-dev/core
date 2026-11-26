@@ -12,6 +12,10 @@ import ThemeSelector from './ThemeSelector';
 const meta = preview.meta({
     title: 'App/ThemeSelector',
     component: ThemeSelector,
+    // Props the story fills itself: their controls would do nothing.
+    argTypes: {
+        children: { control: false },
+    },
     // No reveal animation: the View Transitions API would hold the play function up.
     args: { disableAnimation: true },
 });
