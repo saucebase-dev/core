@@ -45,10 +45,11 @@ function Button({
     size = 'default',
     asChild = false,
     ...props
-}: React.ComponentProps<'button'> &
-    VariantProps<typeof buttonVariants> & {
-        asChild?: boolean;
-    }) {
+}: React.ComponentProps<'button'> & {
+    variant?: NonNullable<VariantProps<typeof buttonVariants>['variant']>;
+    size?: NonNullable<VariantProps<typeof buttonVariants>['size']>;
+    asChild?: boolean;
+}) {
     const Comp = asChild ? Slot.Root : 'button';
 
     return (

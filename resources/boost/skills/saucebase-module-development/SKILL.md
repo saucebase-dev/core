@@ -192,6 +192,68 @@ through `@/components`, `@/layouts` and `@/lib/utils`. The app's
 `saucebase-frontend-development` skill lists exactly what is available. Never import a
 `vendor/` path.
 
+## Stories
+
+A module's components get Storybook stories beside them, as core's do:
+`resources/js/vue/components/Banner.stories.ts` and `resources/js/react/components/Banner.stories.tsx`.
+Storybook and `npm run test:stories` find every module's stories for the app's stack; they list
+under `Modules/`.
+
+Write stories for every component that shows something and can render from props alone:
+UI, design-system and module components, and any component with states of its own (empty,
+error, loading). Skip the rest; E2E covers them:
+
+- Pages.
+- Slots that only read the page and pass it on (`ComingSoonBannerSlot`).
+- Components with no UI of their own (a toast fired on page load).
+- Large components that only compose others: their parts get the stories.
+
+A component that reads the page, sends requests or submits a form but should have stories
+splits in two: a view that takes props and emits events, with the stories, and a slot or
+parent that reads the page and sends the request (`TenantSwitcher` and `TenantSwitcherSlot`).
+
+- Set `title: '<Module>/<Component>'`. Storybook adds the `Modules/` prefix.
+- Import the preview as core's stories do (`import preview from '@/.storybook/preview'`) and
+  page fixtures from `@/.storybook/page`.
+- A component that reads page props gets them per story with `parameters: { inertia: { … } }`.
+  Storybook merges parameters, so a story can override a meta's prop but not remove it.
+- Every story is a test: it must render, and its `play` function must pass. Inertia visits are
+  cancelled and logged in the Actions panel, so a story never needs a server.
+- A plain link (`<a href>`) in an example points at `#`. Plain link clicks are cancelled and
+  logged too, but `#` shows the reader it goes nowhere. Inertia links keep real paths: Inertia
+  renders `#` as `href=""`, which is not a link to screen readers or to `getByRole('link')`.
+- A story of a component that fetches on render needs a network mock; there is none, so don't
+  write one for it.
+
+### Controls
+
+Every control in the Controls panel must change the story, following Storybook's
+[Controls guide](https://storybook.js.org/docs/essentials/controls). The preview already
+shows each control's description and default, and hides `as`, `asChild`, `by`, `testId`,
+`defaultValue` and `modelValue`. A component reads `defaultValue` only once and `modelValue`
+two-way, so a control can't change either; stories still set both in `args`.
+
+- Let docgen choose controls from the prop types. Write `argTypes` only for a control that
+  docgen gets wrong.
+- Give union props a type without `null`: docgen shows `'a' | 'b' | null` as a JSON
+  editor. Wrap cva's types: `variant?: NonNullable<AlertVariants['variant']>`.
+- Give a prop that takes a component (an icon) a list of names and a `mapping` to the real
+  components. Put the name in `args`, cast it (`icon: 'Rocket' as never`), because `mapping`
+  swaps it for the component.
+- Give a text slot an arg with a starting value, and show it in the render
+  (`{{ args.default }}`). Set `control: false` on a slot the render fills itself.
+- Leave object and array props on the JSON editor: that is their control.
+- Give every main prop a starting value in the meta's `args`.
+- Keep `fn()` out of the meta's `args`: Storybook can't print a call as an event handler,
+  so every story's snippet gets an "Incomplete code snippet" warning. Put the spy only on
+  the story whose `play` reads it, or handle the event in a decorator that passes its own
+  handler (`story({ args: { onDismiss } })`) and logs it with `action()`.
+- Render stories inline on the docs page: controls there don't reach a story in its own
+  frame (`docs.story.inline: false`). A component that sticks or scrolls with the page
+  gets a scrolling box of its own in a decorator instead.
+- Describe every prop, slot and event with a JSDoc comment in the component: the panel shows
+  it next to the control.
+
 ## npm Packages
 
 Every module has a `package.json` (the recipe creates it), with only `name` and `private` until

@@ -6,7 +6,7 @@ import { emptyMediaVariants } from '.';
 
 const props = defineProps<{
     class?: HTMLAttributes['class'];
-    variant?: EmptyMediaVariants['variant'];
+    variant?: NonNullable<EmptyMediaVariants['variant']>;
 }>();
 </script>
 

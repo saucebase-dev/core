@@ -134,6 +134,42 @@ describe('saucebase()', () => {
         expect(define.__SAUCEBASE_CONTRIBUTOR__).toBe('true');
     });
 
+    describe('in Storybook', () => {
+        beforeEach(() => vi.stubEnv('STORYBOOK', 'true'));
+        afterEach(() => vi.unstubAllEnvs());
+
+        it('leaves out the Laravel and Inertia plugins: Storybook serves the UI itself, with no app entry or server renderer', () => {
+            const plugins = saucebase({
+                framework: 'vue',
+                entry: 'resources/js/app.ts',
+                requires: {},
+            });
+
+            for (const name of ['laravel', 'inertia']) {
+                expect(plugins).not.toContainEqual(
+                    expect.objectContaining({ name }),
+                );
+            }
+        });
+
+        it('resolves @ from the app root, not the config folder Storybook runs Vite from', () => {
+            const storybookRoot = path.join(root, 'resources/js');
+            const plugin = saucebase({
+                framework: 'vue',
+                entry: 'resources/js/app.ts',
+                requires: {},
+            }).find((p: any) => p?.name === 'saucebase') as any;
+
+            const { root: viteRoot, resolve } = plugin.config(
+                { root: storybookRoot },
+                {},
+            );
+
+            expect(viteRoot).toBe(root);
+            expect(resolve.alias['@']).toBe(path.join(root, 'resources/js'));
+        });
+    });
+
     it('skips the server build when saucebase.json turns server rendering off', () => {
         fs.writeFileSync(path.join(root, 'saucebase.json'), '{"ssr": false}');
         const exit = vi
@@ -393,5 +429,62 @@ describe('saucebase() app-first @/', () => {
         expect(info).toHaveBeenCalledWith(
             expect.stringMatching(/adds: components\/ui\/select\/index\.ts/),
         );
+    });
+});
+
+describe('saucebase() core packages', () => {
+    function plugin(): any {
+        return saucebase({
+            framework: 'vue',
+            entry: 'resources/js/app.ts',
+            requires: {},
+        }).find((p: any) => p?.name === 'saucebase:core-packages') as any;
+    }
+
+    /** Records where Vite was asked to resolve from. */
+    const context = {
+        resolve: async (id: string, importer: string) => ({ id, importer }),
+    };
+
+    const coreFile = () =>
+        path.join(root, 'vendor/saucebase/core/stubs/stack/vue/js/app.ts');
+
+    beforeEach(() => {
+        fs.writeFileSync(
+            path.join(root, 'saucebase.json'),
+            '{"contributor": true}',
+        );
+    });
+
+    // Core is read through vendor/, and `stack --dev` links node_modules into it for
+    // TypeScript: a package found there would be a second copy beside the app's.
+    it("resolves a core file's packages from the app, so the build has one copy of each", async () => {
+        const result = await plugin().resolveId.call(
+            context,
+            '@inertiajs/vue3',
+            coreFile(),
+            {},
+        );
+
+        expect(path.dirname(result.importer)).toBe(root);
+    });
+
+    it("leaves core's relative imports and the app's own files to Vite", async () => {
+        const resolveId = plugin().resolveId.bind(context);
+
+        expect(await resolveId('./ssr', coreFile(), {})).toBeNull();
+        expect(
+            await resolveId(
+                '@inertiajs/vue3',
+                path.join(root, 'modules/blog/resources/js/app.ts'),
+                {},
+            ),
+        ).toBeNull();
+    });
+
+    it('is off in an installed app, which has no link', () => {
+        fs.writeFileSync(path.join(root, 'saucebase.json'), '{}');
+
+        expect(plugin()).toBeUndefined();
     });
 });

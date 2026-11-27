@@ -10,6 +10,7 @@ import {
     unmetRequirements,
     versionLine,
 } from './requirements.ts';
+import { readSettings } from './settings.ts';
 
 /** Where Composer installs this package's JavaScript, relative to the app root. */
 const SAUCEBASE_JS = 'vendor/saucebase/core/resources/js';
@@ -33,6 +34,9 @@ export function saucebase({
 }): PluginOption[] {
     const settings = readSettings(process.cwd());
     const contributor = settings.contributor === true;
+    // Storybook's CLI sets this. It runs Vite from its config folder (resources/js/.storybook)
+    // and serves the UI itself: no Laravel entry to wire, no app.ts to server-render.
+    const storybook = process.env.STORYBOOK === 'true';
 
     // The Inertia plugin turns app.ts's createInertiaApp() call into the server
     // renderer, so there is no ssr.ts. A contributor checkout's app.ts only imports
@@ -43,10 +47,13 @@ export function saucebase({
 
     return [
         contributor && overrides(framework, settings.template),
+        contributor && corePackages(),
         {
             name: 'saucebase',
             config: (userConfig, env) => {
-                const root = path.resolve(userConfig.root ?? process.cwd());
+                const root = storybook
+                    ? process.cwd()
+                    : path.resolve(userConfig.root ?? process.cwd());
 
                 if (env?.isSsrBuild && settings.ssr === false) {
                     console.log(
@@ -60,6 +67,7 @@ export function saucebase({
                     : 'resources/js';
 
                 return {
+                    ...(storybook && { root }),
                     // Core is symlinked in a contributor checkout, and its own vendor/
                     // loops back on itself through testbench: 500,000+ watched files.
                     ...(contributor && {
@@ -147,17 +155,18 @@ export function saucebase({
             },
         },
         tailwindcss(),
-        laravel({
-            input: [
-                'resources/css/app.css',
-                entry,
-                'resources/css/filament/admin/theme.css',
-            ],
-            // Without it the server build would bundle every input, CSS included.
-            ssr: ssrEntry,
-            refresh: true,
-        }),
-        inertia({ ssr: ssrEntry }),
+        !storybook &&
+            laravel({
+                input: [
+                    'resources/css/app.css',
+                    entry,
+                    'resources/css/filament/admin/theme.css',
+                ],
+                // Without it the server build would bundle every input, CSS included.
+                ssr: ssrEntry,
+                refresh: true,
+            }),
+        !storybook && inertia({ ssr: ssrEntry }),
     ];
 }
 
@@ -292,17 +301,34 @@ function overrides(
     };
 }
 
-/** The app's `saucebase.json`: its framework, contributor mode and server rendering. */
-function readSettings(root: string): {
-    contributor?: boolean;
-    ssr?: boolean;
-    template?: string;
-} {
-    const file = path.join(root, 'saucebase.json');
+/**
+ * A contributor checkout reads core through vendor/ (`preserveSymlinks`), and the
+ * installer's `stack --dev` links node_modules into core's stack for TypeScript. Vite
+ * would find packages there under a second path: two copies of Vue and Inertia in one
+ * build, and a module's usePage() reading the copy that has no page. Core's imports
+ * resolve from the app root instead, as an installed app's do.
+ */
+function corePackages(): PluginOption {
+    const root = process.cwd();
+    const core = path.join(root, 'vendor/saucebase/core') + path.sep;
+    const fromApp = path.join(root, 'package.json');
 
-    return fs.existsSync(file)
-        ? JSON.parse(fs.readFileSync(file, 'utf-8'))
-        : {};
+    return {
+        name: 'saucebase:core-packages',
+        enforce: 'pre',
+        resolveId(id, importer, options) {
+            // Relative, absolute (aliases are already applied) and virtual ids stay as they are.
+            if (
+                !importer?.startsWith(core) ||
+                /^[./\\\0]/.test(id) ||
+                id.includes(':')
+            ) {
+                return null;
+            }
+
+            return this.resolve(id, fromApp, { ...options, skipSelf: true });
+        },
+    };
 }
 
 /** PHP dependencies and runtime files, except core's frontend, which hot-reloads from vendor/. */

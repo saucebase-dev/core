@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils';
 import { sidebarMenuButtonVariants } from '.';
 
 export interface SidebarMenuButtonProps extends PrimitiveProps {
-    variant?: SidebarMenuButtonVariants['variant'];
-    size?: SidebarMenuButtonVariants['size'];
+    variant?: NonNullable<SidebarMenuButtonVariants['variant']>;
+    size?: NonNullable<SidebarMenuButtonVariants['size']>;
     isActive?: boolean;
     class?: HTMLAttributes['class'];
 }

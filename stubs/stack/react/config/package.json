@@ -23,7 +23,10 @@
         "test:e2e:debug": "playwright test --debug",
         "test:e2e:report": "playwright show-report",
         "screenshots": "npm run build && tsx scripts/capture-screenshots.ts",
-        "lint": "eslint ./vendor/saucebase/core/stubs/stack/react/js ./modules/*/resources --fix --no-error-on-unmatched-pattern"
+        "lint": "eslint ./vendor/saucebase/core/stubs/stack/react/js ./modules/*/resources --fix --no-error-on-unmatched-pattern",
+        "storybook": "storybook dev -p 6006 -c vendor/saucebase/core/stubs/stack/react/js/.storybook",
+        "storybook:build": "storybook build -c vendor/saucebase/core/stubs/stack/react/js/.storybook -o storage/storybook",
+        "test:stories": "vitest run --config vendor/saucebase/core/stubs/stack/react/js/vitest.config.ts"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
@@ -37,6 +40,12 @@
         "@inertiajs/vite": "^3.9.1",
         "@playwright/test": "^1.64.1",
         "@saucebase/laravel-playwright": "^2.0.1",
+        "@storybook/addon-a11y": "^11.0.0-rc.0",
+        "@storybook/addon-docs": "^11.0.0-rc.0",
+        "@storybook/addon-mcp": "^11.0.0-rc.0",
+        "@storybook/addon-themes": "^11.0.0-rc.0",
+        "@storybook/addon-vitest": "^11.0.0-rc.0",
+        "@storybook/react-vite": "^11.0.0-rc.0",
         "@svgr/core": "^8.1.0",
         "@svgr/plugin-jsx": "^8.1.0",
         "@tailwindcss/forms": "^0.5.11",
@@ -46,6 +55,8 @@
         "@types/react": "^19.3.0",
         "@types/react-dom": "^19.3.0",
         "@vitejs/plugin-react": "^6.1.2",
+        "@vitest/browser-playwright": "^5.1.1",
+        "@vitest/coverage-v8": "^5.1.1",
         "concurrently": "^10.0.6",
         "dotenv": "^18.0.9",
         "eslint": "^10.13.0",
@@ -59,13 +70,16 @@
         "prettier-plugin-organize-imports": "^4.3.0",
         "prettier-plugin-tailwindcss": "^0.8.1",
         "shadcn": "^4.22.1",
+        "storybook": "^11.0.0-rc.0",
+        "storybook-addon-pseudo-states": "^11.0.0-rc.0",
+        "storybook-addon-tag-badges": "^4.0.0",
         "tailwindcss": "^4.3.3",
         "tsx": "^4.23.15",
         "typescript": "^6.0.3",
         "typescript-eslint": "^8.72.0",
         "unplugin-icons": "^24.0.0",
         "vite": "^8.3.5",
-        "vitest": "^5.0.5"
+        "vitest": "^5.1.1"
     },
     "dependencies": {
         "@fontsource-variable/jetbrains-mono": "^5.3.0",

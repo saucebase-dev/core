@@ -1,0 +1,54 @@
+import preview from '@/.storybook/preview';
+import { expect } from 'storybook/test';
+import { InputField } from './input-field';
+
+/**
+ * A labelled text input with its validation error, for forms. Screen readers hear the
+ * label and, when there is one, the error.
+ *
+ * The form passes the error in: `<Form>`'s render props or `useForm()`. The field
+ * never reads the page, so it works in any form.
+ */
+const meta = preview.meta({
+    title: 'UI/InputField',
+    component: InputField,
+    args: { name: 'email', label: 'Email', placeholder: 'you@example.com' },
+});
+export default meta;
+
+/** Before the form is sent. */
+export const Default = meta.story({
+    play: async ({ canvas }) => {
+        await expect(canvas.queryByTestId('email-error')).toBeNull();
+    },
+});
+
+/** After the server rejects the value: the message shows under the input, which is marked invalid. */
+export const WithError = meta.story({
+    args: { error: 'The email field is required.' },
+    play: async ({ canvas }) => {
+        await expect(canvas.getByTestId('email-error')).toHaveTextContent(
+            'The email field is required.',
+        );
+        await expect(canvas.getByLabelText('Email')).toHaveAttribute(
+            'aria-invalid',
+            'true',
+        );
+    },
+});
+
+/** A password: hidden as typed, with a button to show it. */
+export const Password = meta.story({
+    args: { name: 'password', label: 'Password', type: 'password', placeholder: undefined },
+    play: async ({ canvas, userEvent }) => {
+        const input = canvas.getByLabelText('Password');
+        await expect(input).toHaveAttribute('type', 'password');
+
+        await userEvent.click(canvas.getByRole('button', { name: 'Show password' }));
+
+        await expect(input).toHaveAttribute('type', 'text');
+        await expect(
+            canvas.getByRole('button', { name: 'Hide password' }),
+        ).toBeVisible();
+    },
+});

@@ -9,14 +9,18 @@ import {
     SidebarHeader,
 } from '@/components/ui/sidebar';
 import type { PageProps, User } from '@/types';
+import type { ComponentProps } from 'react';
 import type { Navigation } from '@saucebase/core/types';
 import { usePage } from '@inertiajs/react';
-import {
-    getGlobalComponents,
-    hasGlobalComponent,
-} from '@saucebase/react/lib/globalComponents';
+import { hasGlobalComponent } from '@saucebase/react/lib/globalComponents';
 
-export default function AppSidebar() {
+// Sidebar's props, with the app's defaults: an inset that collapses to icons.
+export default function AppSidebar({
+    variant = 'inset',
+    collapsible = 'icon',
+    className = 'bg-transparent',
+    ...props
+}: ComponentProps<typeof Sidebar>) {
     const page =
         usePage<PageProps<{ navigation: Navigation; auth: { user: User } }>>();
 
@@ -30,12 +34,15 @@ export default function AppSidebar() {
     const brandIsClaimed = hasGlobalComponent('dashboard::sidebar.brand');
 
     return (
-        <Sidebar variant="inset" collapsible="icon" className="bg-transparent">
+        <Sidebar
+            variant={variant}
+            collapsible={collapsible}
+            className={className}
+            {...props}
+        >
             <SidebarHeader data-testid="sidebar-header">
                 {brandIsClaimed ? (
-                    getGlobalComponents('dashboard::sidebar.brand').map((C, i) => (
-                        <C key={i} />
-                    ))
+                    <GlobalComponents position="dashboard::sidebar.brand" />
                 ) : (
                     <AppBrand />
                 )}
@@ -43,6 +50,8 @@ export default function AppSidebar() {
             <SidebarContent>
                 <GlobalComponents position="dashboard::sidebar.start" />
                 <NavGroup items={items} />
+                {/* Between the nav and the bottom links: a module's own list (chat history). */}
+                <GlobalComponents position="dashboard::sidebar.content" />
                 <NavGroup items={secondaryItems} className="mt-auto" />
                 <GlobalComponents position="dashboard::sidebar.end" />
             </SidebarContent>

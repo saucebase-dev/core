@@ -33,6 +33,7 @@ return [
         '*.vue',
         '*.blade.php',
         '*.ts',
+        '*.tsx',
     ],
 
     // Indicates whether new lines are allowed in translations.
@@ -49,6 +50,9 @@ return [
         '@lang',
         '\$t',
         'trans',
+        // React's t(): each name goes into the exporter's regex with nothing before it, so
+        // a bare `t` would also match import('./x') and emit('submit').
+        '(?<![\w$.])t',
     ],
 
     // Indicates whether you need to sort the translations alphabetically

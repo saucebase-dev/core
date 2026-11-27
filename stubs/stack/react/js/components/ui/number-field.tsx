@@ -1,10 +1,12 @@
 import { cn } from '@/lib/utils';
+import { useT } from '@saucebase/react/i18n';
 import { Minus, Plus } from 'lucide-react';
 import {
     createContext,
     useCallback,
     useContext,
     useId,
+    useState,
     type HTMLAttributes,
     type ReactNode,
 } from 'react';
@@ -55,15 +57,18 @@ export function NumberField({
 }: NumberFieldProps) {
     const inputId = useId();
     const controlled = value !== undefined;
-    const currentValue = controlled ? value : defaultValue;
+    // Without `value`, the field keeps its own, starting at `defaultValue`.
+    const [own, setOwn] = useState(defaultValue);
+    const currentValue = controlled ? value : own;
 
     const onChange = useCallback(
         (next: number) => {
             const clamped = min !== undefined ? Math.max(min, next) : next;
             const final = max !== undefined ? Math.min(max, clamped) : clamped;
+            if (!controlled) setOwn(final);
             onValueChange?.(final);
         },
-        [min, max, onValueChange],
+        [controlled, min, max, onValueChange],
     );
 
     return (
@@ -132,10 +137,12 @@ export function NumberFieldDecrement({
     ...props
 }: HTMLAttributes<HTMLButtonElement>) {
     const { value, min, step, disabled, onChange } = useNumberField();
+    const t = useT();
     return (
         <button
             type="button"
             data-slot="decrement"
+            aria-label={t('Decrease')}
             disabled={disabled || (min !== undefined && value <= min)}
             onClick={() => onChange(value - step)}
             className={cn(
@@ -155,10 +162,12 @@ export function NumberFieldIncrement({
     ...props
 }: HTMLAttributes<HTMLButtonElement>) {
     const { value, max, step, disabled, onChange } = useNumberField();
+    const t = useT();
     return (
         <button
             type="button"
             data-slot="increment"
+            aria-label={t('Increase')}
             disabled={disabled || (max !== undefined && value >= max)}
             onClick={() => onChange(value + step)}
             className={cn(

@@ -2,7 +2,7 @@
 import Sonner from '@/components/ui/sonner/Sonner.vue';
 import { useColorMode } from '@vueuse/core';
 import { router, usePage } from '@inertiajs/vue3';
-import { computed, watch } from 'vue';
+import { computed, onUnmounted, watch } from 'vue';
 import { toast } from 'vue-sonner';
 
 import 'vue-sonner/style.css';
@@ -76,11 +76,14 @@ function showToast(data: Saucebase.Core.Data.ToastData) {
     }
 }
 
-router.on('flash', (event) => {
+// Removed on unmount: a remount (hot reload, Storybook) would otherwise add a second
+// listener and show every flashed toast twice.
+const stopListening = router.on('flash', (event) => {
     if (event?.detail.flash.toast) {
         showToast(event.detail.flash.toast);
     }
 });
+onUnmounted(stopListening);
 
 watch(
     () => page.props?.toast,

@@ -46,7 +46,9 @@ function EmptyMedia({
     className,
     variant = 'default',
     ...props
-}: React.ComponentProps<'div'> & VariantProps<typeof emptyMediaVariants>) {
+}: React.ComponentProps<'div'> & {
+    variant?: NonNullable<VariantProps<typeof emptyMediaVariants>['variant']>;
+}) {
     return (
         <div
             data-slot="empty-icon"

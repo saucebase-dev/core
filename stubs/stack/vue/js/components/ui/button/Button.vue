@@ -7,8 +7,11 @@ import { cn } from '@/lib/utils';
 import { buttonVariants } from '.';
 
 interface Props extends PrimitiveProps {
-    variant?: ButtonVariants['variant'];
-    size?: ButtonVariants['size'];
+    /** How much the action stands out: `default` for the page's main action, `destructive` for one that deletes or can't be undone. */
+    variant?: NonNullable<ButtonVariants['variant']>;
+    /** `sm` in dense rows and toolbars, `lg` for a hero or a lone call to action. */
+    size?: NonNullable<ButtonVariants['size']>;
+    /** Extra classes, merged over the variant's. */
     class?: HTMLAttributes['class'];
 }
 
